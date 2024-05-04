@@ -1,4 +1,4 @@
-use nalgebra_glm::TMat4;
+use glam::Mat4;
 use crate::engine::drawable::{Drawable, DrawObject};
 use crate::engine::drawable::mesh::cube::CubeMesh;
 use crate::engine::shader::Shader;
@@ -9,7 +9,7 @@ pub struct DrawCube {
 }
 
 impl Drawable for DrawCube {
-    fn draw(&self,modelmat: &TMat4<f32>, viewmat: &TMat4<f32>) {
+    fn draw(&self,modelmat: &Mat4, viewmat: &Mat4) {
         self.draw_object.draw(modelmat, viewmat);
     }
 }

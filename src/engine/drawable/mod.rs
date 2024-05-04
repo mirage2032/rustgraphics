@@ -1,5 +1,4 @@
-use nalgebra_glm::TMat4;
-
+use glam::Mat4;
 use crate::engine::shader::Shader;
 use crate::PROJECTION;
 
@@ -7,7 +6,7 @@ pub mod mesh;
 pub mod cube;
 
 pub trait Drawable {
-    fn draw(&self, modelmat: &TMat4<f32>, viewmat: &TMat4<f32>);
+    fn draw(&self, modelmat: &Mat4, viewmat: &Mat4);
 }
 
 pub struct DrawObject {
@@ -16,7 +15,7 @@ pub struct DrawObject {
 }
 
 impl Drawable for DrawObject {
-    fn draw(&self,modelmat: &TMat4<f32>, viewmat: &TMat4<f32>) {
+    fn draw(&self,modelmat: &Mat4, viewmat: &Mat4) {
         self.shader.use_program();
         self.shader.set_mat4("model", modelmat);
         self.shader.set_mat4("view", viewmat);

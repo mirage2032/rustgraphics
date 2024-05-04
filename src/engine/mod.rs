@@ -1,9 +1,9 @@
 use std::f32::consts::PI;
 use std::sync::mpsc::{channel, Receiver};
 use std::thread::Builder;
+use glam::{Mat4, vec3, vec4};
 
 use glfw::{Action, Context, Glfw, GlfwReceiver, Key, PWindow, WindowEvent, WindowHint};
-use nalgebra_glm as glm;
 
 use crate::{HEIGHT, WIDTH};
 use crate::engine::drawable::cube::DrawCube;
@@ -69,25 +69,25 @@ impl Engine {
 
         //to mat4
         let mut model = {
-            let global_pos = glm::vec3(0.0, 1.0, 0.0);
-            glm::translation(&global_pos)
+            let global_pos = vec3(0.0, 1.0, 0.0);
+            Mat4::from_translation(global_pos)
         };
 
         // Apply rotation to the view matrix
         let rotated_view = {
-            let eye = glm::vec3(0.0, 0.0, 3.0); // Camera position
-            let center = glm::vec3(0.0, 0.0, 0.0); // Camera target
-            let up = glm::vec3(0.0, 1.0, 0.0); // Up vector
+            let eye = vec3(0.0, 0.0, 3.0); // Camera position
+            let center = vec3(0.0, 0.0, 0.0); // Camera target
+            let up = vec3(0.0, 1.0, 0.0); // Up vector
 
             // Create a view matrix
-            let view = glm::look_at(&eye, &center, &up);
+            let view = Mat4::look_at_rh(eye, center, up);
 
             // Define rotation parameters
             let angle = (PI / 180.0) * 15.0; // Rotation angle in degrees
-            let axis = glm::vec3(0.0, 1.0, 0.0); // Rotation axis
+            let axis = vec3(0.0, 1.0, 0.0); // Rotation axis
 
             // Create a rotation matrix
-            let rotation = glm::rotation(angle, &axis);
+            let rotation = Mat4::from_axis_angle(axis, angle);
             view * rotation
         };
 
@@ -101,13 +101,18 @@ impl Engine {
 
         let cube = DrawCube::default();
 
-        let mut viewport = glm::vec4(0.0, 0.0, *WIDTH as f32, *HEIGHT as f32);
+        let mut viewport = vec4(0.0, 0.0, *WIDTH as f32, *HEIGHT as f32);
 
         loop {
-            let rotate_offset = glm::vec3(0.45,0.7,0.2);
-            let translate_offset = glm::vec3(0.0,-0.005,0.0);
-            model = glm::rotate(&model, 0.03, &rotate_offset);
-            let translate_global = glm::translation(&translate_offset);
+            let rotate_axis = vec3(0.45, 0.7, 0.2);
+            let rotation_degrees = 3.0_f32.to_radians();
+            let rotation_mat = Mat4::from_axis_angle(rotate_axis, rotation_degrees);
+
+            model = model * rotation_mat;
+
+
+            let translate_offset = vec3(0.0,-0.005,0.0);
+            let translate_global = Mat4::from_translation(translate_offset);
             model = translate_global * model;
 
             // Check if the rendering should stop.

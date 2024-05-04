@@ -1,6 +1,6 @@
 pub mod cube;
 
-use nalgebra_glm::TMat4;
+use glam::Mat4;
 use crate::engine::drawable::Drawable;
 
 pub trait MeshTrait: Drawable {
@@ -34,7 +34,7 @@ impl MeshTrait for Mesh {
 }
 
 impl Drawable for Mesh {
-    fn draw(&self,_: &TMat4<f32>, _: &TMat4<f32>) {
+    fn draw(&self,_: &Mat4, _: &Mat4) {
         self.bind();
         unsafe {
             gl::DrawElements(gl::TRIANGLES, self.indices_count, gl::UNSIGNED_INT, std::ptr::null());

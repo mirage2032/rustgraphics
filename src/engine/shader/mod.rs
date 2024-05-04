@@ -1,6 +1,7 @@
 use gl;
 use gl::types::GLenum;
-use nalgebra_glm as glm;
+use glam::Mat4;
+
 pub struct Shader {
     id: u32,
 }
@@ -36,12 +37,12 @@ impl Shader {
         }
     }
 
-    pub fn set_mat4(&self, name: &str, mat: &glm::Mat4) {
+    pub fn set_mat4(&self, name: &str, mat: &Mat4) {
         unsafe {
             self.use_program();
             let name_cstring = std::ffi::CString::new(name).unwrap();
             let location = gl::GetUniformLocation(self.id, name_cstring.as_ptr());
-            gl::UniformMatrix4fv(location, 1, gl::FALSE, mat.as_ptr());
+            gl::UniformMatrix4fv(location, 1, gl::FALSE, mat.as_ref().as_ptr());
         }
     }
 }

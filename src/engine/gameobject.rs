@@ -1,4 +1,4 @@
-use nalgebra_glm::TMat4;
+use glam::Mat4;
 use crate::engine::drawable::Drawable;
 use crate::engine::transform::Transform;
 
@@ -21,7 +21,7 @@ impl<'a> GameObject<'a> {
 }
 
 impl Drawable for GameObject<'_>{
-    fn draw(&self,modelmat: &TMat4<f32>, viewmat: &TMat4<f32>) {
+    fn draw(&self,modelmat: &Mat4, viewmat: &Mat4) {
         if let Some(drawable) = &self.drawable {
             drawable.draw(modelmat, viewmat);
         }
