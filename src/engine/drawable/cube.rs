@@ -1,7 +1,7 @@
-use crate::drawable::{Drawable, DrawObject};
-use crate::drawable::mesh::CubeMesh;
-use crate::drawable::transform::Transform;
-use crate::shader::Shader;
+use crate::engine::drawable::{Drawable, DrawObject};
+use crate::engine::drawable::mesh::cube::CubeMesh;
+use crate::engine::drawable::transform::Transform;
+use crate::engine::shader::Shader;
 
 struct DrawCube {
     draw_object: DrawObject

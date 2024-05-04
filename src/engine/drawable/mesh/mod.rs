@@ -1,7 +1,6 @@
-mod cube;
+pub mod cube;
 
-pub use cube::CubeMesh;
-use crate::drawable::Drawable;
+use crate::engine::drawable::Drawable;
 
 pub trait MeshTrait: Drawable {
     fn bind(&self);

@@ -1,5 +1,5 @@
-use crate::drawable::transform::Transform;
-use crate::shader::Shader;
+use crate::engine::drawable::transform::Transform;
+use crate::engine::shader::Shader;
 
 pub mod mesh;
 mod cube;

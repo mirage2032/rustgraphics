@@ -1,16 +1,16 @@
-mod shader;
-mod drawable;
+mod engine;
 
 use std::f32::consts::PI;
-use drawable::mesh::MeshTrait;
-use drawable::Drawable;
 
 extern crate glfw;
 
-use glfw::{Action, Context, Key};
+use glfw::{Action, Context, Key, WindowHint};
 use std::sync::mpsc::{channel, Receiver};
 use std::thread::Builder;
 use nalgebra_glm as glm;
+use crate::engine::drawable::Drawable;
+use crate::engine::drawable::mesh::cube::CubeMesh;
+use crate::engine::shader::Shader;
 
 const WIDTH: u32 = 800;
 const HEIGHT: u32 = 600;
@@ -18,15 +18,17 @@ const HEIGHT: u32 = 600;
 fn main() {
     let mut glfw = glfw::init_no_callbacks().unwrap();
 
-    glfw.window_hint(glfw::WindowHint::ContextVersion(3, 3));
-    glfw.window_hint(glfw::WindowHint::OpenGlProfile(glfw::OpenGlProfileHint::Core));
-    glfw.window_hint(glfw::WindowHint::Resizable(false));
+    glfw.window_hint(WindowHint::ContextVersion(3, 3));
+    glfw.window_hint(WindowHint::OpenGlProfile(glfw::OpenGlProfileHint::Core));
+    glfw.window_hint(WindowHint::Resizable(false));
+    glfw.window_hint(WindowHint::Samples(Some(4))); // Set the number of samples for multi-sampling
 
     let (mut window, events) = glfw
         .create_window(WIDTH, HEIGHT, "Hello this is window", glfw::WindowMode::Windowed)
         .expect("Failed to create GLFW window.");
 
     window.set_key_polling(true);
+    window.glfw.set_swap_interval(glfw::SwapInterval::Sync(1));
 
     let render_context = window.render_context();
     let (send, recv) = channel();
@@ -54,7 +56,7 @@ fn render(mut ctx: glfw::PRenderContext, finish: Receiver<()>) {
     ctx.make_current();
     gl::load_with(|symbol| ctx.get_proc_address(symbol) as *const _);
 
-    let shader = shader::Shader::default();
+    let shader = Shader::default();
     shader.use_program();
 
     let global_pos = glm::vec3(0.0, 1.0, 0.0);
@@ -93,12 +95,16 @@ fn render(mut ctx: glfw::PRenderContext, finish: Receiver<()>) {
     // Set the projection matrix in the shader
     shader.set_mat4("projection", &projection);
 
+
     unsafe {
+        gl::Enable(gl::MULTISAMPLE); // Enable multi-sampling
+        gl::Enable(gl::BLEND); // Enable blending for better anti-aliasing
+        gl::BlendFunc(gl::SRC_ALPHA, gl::ONE_MINUS_SRC_ALPHA); // Set blending function
         gl::ClearColor(0.2, 0.3, 0.3, 1.0);
         gl::Enable(gl::DEPTH_TEST);
     }
 
-    let cube = drawable::mesh::CubeMesh::default();
+    let cube = CubeMesh::default();
 
     let mut viewport = glm::vec4(0.0, 0.0, WIDTH as f32, HEIGHT as f32);
 

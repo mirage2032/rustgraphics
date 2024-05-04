@@ -1,5 +1,5 @@
-use crate::drawable::Drawable;
-use crate::drawable::mesh::{Mesh, MeshTrait};
+use crate::engine::drawable::Drawable;
+use crate::engine::drawable::mesh::{Mesh, MeshTrait};
 
 pub struct CubeMesh {
     mesh: Mesh,
