@@ -1,4 +1,3 @@
-use std::f32::consts::PI;
 use std::sync::mpsc::{channel, Receiver};
 use std::thread::Builder;
 use glam::{Mat4, vec3, vec4};
@@ -103,7 +102,7 @@ impl<'a> Engine<'a> {
 
         let cube = DrawCube::default();
 
-        let mut viewport = vec4(0.0, 0.0, *WIDTH as f32, *HEIGHT as f32);
+        let viewport = vec4(0.0, 0.0, *WIDTH as f32, *HEIGHT as f32);
 
         loop {
             let rotate_axis = vec3(0.45, 0.7, 0.2);

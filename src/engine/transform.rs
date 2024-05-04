@@ -1,4 +1,4 @@
-use glam::{Mat4, Quat, Vec3, vec3};
+use glam::{Mat4, Quat, Vec3};
 
 pub struct Transform {
     pub position: Vec3,
