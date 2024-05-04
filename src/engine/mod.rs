@@ -8,21 +8,23 @@ use glfw::{Action, Context, Glfw, GlfwReceiver, Key, PWindow, WindowEvent, Windo
 use crate::{HEIGHT, WIDTH};
 use crate::engine::drawable::cube::DrawCube;
 use crate::engine::drawable::Drawable;
+use crate::engine::scene::Scene;
 
 pub mod drawable;
 pub mod shader;
 pub mod gameobject;
 pub mod transform;
-mod scene;
+pub mod scene;
 mod camera;
 
-pub struct Engine {
+pub struct Engine<'a> {
     glfw: Glfw,
     window: PWindow,
     events: GlfwReceiver<(f64, WindowEvent)>,
+    scene: Option<Scene<'a>>,
 }
 
-impl Engine {
+impl<'a> Engine<'a> {
     pub fn new() -> Self {
         let mut glfw = glfw::init_no_callbacks().unwrap();
 
@@ -37,7 +39,7 @@ impl Engine {
 
         window.set_key_polling(true);
         window.glfw.set_swap_interval(glfw::SwapInterval::Sync(1));
-        Self { window, glfw, events }
+        Self { window, glfw, events,scene: None }
     }
 
     pub fn run(&mut self) {
@@ -83,7 +85,7 @@ impl Engine {
             let view = Mat4::look_at_rh(eye, center, up);
 
             // Define rotation parameters
-            let angle = (PI / 180.0) * 15.0; // Rotation angle in degrees
+            let angle = 15.0_f32.to_radians(); // Rotation angle in degrees
             let axis = vec3(0.0, 1.0, 0.0); // Rotation axis
 
             // Create a rotation matrix

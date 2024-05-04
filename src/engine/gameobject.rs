@@ -2,6 +2,10 @@ use glam::Mat4;
 use crate::engine::drawable::Drawable;
 use crate::engine::transform::Transform;
 
+trait Step {
+    fn step(&mut self);
+}
+
 pub struct GameObject<'a> {
     parent: Option<&'a GameObject<'a>>,
     children: Vec<GameObject<'a>>,
@@ -20,6 +24,13 @@ impl<'a> GameObject<'a> {
     }
 }
 
+impl<'a> Step for GameObject<'a> {
+    fn step(&mut self) {
+        for child in &mut self.children {
+            child.step();
+        }
+    }
+}
 impl Drawable for GameObject<'_>{
     fn draw(&self,modelmat: &Mat4, viewmat: &Mat4) {
         if let Some(drawable) = &self.drawable {

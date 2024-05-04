@@ -1,29 +1,43 @@
-use glam::{Vec3, vec3};
+use glam::{Mat4, Quat, Vec3, vec3};
 
 pub struct Transform {
     pub position: Vec3,
-    pub rotation: Vec3,
+    pub rotation: Quat,
     pub scale: Vec3,
 }
 
-// impl From<TMat4<f32>> for Transform{
-//     fn from(mat: TMat4<f32>) -> Self {
-//
-//
-//         Self {
-//             position,
-//             rotation,
-//             scale,
-//         }
-//     }
-// }
+impl Transform {
+    pub fn new(position: Vec3, rotation: Quat, scale: Vec3) -> Self {
+        Self {
+            position,
+            rotation,
+            scale,
+        }
+    }
+
+    pub fn to_mat4(&self) -> Mat4 {
+        Mat4::from_scale_rotation_translation(self.scale, self.rotation, self.position)
+    }
+}
+
+impl From<Mat4> for Transform{
+    fn from(mat: Mat4) -> Self {
+        let (scale, rotation, position) = mat.to_scale_rotation_translation();
+
+        Self {
+            position,
+            rotation,
+            scale,
+        }
+    }
+}
 
 impl Default for Transform {
     fn default() -> Self {
         Self {
-            position: vec3(0.0, 0.0, 0.0),
-            rotation: vec3(0.0, 0.0, 0.0),
-            scale: vec3(1.0, 1.0, 1.0),
+            position: Vec3::ZERO,
+            rotation: Quat::IDENTITY,
+            scale: Vec3::ONE,
         }
     }
 }

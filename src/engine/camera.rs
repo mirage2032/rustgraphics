@@ -4,6 +4,14 @@ pub struct Camera {
     transform: Transform,
 }
 
+impl Camera {
+    pub fn new(transform: Transform) -> Self {
+        Self {
+            transform,
+        }
+    }
+}
+
 impl Default for Camera {
     fn default() -> Self {
         Self {
