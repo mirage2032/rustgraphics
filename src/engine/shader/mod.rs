@@ -39,7 +39,8 @@ impl Shader {
     pub fn set_mat4(&self, name: &str, mat: &glm::Mat4) {
         unsafe {
             self.use_program();
-            let location = gl::GetUniformLocation(self.id, std::ffi::CString::new(name).unwrap().as_ptr());
+            let name_cstring = std::ffi::CString::new(name).unwrap();
+            let location = gl::GetUniformLocation(self.id, name_cstring.as_ptr());
             gl::UniformMatrix4fv(location, 1, gl::FALSE, mat.as_ptr());
         }
     }

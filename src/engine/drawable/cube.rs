@@ -1,15 +1,16 @@
+use nalgebra_glm::TMat4;
 use crate::engine::drawable::{Drawable, DrawObject};
 use crate::engine::drawable::mesh::cube::CubeMesh;
-use crate::engine::drawable::transform::Transform;
 use crate::engine::shader::Shader;
+use crate::engine::transform::Transform;
 
-struct DrawCube {
+pub struct DrawCube {
     draw_object: DrawObject
 }
 
 impl Drawable for DrawCube {
-    fn draw(&self) {
-        self.draw_object.draw();
+    fn draw(&self,modelmat: &TMat4<f32>, viewmat: &TMat4<f32>) {
+        self.draw_object.draw(modelmat, viewmat);
     }
 }
 
@@ -19,7 +20,6 @@ impl Default for DrawCube {
         let draw_object = DrawObject{
             mesh: Box::new(CubeMesh::default()),
             shader: Shader::default(),
-            transform: Transform::default(),
         };
         Self{draw_object}
     }

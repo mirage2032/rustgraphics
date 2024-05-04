@@ -1,3 +1,4 @@
+use nalgebra_glm::TMat4;
 use crate::engine::drawable::Drawable;
 use crate::engine::drawable::mesh::{Mesh, MeshTrait};
 
@@ -12,8 +13,8 @@ impl MeshTrait for CubeMesh {
 }
 
 impl Drawable for CubeMesh{
-    fn draw(&self) {
-        self.mesh.draw();
+    fn draw(&self,modelmat: &TMat4<f32>, viewmat: &TMat4<f32>) {
+        self.mesh.draw(modelmat, viewmat);
     }
 }
 impl Default for CubeMesh{

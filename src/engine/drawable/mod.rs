@@ -1,23 +1,26 @@
-use crate::engine::drawable::transform::Transform;
+use nalgebra_glm::TMat4;
+
 use crate::engine::shader::Shader;
+use crate::PROJECTION;
 
 pub mod mesh;
-mod cube;
-mod transform;
+pub mod cube;
 
 pub trait Drawable {
-    fn draw(&self) {}
+    fn draw(&self, modelmat: &TMat4<f32>, viewmat: &TMat4<f32>);
 }
 
 pub struct DrawObject {
     mesh: Box<dyn mesh::MeshTrait>,
     shader: Shader,
-    transform: Transform,
 }
 
-impl DrawObject {
-    pub fn draw(&self) {
+impl Drawable for DrawObject {
+    fn draw(&self,modelmat: &TMat4<f32>, viewmat: &TMat4<f32>) {
         self.shader.use_program();
-        self.mesh.draw();
+        self.shader.set_mat4("model", modelmat);
+        self.shader.set_mat4("view", viewmat);
+        self.shader.set_mat4("projection", &PROJECTION);
+        self.mesh.draw(modelmat, viewmat);
     }
 }
