@@ -1,5 +1,6 @@
-use std::sync::mpsc::{channel, Receiver};
+use std::sync::mpsc::{channel, Receiver, Sender};
 use std::thread::Builder;
+use std::time::{Duration, Instant};
 use glam::{Mat4, vec3, vec4};
 
 use glfw::{Action, Context, Glfw, GlfwReceiver, Key, PWindow, WindowEvent, WindowHint};
@@ -28,7 +29,7 @@ pub struct Engine<'a> {
 
 impl<'a> Engine<'a> {
     pub fn new() -> Self {
-        let mut glfw = glfw::init_no_callbacks().unwrap();
+        let mut glfw = glfw::init(glfw::fail_on_errors).unwrap();
 
         glfw.window_hint(WindowHint::ContextVersion(3, 3));
         glfw.window_hint(WindowHint::OpenGlProfile(glfw::OpenGlProfileHint::Core));
@@ -40,7 +41,6 @@ impl<'a> Engine<'a> {
             .expect("Failed to create GLFW window.");
 
         window.set_key_polling(true);
-        window.glfw.set_swap_interval(glfw::SwapInterval::Sync(1));
 
 
         Self { window, glfw, events,scene:None }
@@ -52,7 +52,7 @@ impl<'a> Engine<'a> {
 
         let render_task = Builder::new().name("render task".to_string());
         let render_task_done = render_task.spawn(move || {
-            Self::render(render_context, recv);
+            Self::render(render_context, send);
         });
 
         while !self.window.should_close() {
@@ -60,18 +60,20 @@ impl<'a> Engine<'a> {
             for (_, event) in glfw::flush_messages(&self.events) {
                 Self::handle_window_event(&mut self.window, event);
             }
+            if let Ok(val) =  recv.try_recv() {
+                self.window.set_title(&format!("FPS: {:.2}", val));
+            };
         }
-
-        // Tell the render task to exit.
-        send.send(()).ok().expect("Failed signal to render thread.");
 
         // Wait for acknowledgement that the rendering was completed.
         let _ = render_task_done;
     }
 
-    fn render(mut ctx: glfw::PRenderContext, finish: Receiver<()>) {
+    fn render(mut ctx: glfw::PRenderContext, sender: Sender<f32>) {
         ctx.make_current();
         gl::load_with(|symbol| ctx.get_proc_address(symbol) as *const _);
+
+        let mut fps_counter = FpsCounter::new();
 
         let mut scene = {
             let mut scene = Scene::new();
@@ -112,10 +114,7 @@ impl<'a> Engine<'a> {
         let viewport = vec4(0.0, 0.0, *WIDTH as f32, *HEIGHT as f32);
 
         loop {
-            // Check if the rendering should stop.
-            if finish.try_recv() == Ok(()) {
-                break;
-            };
+            fps_counter.update();
 
             unsafe {
                 gl::Viewport(viewport.x as i32, viewport.y as i32, *WIDTH as i32, *HEIGHT as i32);
@@ -125,9 +124,8 @@ impl<'a> Engine<'a> {
             }
 
             ctx.swap_buffers();
+            sender.send(fps_counter.fps()).expect("Failed to send FPS");
         }
-        // required on some platforms
-        glfw::make_context_current(None);
     }
 
     fn handle_window_event(window: &mut glfw::Window, event: WindowEvent) {
@@ -135,6 +133,36 @@ impl<'a> Engine<'a> {
             WindowEvent::Key(Key::Escape, _, Action::Press, _) => window.set_should_close(true),
             _ => {}
         }
+    }
+}
+
+struct FpsCounter {
+    frame_count: u32,
+    start_time: Instant,
+    fps: f32,
+}
+
+impl FpsCounter {
+    fn new() -> Self {
+        Self {
+            frame_count: 0,
+            start_time: Instant::now(),
+            fps: 0.0,
+        }
+    }
+
+    fn update(&mut self) {
+        self.frame_count += 1;
+        let elapsed = self.start_time.elapsed();
+        if elapsed >= Duration::from_secs(1) {
+            self.fps = self.frame_count as f32 / elapsed.as_secs_f32();
+            self.frame_count = 0;
+            self.start_time = Instant::now();
+        }
+    }
+
+    fn fps(&self) -> f32 {
+        self.fps
     }
 }
 

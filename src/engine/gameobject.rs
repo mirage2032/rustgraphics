@@ -68,7 +68,9 @@ impl<'a> GameObject<'a> for BaseGameObject<'a> {
 
     fn step(&mut self) {
         let data = self.data_mut();
-        data.transform.rotation *= glam::Quat::from_rotation_y(0.01);
+        data.transform.rotation *= glam::Quat::from_rotation_y(0.004);
+        data.transform.rotation *= glam::Quat::from_rotation_x(0.007);
+        data.transform.rotation *= glam::Quat::from_rotation_x(-0.01);
         for child in &mut self.data.children {
             child.step();
         }
