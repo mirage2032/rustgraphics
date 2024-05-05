@@ -1,11 +1,11 @@
-use glam::Mat4;
+use glam::{Mat4, vec3};
 
 use crate::engine::camera::Camera;
 use crate::engine::gameobject::GameObject;
 
 pub struct Scene<'a> {
-    objects: Vec<Box<dyn GameObject<'a>>>,
-    main_camera: Option<Camera>,
+    pub objects: Vec<Box<dyn GameObject<'a>>>,
+    pub main_camera: Option<Camera>,
 }
 
 impl<'a> Scene<'a> {
@@ -18,10 +18,17 @@ impl<'a> Scene<'a> {
 
     pub fn render(&self) {
         if let Some(camera) = &self.main_camera {
-            let viewmat = camera.transform.to_mat4().inverse();
+            let viewmat = camera.transform.to_mat4();
             for object in &self.objects {
-                object.draw(&Mat4::IDENTITY, &viewmat);
+                object.draw(&Mat4::from_translation(vec3(0.0,0.0,0.0)), &viewmat);
             }
         }
     }
+
+    pub fn step(&mut self) {
+        for object in &mut self.objects {
+            object.step();
+        }
+    }
+
 }

@@ -3,10 +3,14 @@ use glam::Mat4;
 use crate::engine::drawable::Drawable;
 use crate::engine::transform::Transform;
 
-pub trait GameObject<'a>: Drawable {
+pub trait GameObject<'a>: Drawable + 'a {
     fn data(&self) -> &GameObjectData<'a>;
     fn data_mut(&mut self) -> &mut GameObjectData<'a>;
-    fn step(&mut self);
+    fn step(&mut self) {
+        for child in &mut self.data_mut().children {
+            child.step();
+        }
+    }
 }
 
 impl<'a, T: GameObject<'a>> Drawable for T {
@@ -24,10 +28,10 @@ impl<'a, T: GameObject<'a>> Drawable for T {
 
 
 pub struct GameObjectData<'a> {
-    parent: Option<&'a dyn GameObject<'a>>,
-    children: Vec<Box<dyn GameObject<'a>>>,
-    transform: Transform,
-    drawable: Option<Box<dyn Drawable>>,
+    pub parent: Option<&'a dyn GameObject<'a>>,
+    pub children: Vec<Box<dyn GameObject<'a>>>,
+    pub transform: Transform,
+    pub drawable: Option<Box<dyn Drawable>>,
 }
 
 impl<'a> GameObjectData<'a> {
@@ -37,6 +41,36 @@ impl<'a> GameObjectData<'a> {
             children: Vec::new(),
             transform: Transform::default(),
             drawable: None,
+        }
+    }
+}
+
+pub struct BaseGameObject<'a> {
+    data: GameObjectData<'a>,
+}
+
+impl<'a> BaseGameObject<'a> {
+    pub fn new(parent: Option<&'a dyn GameObject<'a>>) -> Self {
+        Self {
+            data: GameObjectData::new(parent),
+        }
+    }
+}
+
+impl<'a> GameObject<'a> for BaseGameObject<'a> {
+    fn data(&self) -> &GameObjectData<'a> {
+        &self.data
+    }
+
+    fn data_mut(&mut self) -> &mut GameObjectData<'a> {
+        &mut self.data
+    }
+
+    fn step(&mut self) {
+        let data = self.data_mut();
+        data.transform.rotation *= glam::Quat::from_rotation_y(0.01);
+        for child in &mut self.data.children {
+            child.step();
         }
     }
 }
