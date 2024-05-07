@@ -3,12 +3,12 @@ use glam::{Mat4, vec3};
 use crate::engine::camera::Camera;
 use crate::engine::gameobject::GameObject;
 
-pub struct Scene<'a> {
-    pub objects: Vec<Box<dyn GameObject<'a>>>,
+pub struct Scene {
+    pub objects: Vec<Box<dyn GameObject<'static>>>,
     pub main_camera: Option<Camera>,
 }
 
-impl<'a> Scene<'a> {
+impl Scene {
     pub fn new() -> Self {
         Self {
             objects: Vec::new(),

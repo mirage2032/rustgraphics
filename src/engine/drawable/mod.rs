@@ -1,11 +1,11 @@
 use glam::Mat4;
+use crate::engine::config::STATIC_DATA;
 use crate::engine::shader::Shader;
-use crate::PROJECTION;
 
 pub mod mesh;
 pub mod cube;
 
-pub trait Drawable {
+pub trait Drawable: Send + Sync {
     fn draw(&self, modelmat: &Mat4, viewmat: &Mat4);
 }
 
@@ -19,7 +19,11 @@ impl Drawable for DrawObject {
         self.shader.use_program();
         self.shader.set_mat4("model", modelmat);
         self.shader.set_mat4("view", viewmat);
-        self.shader.set_mat4("projection", &PROJECTION);
+        let projection = {
+            let data = *STATIC_DATA.read().expect("Failed to read config").projection();
+            data
+        };
+        self.shader.set_mat4("projection", &projection);
         self.mesh.draw(modelmat, viewmat);
     }
 }
