@@ -1,5 +1,5 @@
 use rand::Rng;
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 use glengine::gl;
 
 use glengine::engine::camera::Camera;
@@ -7,7 +7,7 @@ use glengine::engine::drawable::base::BaseDrawable;
 use glengine::engine::drawable::mesh::MeshTrait;
 use glengine::engine::Engine;
 use glengine::engine::GameData;
-use glengine::engine::gameobject::{BaseGameObject, GameObject};
+use glengine::engine::gameobject::{BaseGameObject, GameObjectRaw};
 use glengine::engine::scene::Scene;
 use glengine::engine::scene::SceneData;
 use glengine::engine::transform::Transform;
@@ -51,12 +51,12 @@ impl Scene for BaseScene {
                 let rot_x = rng.gen_range(0.0001..1.7);
                 let rot_y = rng.gen_range(0.0001..1.5);
                 let rot_z = rng.gen_range(0.0001..1.3);
-                let mut cubeobj: Box<dyn GameObject> = Box::new(BaseGameObject::new(None, vec3(rot_x, rot_y, rot_z)));
+                let mut cubeobj = BaseGameObject::new(None, vec3(rot_x, rot_y, rot_z));
                 let data = cubeobj.data_mut();
                 data.transform.scale = vec3(0.1, 0.1, 0.1);
                 data.transform.position += vec3(0.20 * offset_x as f32, 0.20 * offset_y as f32, 0.0);
                 data.drawable = Some(Box::new(BaseDrawable::new(mesh.clone(),shader.clone())));
-                self.data.objects.push(cubeobj);
+                self.data.objects.push(Arc::new(RwLock::new(cubeobj)));
             }
         }
 
