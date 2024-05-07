@@ -1,6 +1,6 @@
 use std::sync::{Arc, Mutex};
 use std::sync::mpsc::{channel, Sender};
-use std::thread::Builder;
+use std::thread::{Builder, sleep};
 
 use glam::vec4;
 use glfw::{Action, Context, Glfw, GlfwReceiver, Key, PRenderContext, PWindow, WindowEvent, WindowHint};
@@ -52,7 +52,7 @@ impl Engine {
                 scene: None,
             }));
 
-        Self { window, game, events, glfw}
+        Self { window, game, events, glfw }
     }
 
     pub fn from_game(game: GameData) -> Self {
@@ -62,13 +62,19 @@ impl Engine {
     }
 
     pub fn run(&mut self) {
-        let (send, recv) = channel();
-
-        let render_task = Builder::new().name("render task".to_string());
         let game = self.game.clone();
         let ctx = self.window.render_context();
+
+        let render_task = Builder::new().name("render task".to_string());
+        let (send, recv) = channel();
         let render_task_done = render_task.spawn(move || {
             Self::render_task(ctx, game, send);
+        });
+
+        let game = self.game.clone();
+        let step_task = Builder::new().name("step task".to_string());
+        let step_task_done = step_task.spawn(move || {
+            Self::step_task(game);
         });
 
         while !self.window.should_close() {
@@ -107,17 +113,27 @@ impl Engine {
             unsafe {
                 gl::Viewport(viewport.x as i32, viewport.y as i32, viewport.z as i32, viewport.w as i32);
                 gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
-                {
-                    let mut game = game.lock().expect("Could not lock game data in render thread");
-                    if let Some(scene) = &mut game.scene{
-                        scene.render();
-                        scene.step();
-                    }
+
+                let game = game.lock().expect("Could not lock game data in render thread");
+                if let Some(scene) = &game.scene {
+                    scene.render();
                 }
             }
 
             ctx.swap_buffers();
             let _ = sender.send(fps_counter.fps());
+        }
+    }
+
+    fn step_task(game: Arc<Mutex<GameData>>) {
+        loop {
+            {
+                let mut game = game.lock().expect("Could not lock game data in step thread");
+                if let Some(scene) = &mut game.scene {
+                    scene.step();
+                }
+            }
+            sleep(std::time::Duration::from_nanos(1));
         }
     }
 
