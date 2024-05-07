@@ -72,8 +72,8 @@ impl Config {
 impl Default for Config {
     fn default() -> Self {
         let default = Config {
-            resolution: (800, 600),
-            fov: 70.0,
+            resolution: (1600, 900),
+            fov: 90.0,
             near_clip: 0.1,
             far_clip: 100.0
         };

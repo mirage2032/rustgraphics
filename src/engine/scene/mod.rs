@@ -1,3 +1,4 @@
+use std::time::Duration;
 use glam::{Mat4, vec3};
 
 use crate::engine::camera::Camera;
@@ -20,9 +21,9 @@ pub trait Scene: Send {
             }
         }
     }
-    fn step(&mut self) {
+    fn step(&mut self,duration: &Duration) {
         for object in &mut self.data_mut().objects {
-            object.step();
+            object.step(duration);
         }
     }
 }

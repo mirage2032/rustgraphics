@@ -1,4 +1,5 @@
-use glam::Mat4;
+use glam::{Mat4,Vec3};
+use std::time::Duration;
 
 use crate::engine::drawable::Drawable;
 use crate::engine::transform::Transform;
@@ -6,9 +7,9 @@ use crate::engine::transform::Transform;
 pub trait GameObject<'a>: Drawable + 'a {
     fn data(&self) -> &GameObjectData<'a>;
     fn data_mut(&mut self) -> &mut GameObjectData<'a>;
-    fn step(&mut self) {
+    fn step(&mut self,duration: &Duration) {
         for child in &mut self.data_mut().children {
-            child.step();
+            child.step(duration);
         }
     }
 }
@@ -47,11 +48,11 @@ impl<'a> GameObjectData<'a> {
 
 pub struct BaseGameObject<'a> {
     data: GameObjectData<'a>,
-    rotation: (f32, f32, f32),
+    rotation: Vec3,
 }
 
 impl<'a> BaseGameObject<'a> {
-    pub fn new(parent: Option<&'a dyn GameObject<'a>>,rotation: (f32,f32,f32)) -> Self {
+    pub fn new(parent: Option<&'a dyn GameObject<'a>>,rotation: Vec3) -> Self {
         Self {
             data: GameObjectData::new(parent),
             rotation
@@ -68,14 +69,14 @@ impl<'a> GameObject<'a> for BaseGameObject<'a> {
         &mut self.data
     }
 
-    fn step(&mut self) {
-        let rotation = self.rotation;
+    fn step(&mut self,duration: &Duration) {
+        let rotation = self.rotation * duration.as_secs_f32();
         let data = self.data_mut();
-        data.transform.rotation *= glam::Quat::from_rotation_x(rotation.0);
-        data.transform.rotation *= glam::Quat::from_rotation_y(rotation.1);
-        data.transform.rotation *= glam::Quat::from_rotation_z(rotation.2);
+        data.transform.rotation *= glam::Quat::from_rotation_x(rotation.x);
+        data.transform.rotation *= glam::Quat::from_rotation_y(rotation.y);
+        data.transform.rotation *= glam::Quat::from_rotation_z(rotation.z);
         for child in &mut self.data_mut().children {
-            child.step();
+            child.step(duration);
         }
     }
 }

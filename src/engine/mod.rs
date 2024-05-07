@@ -1,12 +1,12 @@
 use std::sync::{Arc, Mutex};
-use std::sync::mpsc::{channel, Sender};
-use std::thread::{Builder, sleep};
+use std::sync::mpsc::{channel, Receiver, Sender};
+use std::thread::Builder;
+use std::time::Duration;
 
-use glam::vec4;
 use glfw::{Action, Context, Glfw, GlfwReceiver, Key, PRenderContext, PWindow, WindowEvent, WindowHint};
 
 use crate::engine::config::STATIC_DATA;
-use crate::engine::fpscounter::FpsCounter;
+use crate::engine::fpscounter::TimeDelta;
 use crate::engine::scene::Scene;
 
 pub mod drawable;
@@ -44,7 +44,7 @@ impl Engine {
 
         window.make_current();
         window.set_key_polling(true);
-        window.glfw.set_swap_interval(glfw::SwapInterval::Sync(1));
+        window.glfw.set_swap_interval(glfw::SwapInterval::None);
         glfw.make_context_current(None);
 
         let game = Arc::new(Mutex::new(
@@ -66,15 +66,16 @@ impl Engine {
         let ctx = self.window.render_context();
 
         let render_task = Builder::new().name("render task".to_string());
-        let (send, recv) = channel();
+        let (send_rend, recv_rend) = channel();
         let render_task_done = render_task.spawn(move || {
-            Self::render_task(ctx, game, send);
+            Self::render_task(ctx, game, send_rend);
         });
 
         let game = self.game.clone();
-        let step_task = Builder::new().name("step task".to_string());
+        let step_task = Builder::new().name("update task".to_string());
+        let (send_step, recv_step) = channel();
         let step_task_done = step_task.spawn(move || {
-            Self::step_task(game);
+            Self::step_task(game, recv_step);
         });
 
         while !self.window.should_close() {
@@ -82,36 +83,40 @@ impl Engine {
             for (_, event) in glfw::flush_messages(&self.events) {
                 Self::handle_window_event(&mut self.window, event);
             }
-            if let Ok(fps) = recv.try_recv() {
+            if let Ok(delta) = recv_rend.try_recv() {
+                let seconds_per_frame = delta.as_secs_f64(); // Convert duration to seconds
+                let fps = {
+                    if seconds_per_frame > 0.0 {
+                        1.0 / seconds_per_frame  // Calculate frames per second
+                    } else {
+                        0.0 // If duration is zero or negative, return 0 FPS to avoid division by zero
+                    }
+                };
                 self.window.set_title(&format!("FPS: {:.2}", fps));
+                send_step.send(delta).expect("Could not send delta time to step task");
             }
         }
 
         // Wait for acknowledgement that the rendering was completed.
         let _ = render_task_done;
+        let _ = step_task_done;
     }
 
-    fn render_task(mut ctx: PRenderContext, game: Arc<Mutex<GameData>>, sender: Sender<f32>) {
+    fn render_task(mut ctx: PRenderContext, game: Arc<Mutex<GameData>>, sender: Sender<Duration>) {
         ctx.make_current();
         gl::load_with(|symbol| ctx.get_proc_address(symbol) as *const _);
         game.lock().expect("Could not lock game data in render thread").scene.as_mut().unwrap().init_gl();
-        let mut fps_counter = FpsCounter::new();
+        let mut fps_counter = TimeDelta::new();
 
         unsafe {
             gl::Enable(gl::MULTISAMPLE); // Enable multi-sampling
             gl::Enable(gl::BLEND); // Enable blending for better anti-aliasing
             gl::BlendFunc(gl::SRC_ALPHA, gl::ONE_MINUS_SRC_ALPHA); // Set blending function
-            gl::ClearColor(0.2, 0.3, 0.3, 1.0);
             gl::Enable(gl::DEPTH_TEST);
         }
-        let resolution = STATIC_DATA.read().expect("Failed to read config").config().get_resolution();
-        let viewport = vec4(0.0, 0.0, resolution.0 as f32, resolution.1 as f32);
 
         loop {
-            fps_counter.update();
-
             unsafe {
-                gl::Viewport(viewport.x as i32, viewport.y as i32, viewport.z as i32, viewport.w as i32);
                 gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
 
                 let game = game.lock().expect("Could not lock game data in render thread");
@@ -121,19 +126,18 @@ impl Engine {
             }
 
             ctx.swap_buffers();
-            let _ = sender.send(fps_counter.fps());
+            let _ = sender.send(fps_counter.delta());
         }
     }
 
-    fn step_task(game: Arc<Mutex<GameData>>) {
-        loop {
+    fn step_task(game: Arc<Mutex<GameData>>, sender: Receiver<Duration>) {
+        while let Ok(delta) = sender.recv() {
             {
                 let mut game = game.lock().expect("Could not lock game data in step thread");
                 if let Some(scene) = &mut game.scene {
-                    scene.step();
+                    scene.step(&delta);
                 }
             }
-            sleep(std::time::Duration::from_nanos(1));
         }
     }
 
