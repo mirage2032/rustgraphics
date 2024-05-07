@@ -47,12 +47,14 @@ impl<'a> GameObjectData<'a> {
 
 pub struct BaseGameObject<'a> {
     data: GameObjectData<'a>,
+    rotation: (f32, f32, f32),
 }
 
 impl<'a> BaseGameObject<'a> {
-    pub fn new(parent: Option<&'a dyn GameObject<'a>>) -> Self {
+    pub fn new(parent: Option<&'a dyn GameObject<'a>>,rotation: (f32,f32,f32)) -> Self {
         Self {
             data: GameObjectData::new(parent),
+            rotation
         }
     }
 }
@@ -67,11 +69,12 @@ impl<'a> GameObject<'a> for BaseGameObject<'a> {
     }
 
     fn step(&mut self) {
+        let rotation = self.rotation;
         let data = self.data_mut();
-        data.transform.rotation *= glam::Quat::from_rotation_y(0.004);
-        data.transform.rotation *= glam::Quat::from_rotation_x(0.007);
-        data.transform.rotation *= glam::Quat::from_rotation_x(-0.01);
-        for child in &mut self.data.children {
+        data.transform.rotation *= glam::Quat::from_rotation_x(rotation.0);
+        data.transform.rotation *= glam::Quat::from_rotation_y(rotation.1);
+        data.transform.rotation *= glam::Quat::from_rotation_z(rotation.2);
+        for child in &mut self.data_mut().children {
             child.step();
         }
     }

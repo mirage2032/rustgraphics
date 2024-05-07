@@ -2,17 +2,12 @@ use std::sync::{Arc, Mutex};
 use std::sync::mpsc::{channel, Sender};
 use std::thread::Builder;
 
-use glam::{Mat4, vec3, vec4};
+use glam::vec4;
 use glfw::{Action, Context, Glfw, GlfwReceiver, Key, PRenderContext, PWindow, WindowEvent, WindowHint};
 
-use crate::engine::camera::Camera;
-use crate::engine::config::{STATIC_DATA};
-use crate::engine::drawable::cube::DrawCube;
-use crate::engine::drawable::Drawable;
+use crate::engine::config::STATIC_DATA;
 use crate::engine::fpscounter::FpsCounter;
-use crate::engine::gameobject::{BaseGameObject, GameObject};
 use crate::engine::scene::Scene;
-use crate::engine::transform::Transform;
 
 pub mod drawable;
 pub mod shader;
@@ -24,7 +19,7 @@ pub mod fpscounter;
 pub mod config;
 
 pub struct GameData {
-    pub scene: Option<Scene>,
+    pub scene: Option<Box<dyn Scene>>,
 }
 
 pub struct Engine {
@@ -60,6 +55,12 @@ impl Engine {
         Self { window, game, events, glfw}
     }
 
+    pub fn from_game(game: GameData) -> Self {
+        let mut engine = Self::new();
+        engine.game = Arc::new(Mutex::new(game));
+        engine
+    }
+
     pub fn run(&mut self) {
         let (send, recv) = channel();
 
@@ -87,36 +88,8 @@ impl Engine {
     fn render_task(mut ctx: PRenderContext, game: Arc<Mutex<GameData>>, sender: Sender<f32>) {
         ctx.make_current();
         gl::load_with(|symbol| ctx.get_proc_address(symbol) as *const _);
-
+        game.lock().expect("Could not lock game data in render thread").scene.as_mut().unwrap().init_gl();
         let mut fps_counter = FpsCounter::new();
-
-        let mut scene = {
-            let mut scene = Scene::new();
-            let mut cubeobj: Box<dyn GameObject> = Box::new(BaseGameObject::new(None));
-            cubeobj.data_mut().drawable = Some(Box::new(DrawCube::default()));
-            scene.objects.push(cubeobj);
-
-            let rotated_view = {
-                let eye = vec3(0.0, 0.0, 3.0); // Camera position
-                let center = vec3(0.0, 0.0, 0.0); // Camera target
-                let up = vec3(0.0, 1.0, 0.0); // Up vector
-
-                // Create a view matrix
-                let view = Mat4::look_at_rh(eye, center, up);
-
-                // Define rotation parameters
-                let angle = 15.0_f32.to_radians(); // Rotation angle in degrees
-                let axis = vec3(0.0, 1.0, 0.0); // Rotation axis
-
-                // Create a rotation matrix
-                let rotation = Mat4::from_axis_angle(axis, angle);
-                view * rotation
-            };
-            let camera = Camera::new(Transform::from(rotated_view));
-            scene.main_camera = Some(camera);
-            scene
-        };
-
 
         unsafe {
             gl::Enable(gl::MULTISAMPLE); // Enable multi-sampling
@@ -134,8 +107,13 @@ impl Engine {
             unsafe {
                 gl::Viewport(viewport.x as i32, viewport.y as i32, viewport.z as i32, viewport.w as i32);
                 gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
-                scene.render();
-                scene.step();
+                {
+                    let mut game = game.lock().expect("Could not lock game data in render thread");
+                    if let Some(scene) = &mut game.scene{
+                        scene.render();
+                        scene.step();
+                    }
+                }
             }
 
             ctx.swap_buffers();

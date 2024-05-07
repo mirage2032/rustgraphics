@@ -1,7 +1,7 @@
 use serde::{Serialize, Deserialize};
 use std::fs::File;
 use std::io::{Read, Write};
-use std::sync::{Arc, Mutex, RwLock};
+use std::sync::RwLock;
 use lazy_static::lazy_static;
 
 
@@ -15,7 +15,7 @@ pub struct Config {
 
 impl Config {
     pub fn new() -> Self {
-        let mut config = Config::default();
+        let config = Config::default();
         config
     }
     pub fn from_file(path: &str) -> Result<Self,&'static str> {
@@ -71,7 +71,7 @@ impl Config {
 
 impl Default for Config {
     fn default() -> Self {
-        let mut default = Config {
+        let default = Config {
             resolution: (800, 600),
             fov: 70.0,
             near_clip: 0.1,

@@ -27,6 +27,7 @@ impl Shader {
             gl::AttachShader(id, vertex_shader);
             gl::AttachShader(id, fragment_shader);
             gl::LinkProgram(id);
+            gl::UseProgram(id);
         }
         Shader { id }
     }

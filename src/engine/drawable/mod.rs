@@ -1,17 +1,18 @@
 use glam::Mat4;
+use std::sync::Arc;
 use crate::engine::config::STATIC_DATA;
 use crate::engine::shader::Shader;
 
 pub mod mesh;
-pub mod cube;
+pub mod base;
 
 pub trait Drawable: Send + Sync {
     fn draw(&self, modelmat: &Mat4, viewmat: &Mat4);
 }
 
 pub struct DrawObject {
-    mesh: Box<dyn mesh::MeshTrait>,
-    shader: Shader,
+    mesh: Arc<Box<dyn mesh::MeshTrait>>,
+    shader: Arc<Shader>,
 }
 
 impl Drawable for DrawObject {
