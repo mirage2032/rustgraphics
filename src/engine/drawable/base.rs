@@ -2,7 +2,7 @@ use glam::Mat4;
 use std::sync::Arc;
 
 use crate::engine::drawable::{Drawable, DrawObject};
-use crate::engine::drawable::mesh::{Mesh, cube::CubeMesh, MeshTrait};
+use crate::engine::drawable::mesh::{cube::CubeMesh, Mesh};
 use crate::engine::shader::Shader;
 
 pub struct BaseDrawable {
@@ -10,7 +10,7 @@ pub struct BaseDrawable {
 }
 
 impl BaseDrawable {
-    pub fn new(mesh:Arc<Box<dyn MeshTrait>>,shader: Arc<Shader>) -> Self {
+    pub fn new(mesh:Arc<Box<dyn Mesh>>, shader: Arc<Shader>) -> Self {
         let draw_object = DrawObject{
             mesh,
             shader,

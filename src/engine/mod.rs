@@ -44,7 +44,7 @@ impl Engine {
 
         window.make_current();
         window.set_key_polling(true);
-        window.glfw.set_swap_interval(glfw::SwapInterval::None);
+        window.glfw.set_swap_interval(glfw::SwapInterval::Sync(2));
         glfw.make_context_current(None);
 
         let game = Arc::new(Mutex::new(
@@ -122,6 +122,13 @@ impl Engine {
                 let game = game.lock().expect("Could not lock game data in render thread");
                 if let Some(scene) = &game.scene {
                     scene.render();
+                }
+                while let Some(res) = gl::GetError().into() {
+                    if res != gl::NO_ERROR {
+                        println!("OpenGL error: {}", res);
+                    } else {
+                        break;
+                    }
                 }
             }
 

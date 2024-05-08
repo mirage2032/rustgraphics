@@ -11,7 +11,7 @@ pub trait Drawable: Send + Sync {
 }
 
 pub struct DrawObject {
-    mesh: Arc<Box<dyn mesh::MeshTrait>>,
+    mesh: Arc<Box<dyn mesh::Mesh>>,
     shader: Arc<Shader>,
 }
 

@@ -8,7 +8,9 @@ use crate::engine::transform::Transform;
 pub trait GameObjectRaw: Drawable {
     fn data(&self) -> &GameObjectData;
     fn data_mut(&mut self) -> &mut GameObjectData;
-    fn step(&mut self,duration: &Duration) {
+    fn step(&mut self,duration: &Duration);
+    fn step_recursive(&mut self,duration: &Duration) {
+        self.step(duration);
         for child in &mut self.data_mut().children {
             child.write().expect("Could not lock child gameobject for step").step(duration);
         }
@@ -78,8 +80,5 @@ impl GameObjectRaw for BaseGameObject {
         data.transform.rotation *= glam::Quat::from_rotation_x(rotation.x);
         data.transform.rotation *= glam::Quat::from_rotation_y(rotation.y);
         data.transform.rotation *= glam::Quat::from_rotation_z(rotation.z);
-        for child in &mut self.data_mut().children {
-            child.write().expect("Could not lock child gameobject for step").step(duration);
-        }
     }
 }
