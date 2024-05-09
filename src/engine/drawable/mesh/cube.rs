@@ -10,6 +10,9 @@ impl Mesh for CubeMesh {
     fn bind(&self) {
         self.mesh.bind();
     }
+    fn get_indices_count(&self) -> u32 {
+        self.mesh.get_indices_count()
+    }
 }
 
 impl Drawable for CubeMesh{

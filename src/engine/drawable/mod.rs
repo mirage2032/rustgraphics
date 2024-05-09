@@ -25,7 +25,6 @@ impl Drawable for DrawObject {
             data
         };
         self.shader.set_mat4("projection", &projection);
-        
         self.mesh.draw(modelmat, viewmat);
     }
 }

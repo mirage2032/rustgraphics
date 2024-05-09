@@ -1,14 +1,15 @@
 use std::time::Duration;
 use glam::{Vec3, Mat4};
-use obj::Position;
 use crate::engine::gameobject::{GameObject,GameObjectData,GameObjectRaw};
-use crate::engine::transform::Transform;
+use std::sync::{Arc, Mutex};
+use glfw::Key;
+use crate::engine::GameState;
 
-pub struct PointCamera {
+pub struct CameraControlled {
     pub data: GameObjectData,
 }
 
-impl PointCamera {
+impl CameraControlled {
     pub fn new(parent:Option<GameObject>,position: Vec3,target: Vec3,up:Vec3) -> Self {
         let mut data = GameObjectData::new(parent);
         data.transform.position = position;
@@ -19,7 +20,7 @@ impl PointCamera {
     }
 }
 
-impl Default for PointCamera {
+impl Default for CameraControlled {
     fn default() -> Self {
         Self {
             data: GameObjectData::new(None),
@@ -27,7 +28,7 @@ impl Default for PointCamera {
     }
 }
 
-impl GameObjectRaw for PointCamera {
+impl GameObjectRaw for CameraControlled {
     fn data(&self) -> &GameObjectData {
         &self.data
     }
@@ -36,6 +37,31 @@ impl GameObjectRaw for PointCamera {
         &mut self.data
     }
 
-    fn step(&mut self, duration: &Duration) {
+    fn step(&mut self, game:&GameState) {
+        let mut speed = 10.0*game.delta.as_secs_f32();
+        let forward = self.data.transform.forward();
+        let right = self.data.transform.right();
+        let up = self.data.transform.up();
+        let mut transform = &mut self.data.transform;
+        if game.input_changes.keyboard.is_held(Key::W) {
+            transform.position += forward * speed;
+        }
+        if game.input_changes.keyboard.is_held(Key::S) {
+            transform.position -= forward * speed;
+        }
+        if game.input_changes.keyboard.is_held(Key::D) {
+            transform.position += right * speed;
+        }
+        if game.input_changes.keyboard.is_held(Key::A) {
+            transform.position -= right * speed;
+        }
+        if game.input_changes.keyboard.is_held(Key::Space) {
+            transform.position -= up * speed;
+        }
+        if game.input_changes.keyboard.is_held(Key::LeftShift) {
+            transform.position += up * speed;
+        }
+        transform.position.y -= speed*0.1;
+        // self.data.transform.position = position;
     }
 }

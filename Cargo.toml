@@ -10,7 +10,7 @@ glam = "0.27.0"
 lazy_static = "1.4.0"
 serde = { version = "1.0.200", features = ["derive"] }
 serde_json = "1.0.116"
-obj-rs = "0.7.1"
+tobj = {git = "https://github.com/Twinklebear/tobj", branch = "master"}
 
 [lib]
 crate-type = ["lib"]

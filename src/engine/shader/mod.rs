@@ -2,6 +2,9 @@ use gl;
 use gl::types::GLenum;
 use glam::Mat4;
 
+pub static DEFAULT_VERTEX_SHADER: &str = include_str!("glsl/vertex/vertex_shader.glsl");
+pub static DEFAULT_FRAGMENT_SHADER: &str = include_str!("glsl/fragment/fragment_shader.glsl");
+
 pub struct Shader {
     id: u32,
 }
@@ -57,7 +60,8 @@ impl Drop for Shader {
 impl Default for Shader {
     fn default() -> Self {
         Shader::new(
-            include_str!("vertex_shader.glsl"),
-            include_str!("fragment_shader.glsl"))
+            DEFAULT_VERTEX_SHADER,
+            DEFAULT_FRAGMENT_SHADER,
+        )
     }
 }

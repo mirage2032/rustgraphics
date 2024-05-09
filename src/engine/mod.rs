@@ -1,25 +1,65 @@
 use std::sync::{Arc, Mutex};
-use std::sync::mpsc::{channel, Receiver, Sender,SyncSender,sync_channel};
+use std::sync::mpsc::{Receiver, sync_channel, SyncSender};
 use std::thread::Builder;
 use std::time::Duration;
 
-use glfw::{Action, Context, Glfw, GlfwReceiver, Key, PRenderContext, PWindow, WindowEvent, WindowHint};
+use glfw::{
+    Action, Context, Glfw, GlfwReceiver, Key, PRenderContext, PWindow, WindowEvent, WindowHint,
+};
 
 use crate::engine::config::STATIC_DATA;
+use crate::engine::events::EngineKeyState;
+use crate::engine::events::EngineWindowEvent;
 use crate::engine::fpscounter::TimeDelta;
 use crate::engine::scene::Scene;
 
-pub mod drawable;
-pub mod shader;
-pub mod gameobject;
-pub mod transform;
-pub mod scene;
 pub mod camera;
-pub mod fpscounter;
 pub mod config;
+pub mod drawable;
+mod events;
+pub mod fpscounter;
+pub mod gameobject;
+pub mod scene;
+pub mod shader;
+pub mod transform;
+
+pub struct GameState {
+    pub input_changes: EngineKeyState,
+    pub delta: Duration,
+}
 
 pub struct GameData {
     pub scene: Option<Box<dyn Scene>>,
+    pub state: GameState,
+}
+
+impl GameData {
+    pub fn new(scene: Option<Box<dyn Scene>>) -> Self {
+        Self {
+            scene,
+            ..Default::default()
+        }
+    }
+
+    fn step(&mut self, duration: Duration, input: EngineKeyState) {
+        self.state.input_changes.merge(input);
+        self.state.delta = duration;
+        if let Some(scene) = &mut self.scene {
+            scene.step(&self.state);
+        }
+    }
+}
+
+impl Default for GameData {
+    fn default() -> Self {
+        Self {
+            scene: None,
+            state: GameState {
+                input_changes: EngineKeyState::new(),
+                delta: Duration::new(0, 0),
+            },
+        }
+    }
 }
 
 pub struct Engine {
@@ -41,30 +81,66 @@ impl Engine {
         glfw.window_hint(WindowHint::TransparentFramebuffer(true));
         glfw.window_hint(WindowHint::Samples(Some(4))); // Set the number of samples for multi-sampling
 
-        let resolution = STATIC_DATA.read().expect("Failed to read config").config().get_resolution();
+        let resolution = STATIC_DATA
+            .read()
+            .expect("Failed to read config")
+            .config()
+            .get_resolution();
         let (mut window, events) = glfw
-            .create_window(resolution.0, resolution.1, "Hello this is window", glfw::WindowMode::Windowed)
+            .create_window(
+                resolution.0,
+                resolution.1,
+                "Hello this is window",
+                glfw::WindowMode::Windowed,
+            )
             .expect("Failed to create GLFW window.");
 
-        window.make_current();// Print information about the GPU device
+        window.make_current(); // Print information about the GPU device
         gl::load_with(|symbol| window.get_proc_address(symbol) as *const _);
 
         // Print information about the GPU device
-        println!("Renderer: {:?}", unsafe { std::ffi::CStr::from_ptr(gl::GetString(gl::RENDERER) as *const _) }.to_str().unwrap());
-        println!("Vendor: {:?}", unsafe { std::ffi::CStr::from_ptr(gl::GetString(gl::VENDOR) as *const _) }.to_str().unwrap());
-        println!("Version: {:?}", unsafe { std::ffi::CStr::from_ptr(gl::GetString(gl::VERSION) as *const _) }.to_str().unwrap());
-        println!("GLSL Version: {:?}", unsafe { std::ffi::CStr::from_ptr(gl::GetString(gl::SHADING_LANGUAGE_VERSION) as *const _) }.to_str().unwrap());
+        println!(
+            "Renderer: {:?}",
+            unsafe { std::ffi::CStr::from_ptr(gl::GetString(gl::RENDERER) as *const _) }
+                .to_str()
+                .unwrap()
+        );
+        println!(
+            "Vendor: {:?}",
+            unsafe { std::ffi::CStr::from_ptr(gl::GetString(gl::VENDOR) as *const _) }
+                .to_str()
+                .unwrap()
+        );
+        println!(
+            "Version: {:?}",
+            unsafe { std::ffi::CStr::from_ptr(gl::GetString(gl::VERSION) as *const _) }
+                .to_str()
+                .unwrap()
+        );
+        println!(
+            "GLSL Version: {:?}",
+            unsafe {
+                std::ffi::CStr::from_ptr(gl::GetString(gl::SHADING_LANGUAGE_VERSION) as *const _)
+            }
+            .to_str()
+            .unwrap()
+        );
 
         window.set_key_polling(true);
         window.glfw.set_swap_interval(glfw::SwapInterval::Sync(1));
         glfw.make_context_current(None);
 
-        let game = Arc::new(Mutex::new(
-            GameData {
-                scene: None,
-            }));
+        let game = Arc::new(Mutex::new(GameData {
+            scene: None,
+            ..Default::default()
+        }));
 
-        Self { window, game, events, glfw }
+        Self {
+            window,
+            game,
+            events,
+            glfw,
+        }
     }
 
     pub fn from_game(game: GameData) -> Self {
@@ -78,34 +154,45 @@ impl Engine {
         let ctx = self.window.render_context();
 
         let render_task = Builder::new().name("render task".to_string());
-        let (send_rend, recv_rend) = sync_channel(1);
+        let (send_rend, recv_rend) = sync_channel(0);
         let render_task_done = render_task.spawn(move || {
             Self::render_task(ctx, game, send_rend);
         });
 
         let game = self.game.clone();
         let step_task = Builder::new().name("update task".to_string());
-        let (send_step, recv_step) = sync_channel(1);
+        let (send_step, recv_step) = sync_channel(0);
         let step_task_done = step_task.spawn(move || {
             Self::step_task(game, recv_step);
         });
 
         while !self.window.should_close() {
-            self.glfw.poll_events();
-            for (_, event) in glfw::flush_messages(&self.events) {
-                Self::handle_window_event(&mut self.window, event);
-            }
+
             if let Ok(delta) = recv_rend.try_recv() {
                 let seconds_per_frame = delta.as_secs_f64(); // Convert duration to seconds
                 let fps = {
                     if seconds_per_frame > 0.0 {
-                        1.0 / seconds_per_frame  // Calculate frames per second
+                        1.0 / seconds_per_frame // Calculate frames per second
                     } else {
                         0.0 // If duration is zero or negative, return 0 FPS to avoid division by zero
                     }
                 };
                 self.window.set_title(&format!("FPS: {:.2}", fps));
-                send_step.send(delta).expect("Could not send delta time to step task");
+                self.glfw.poll_events();
+                let (engine_events, input_changes) =
+                    Self::gather_window_events(&mut self.window, &self.events);
+                for event in engine_events {
+                    match event {
+                        EngineWindowEvent::Close => self.window.set_should_close(true),
+                        _ => {}
+                    }
+                }
+                if input_changes.keyboard.is_held(Key::W) {
+                    println!("Wbefore");
+                }
+                send_step
+                    .send((delta, input_changes))
+                    .expect("Could not send delta time to step task");
             }
         }
 
@@ -114,13 +201,44 @@ impl Engine {
         let _ = step_task_done;
     }
 
-    fn render_task(mut ctx: PRenderContext, game: Arc<Mutex<GameData>>, sender: SyncSender<Duration>) {
+    fn render_task(
+        mut ctx: PRenderContext,
+        game: Arc<Mutex<GameData>>,
+        sender: SyncSender<Duration>,
+    ) {
         ctx.make_current();
-        println!("Renderer: {:?}", unsafe { std::ffi::CStr::from_ptr(gl::GetString(gl::RENDERER) as *const _) }.to_str().unwrap());
-        println!("Vendor: {:?}", unsafe { std::ffi::CStr::from_ptr(gl::GetString(gl::VENDOR) as *const _) }.to_str().unwrap());
-        println!("Version: {:?}", unsafe { std::ffi::CStr::from_ptr(gl::GetString(gl::VERSION) as *const _) }.to_str().unwrap());
-        println!("GLSL Version: {:?}", unsafe { std::ffi::CStr::from_ptr(gl::GetString(gl::SHADING_LANGUAGE_VERSION) as *const _) }.to_str().unwrap());
-        game.lock().expect("Could not lock game data in render thread").scene.as_mut().unwrap().init_gl();
+        println!(
+            "Renderer: {:?}",
+            unsafe { std::ffi::CStr::from_ptr(gl::GetString(gl::RENDERER) as *const _) }
+                .to_str()
+                .unwrap()
+        );
+        println!(
+            "Vendor: {:?}",
+            unsafe { std::ffi::CStr::from_ptr(gl::GetString(gl::VENDOR) as *const _) }
+                .to_str()
+                .unwrap()
+        );
+        println!(
+            "Version: {:?}",
+            unsafe { std::ffi::CStr::from_ptr(gl::GetString(gl::VERSION) as *const _) }
+                .to_str()
+                .unwrap()
+        );
+        println!(
+            "GLSL Version: {:?}",
+            unsafe {
+                std::ffi::CStr::from_ptr(gl::GetString(gl::SHADING_LANGUAGE_VERSION) as *const _)
+            }
+            .to_str()
+            .unwrap()
+        );
+        game.lock()
+            .expect("Could not lock game data in render thread")
+            .scene
+            .as_mut()
+            .unwrap()
+            .init_gl();
         let mut fps_counter = TimeDelta::new();
 
         unsafe {
@@ -135,8 +253,11 @@ impl Engine {
         loop {
             unsafe {
                 gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
+                gl::Enable(gl::DEBUG_OUTPUT);
 
-                let game = game.lock().expect("Could not lock game data in render thread");
+                let game = game
+                    .lock()
+                    .expect("Could not lock game data in render thread");
                 if let Some(scene) = &game.scene {
                     scene.render();
                 }
@@ -154,21 +275,33 @@ impl Engine {
         }
     }
 
-    fn step_task(game: Arc<Mutex<GameData>>, sender: Receiver<Duration>) {
-        while let Ok(delta) = sender.recv() {
-            {
-                let mut game = game.lock().expect("Could not lock game data in step thread");
-                if let Some(scene) = &mut game.scene {
-                    scene.step(&delta);
-                }
-            }
+    fn step_task(game: Arc<Mutex<GameData>>, sender: Receiver<(Duration, EngineKeyState)>) {
+        while let Ok((delta, changes)) = sender.recv() {
+            let game_clone = game.clone();
+            let mut game_locked = game_clone
+                .lock()
+                .expect("Could not lock game data in step thread");
+            game_locked.step(delta, changes);
         }
     }
 
-    fn handle_window_event(window: &mut glfw::Window, event: WindowEvent) {
-        match event {
-            WindowEvent::Key(Key::Escape, _, Action::Press, _) => window.set_should_close(true),
-            _ => {}
+    fn gather_window_events(
+        window: &mut PWindow,
+        events: &GlfwReceiver<(f64, WindowEvent)>,
+    ) -> (Vec<EngineWindowEvent>, EngineKeyState) {
+        let mut engine_events = vec![];
+        let mut input_changes = EngineKeyState::new();
+        for (_, event) in glfw::flush_messages(events) {
+            match event {
+                WindowEvent::Key(Key::Escape, _, Action::Press, _) => {
+                    engine_events.push(EngineWindowEvent::Close)
+                }
+                WindowEvent::Key(key, _, action, _) => {
+                    input_changes.keyboard.add_key(key, action);
+                }
+                _ => {}
+            }
         }
+        (engine_events, input_changes)
     }
 }

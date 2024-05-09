@@ -7,13 +7,14 @@ pub mod model;
 
 pub trait Mesh: Drawable {
     fn bind(&self);
+    fn get_indices_count(&self) -> u32;
 }
 pub struct MeshData {
     vao: u32,
     vbo_vertices: u32,
     vbo_normals: u32,
     ebo: Option<u32>,
-    indices_count: i32,
+    indices_count: u32,
 }
 
 impl MeshData {
@@ -23,8 +24,8 @@ impl MeshData {
         let mut vbo_normals = 0;
         let mut ebo = 0;
         let indices_count = indices
-            .map(|i| i.len() as i32)
-            .unwrap_or(vertices.len() as i32 / 3);
+            .map(|i| i.len() as u32)
+            .unwrap_or(vertices.len() as u32 / 3);
 
         unsafe {
             gl::GenVertexArrays(1, &mut vao);
@@ -91,9 +92,12 @@ impl Mesh for MeshData {
             gl::BindVertexArray(self.vao);
         }
     }
+    fn get_indices_count(&self) -> u32 {
+        self.indices_count
+    }
 }
 
-fn unbind() {
+pub fn unbind() {
     unsafe {
         gl::BindVertexArray(0);
     }
@@ -102,18 +106,18 @@ fn unbind() {
 impl Drawable for MeshData {
     fn draw(&self, _: &Mat4, _: &Mat4) {
         self.bind();
-        if let Some(ebo) = self.ebo {
+        if self.ebo.is_some() {
             unsafe {
                 gl::DrawElements(
                     gl::TRIANGLES,
-                    self.indices_count,
+                    self.indices_count as i32,
                     gl::UNSIGNED_INT,
                     std::ptr::null(),
                 );
             }
         } else {
             unsafe {
-                gl::DrawArrays(gl::TRIANGLES, 0, self.indices_count);
+                gl::DrawArrays(gl::TRIANGLES, 0, self.indices_count as i32);
             }
         }
         unbind();

@@ -18,9 +18,24 @@ impl Transform {
     pub fn to_mat4(&self) -> Mat4 {
         Mat4::from_scale_rotation_translation(self.scale, self.rotation, self.position)
     }
+
+    pub fn forward(&self) -> Vec3 {
+        let xyzrotation = self.rotation.to_axis_angle();
+        let new =self.rotation * Vec3::Z;
+        let xyzrotation = self.rotation.to_axis_angle();
+        new
+    }
+
+    pub fn right(&self) -> Vec3 {
+        self.rotation * -Vec3::X
+    }
+
+    pub fn up(&self) -> Vec3 {
+        self.rotation * Vec3::Y
+    }
 }
 
-impl From<Mat4> for Transform{
+impl From<Mat4> for Transform {
     fn from(mat: Mat4) -> Self {
         let (scale, rotation, position) = mat.to_scale_rotation_translation();
 

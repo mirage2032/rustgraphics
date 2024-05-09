@@ -1,18 +1,24 @@
-use glam::{Mat4,Vec3};
+use std::sync::{Arc, Mutex, RwLock};
 use std::time::Duration;
-use std::sync::{Arc, RwLock};
+
+use glam::{Mat4, Vec3};
+use glfw::Key;
 
 use crate::engine::drawable::Drawable;
+use crate::engine::GameState;
 use crate::engine::transform::Transform;
 
 pub trait GameObjectRaw: Drawable {
     fn data(&self) -> &GameObjectData;
     fn data_mut(&mut self) -> &mut GameObjectData;
-    fn step(&mut self,duration: &Duration);
-    fn step_recursive(&mut self,duration: &Duration) {
-        self.step(duration);
+    fn step(&mut self, game:&GameState);
+    fn step_recursive(&mut self, game:&GameState) {
+        self.step(game);
         for child in &mut self.data_mut().children {
-            child.write().expect("Could not lock child gameobject for step").step(duration);
+            child
+                .write()
+                .expect("Could not lock child gameobject for step")
+                .step(game);
         }
     }
 }
@@ -27,11 +33,13 @@ impl<T: GameObjectRaw> Drawable for T {
             drawable.draw(&newmodelmat, viewmat);
         }
         for child in &data.children {
-            child.read().expect("Could not lock child gameobject for draw").draw(&newmodelmat, viewmat);
+            child
+                .read()
+                .expect("Could not lock child gameobject for draw")
+                .draw(&newmodelmat, viewmat);
         }
     }
 }
-
 
 pub struct GameObjectData {
     pub parent: Option<GameObject>,
@@ -53,15 +61,17 @@ impl GameObjectData {
 
 pub struct BaseGameObject {
     data: GameObjectData,
-    rotation: Vec3,
 }
 
 impl BaseGameObject {
-    pub fn new(parent: Option<GameObject>, rotation: Vec3) -> Self {
-        Self {
-            data: GameObjectData::new(parent),
-            rotation
+    pub fn new(parent: Option<GameObject>) -> GameObject {
+        let newgameobject = Arc::new(RwLock::new(Self {
+            data: GameObjectData::new(parent.clone()),
+        }));
+        if let Some(parent) = parent {
+            parent.write().expect("Could not lock parent gameobject for init").data_mut().children.push(newgameobject.clone());
         }
+        newgameobject
     }
 }
 
@@ -74,8 +84,40 @@ impl GameObjectRaw for BaseGameObject {
         &mut self.data
     }
 
-    fn step(&mut self,duration: &Duration) {
-        let rotation = self.rotation * duration.as_secs_f32();
+    fn step(&mut self, _game: &GameState) {
+    }
+}
+
+pub struct RotatingGameObject {
+    data: GameObjectData,
+    rotation: Vec3,
+}
+
+impl RotatingGameObject {
+    pub fn new(parent: Option<GameObject>, rotation: Vec3) -> GameObject {
+        let newgameobject = Arc::new(RwLock::new(Self {
+            data: GameObjectData::new(parent.clone()),
+            rotation,
+        }));
+        if let Some(parent) = parent {
+            parent.write().expect("Could not lock parent gameobject for init").data_mut().children.push(newgameobject.clone());
+        }
+        newgameobject
+    }
+}
+
+impl GameObjectRaw for RotatingGameObject {
+    fn data(&self) -> &GameObjectData {
+        &self.data
+    }
+
+    fn data_mut(&mut self) -> &mut GameObjectData {
+        &mut self.data
+    }
+
+    fn step(&mut self, game: &GameState) {
+        let duration = game.delta.as_secs_f32();
+        let rotation = self.rotation * duration;
         let data = self.data_mut();
         data.transform.rotation *= glam::Quat::from_rotation_x(rotation.x);
         data.transform.rotation *= glam::Quat::from_rotation_y(rotation.y);
