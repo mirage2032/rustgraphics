@@ -27,7 +27,6 @@ impl Shader {
             gl::AttachShader(id, vertex_shader);
             gl::AttachShader(id, fragment_shader);
             gl::LinkProgram(id);
-            gl::UseProgram(id);
         }
         Shader { id }
     }
@@ -40,7 +39,6 @@ impl Shader {
 
     pub fn set_mat4(&self, name: &str, mat: &Mat4) {
         unsafe {
-            self.use_program();
             let name_cstring = std::ffi::CString::new(name).unwrap();
             let location = gl::GetUniformLocation(self.id, name_cstring.as_ptr());
             gl::UniformMatrix4fv(location, 1, gl::FALSE, mat.as_ref().as_ptr());

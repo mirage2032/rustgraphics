@@ -1,5 +1,5 @@
 use std::sync::{Arc, Mutex};
-use std::sync::mpsc::{channel, Receiver, Sender};
+use std::sync::mpsc::{channel, Receiver, Sender,SyncSender,sync_channel};
 use std::thread::Builder;
 use std::time::Duration;
 
@@ -56,7 +56,7 @@ impl Engine {
         println!("GLSL Version: {:?}", unsafe { std::ffi::CStr::from_ptr(gl::GetString(gl::SHADING_LANGUAGE_VERSION) as *const _) }.to_str().unwrap());
 
         window.set_key_polling(true);
-        window.glfw.set_swap_interval(glfw::SwapInterval::Sync(2));
+        window.glfw.set_swap_interval(glfw::SwapInterval::Sync(1));
         glfw.make_context_current(None);
 
         let game = Arc::new(Mutex::new(
@@ -78,14 +78,14 @@ impl Engine {
         let ctx = self.window.render_context();
 
         let render_task = Builder::new().name("render task".to_string());
-        let (send_rend, recv_rend) = channel();
+        let (send_rend, recv_rend) = sync_channel(1);
         let render_task_done = render_task.spawn(move || {
             Self::render_task(ctx, game, send_rend);
         });
 
         let game = self.game.clone();
         let step_task = Builder::new().name("update task".to_string());
-        let (send_step, recv_step) = channel();
+        let (send_step, recv_step) = sync_channel(1);
         let step_task_done = step_task.spawn(move || {
             Self::step_task(game, recv_step);
         });
@@ -114,7 +114,7 @@ impl Engine {
         let _ = step_task_done;
     }
 
-    fn render_task(mut ctx: PRenderContext, game: Arc<Mutex<GameData>>, sender: Sender<Duration>) {
+    fn render_task(mut ctx: PRenderContext, game: Arc<Mutex<GameData>>, sender: SyncSender<Duration>) {
         ctx.make_current();
         println!("Renderer: {:?}", unsafe { std::ffi::CStr::from_ptr(gl::GetString(gl::RENDERER) as *const _) }.to_str().unwrap());
         println!("Vendor: {:?}", unsafe { std::ffi::CStr::from_ptr(gl::GetString(gl::VENDOR) as *const _) }.to_str().unwrap());
@@ -128,6 +128,8 @@ impl Engine {
             gl::Enable(gl::BLEND); // Enable blending for better anti-aliasing
             gl::BlendFunc(gl::SRC_ALPHA, gl::ONE_MINUS_SRC_ALPHA); // Set blending function
             gl::Enable(gl::DEPTH_TEST);
+            gl::Enable(gl::CULL_FACE);
+            gl::CullFace(gl::BACK);
         }
 
         loop {

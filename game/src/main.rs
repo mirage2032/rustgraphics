@@ -44,12 +44,14 @@ impl Scene for BaseScene {
 
         let mut rng = rand::thread_rng();
         let mesh:Box<dyn Mesh> = Box::new(glengine::engine::drawable::mesh::cube::CubeMesh::default());
-        let mesh = Arc::new(mesh);
+        let monkey_mesh: Arc<Box<dyn Mesh>> = Arc::new(Box::new(ModelMesh::new("C:\\Users\\alx\\RustroverProjects\\rustgraphics\\untitled.obj")));
         let shader = Arc::new(glengine::engine::shader::Shader::default());
         let mut empty = BaseGameObject::new(None, vec3(0.0, 0.0, 0.3));
+        empty.data_mut().transform.scale = vec3(1.0, 1.0, 1.0);
+        empty.data_mut().transform.position = vec3(0.0, 0.0, -3.0);
         let length = 100;
-        let scale = 0.05;
-        let offset = 0.10;
+        let scale = length as f32 / 2000.0;
+        let offset = scale * 2.0;
         for offset_y in -length..length {
             for offset_x in -length..length {
                 let rot_x = rng.gen_range(0.0001..1.7);
@@ -59,7 +61,7 @@ impl Scene for BaseScene {
                 let data = cubeobj.data_mut();
                 data.transform.scale *= scale;
                 data.transform.position += vec3(offset * offset_x as f32, offset * offset_y as f32, 0.0);
-                data.drawable = Some(Box::new(BaseDrawable::new(mesh.clone(),shader.clone())));
+                data.drawable = Some(Box::new(BaseDrawable::new(monkey_mesh.clone(), shader.clone())));
                 empty.data_mut().children.push(Arc::new(RwLock::new(cubeobj)));
             }
         }
@@ -67,7 +69,7 @@ impl Scene for BaseScene {
 
         let mut monkey = BaseGameObject::new(None, vec3(1.6, 1.2, 3.2));
         let data = monkey.data_mut();
-        data.drawable = Some(Box::new(BaseDrawable::new(Arc::new(Box::new(ModelMesh::new("C:\\Users\\alx\\RustroverProjects\\rustgraphics\\untitled.obj"))), Arc::new(glengine::engine::shader::Shader::default()))));
+        data.drawable = Some(Box::new(BaseDrawable::new(monkey_mesh.clone(), Arc::new(glengine::engine::shader::Shader::default()))));
         data.transform.rotation *= Quat::from_rotation_x(-20.0_f32.to_radians());
         data.transform.rotation *= Quat::from_rotation_y(-35.0_f32.to_radians());
         data.transform.scale = vec3(1.0, 1.0, 1.0);
