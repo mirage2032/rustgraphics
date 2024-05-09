@@ -32,9 +32,13 @@ pub struct Engine {
 impl Engine {
     pub fn new() -> Self {
         let mut glfw = glfw::init(glfw::fail_on_errors).unwrap();
-        glfw.window_hint(WindowHint::ContextVersion(3, 3));
+        glfw.window_hint(WindowHint::ContextVersion(4, 4));
+        glfw.window_hint(WindowHint::CocoaGraphicsSwitching(false));
+        glfw.window_hint(WindowHint::OpenGlForwardCompat(true));
+        glfw.window_hint(WindowHint::OpenGlDebugContext(true));
         glfw.window_hint(WindowHint::OpenGlProfile(glfw::OpenGlProfileHint::Core));
         glfw.window_hint(WindowHint::Resizable(false));
+        glfw.window_hint(WindowHint::TransparentFramebuffer(true));
         glfw.window_hint(WindowHint::Samples(Some(4))); // Set the number of samples for multi-sampling
 
         let resolution = STATIC_DATA.read().expect("Failed to read config").config().get_resolution();
@@ -42,7 +46,15 @@ impl Engine {
             .create_window(resolution.0, resolution.1, "Hello this is window", glfw::WindowMode::Windowed)
             .expect("Failed to create GLFW window.");
 
-        window.make_current();
+        window.make_current();// Print information about the GPU device
+        gl::load_with(|symbol| window.get_proc_address(symbol) as *const _);
+
+        // Print information about the GPU device
+        println!("Renderer: {:?}", unsafe { std::ffi::CStr::from_ptr(gl::GetString(gl::RENDERER) as *const _) }.to_str().unwrap());
+        println!("Vendor: {:?}", unsafe { std::ffi::CStr::from_ptr(gl::GetString(gl::VENDOR) as *const _) }.to_str().unwrap());
+        println!("Version: {:?}", unsafe { std::ffi::CStr::from_ptr(gl::GetString(gl::VERSION) as *const _) }.to_str().unwrap());
+        println!("GLSL Version: {:?}", unsafe { std::ffi::CStr::from_ptr(gl::GetString(gl::SHADING_LANGUAGE_VERSION) as *const _) }.to_str().unwrap());
+
         window.set_key_polling(true);
         window.glfw.set_swap_interval(glfw::SwapInterval::Sync(2));
         glfw.make_context_current(None);
@@ -104,7 +116,10 @@ impl Engine {
 
     fn render_task(mut ctx: PRenderContext, game: Arc<Mutex<GameData>>, sender: Sender<Duration>) {
         ctx.make_current();
-        gl::load_with(|symbol| ctx.get_proc_address(symbol) as *const _);
+        println!("Renderer: {:?}", unsafe { std::ffi::CStr::from_ptr(gl::GetString(gl::RENDERER) as *const _) }.to_str().unwrap());
+        println!("Vendor: {:?}", unsafe { std::ffi::CStr::from_ptr(gl::GetString(gl::VENDOR) as *const _) }.to_str().unwrap());
+        println!("Version: {:?}", unsafe { std::ffi::CStr::from_ptr(gl::GetString(gl::VERSION) as *const _) }.to_str().unwrap());
+        println!("GLSL Version: {:?}", unsafe { std::ffi::CStr::from_ptr(gl::GetString(gl::SHADING_LANGUAGE_VERSION) as *const _) }.to_str().unwrap());
         game.lock().expect("Could not lock game data in render thread").scene.as_mut().unwrap().init_gl();
         let mut fps_counter = TimeDelta::new();
 

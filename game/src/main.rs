@@ -11,8 +11,7 @@ use glengine::engine::GameData;
 use glengine::engine::gameobject::{BaseGameObject, GameObjectRaw};
 use glengine::engine::scene::Scene;
 use glengine::engine::scene::SceneData;
-use glengine::engine::transform::Transform;
-use glengine::glam::{Mat4, vec3,Quat};
+use glengine::glam::{vec3,Quat};
 
 struct BaseScene {
     data: SceneData,
@@ -65,7 +64,7 @@ impl Scene for BaseScene {
             }
         }
         self.data.objects.push(Arc::new(RwLock::new(empty)));
-        
+
         let mut monkey = BaseGameObject::new(None, vec3(1.6, 1.2, 3.2));
         let data = monkey.data_mut();
         data.drawable = Some(Box::new(BaseDrawable::new(Arc::new(Box::new(ModelMesh::new("C:\\Users\\alx\\RustroverProjects\\rustgraphics\\untitled.obj"))), Arc::new(glengine::engine::shader::Shader::default()))));
@@ -73,17 +72,17 @@ impl Scene for BaseScene {
         data.transform.rotation *= Quat::from_rotation_y(-35.0_f32.to_radians());
         data.transform.scale = vec3(1.0, 1.0, 1.0);
         self.data.objects.push(Arc::new(RwLock::new(monkey)));
-        
+
         let camera = Arc::new(RwLock::new(PointCamera::new(
             None,
             vec3(2.0, 2.0, 3.0),
             vec3(0.0, 0.0, 0.0),
             vec3(0.0, 1.0, 0.0),
         )));
-        
+
         self.data.objects.push(camera.clone());
         self.data.main_camera = Some(camera);
-        
+
     }
 }
 
