@@ -16,12 +16,12 @@ pub trait Scene: Send {
     fn init_gl(&mut self);
     fn render(&self) {
         if let Some(camera) = &self.data().main_camera {
-            let viewmat = camera
+            let camera_transform = camera
                 .read()
                 .expect("Could not lock camera for render")
                 .data()
-                .transform
-                .to_mat4();
+                .transform;
+            let viewmat:Mat4 = Mat4::from(camera_transform).inverse();
             for object in &self.data().objects {
                 object
                     .read()

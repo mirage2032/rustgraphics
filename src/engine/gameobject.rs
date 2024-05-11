@@ -28,7 +28,7 @@ pub type GameObject = Arc<RwLock<dyn GameObjectRaw>>;
 impl<T: GameObjectRaw> Drawable for T {
     fn draw(&self, modelmat: &Mat4, viewmat: &Mat4) {
         let data = self.data();
-        let newmodelmat = *modelmat * data.transform.to_mat4();
+        let newmodelmat = *modelmat * Mat4::from(data.transform);
         if let Some(drawable) = &data.drawable {
             drawable.draw(&newmodelmat, viewmat);
         }
