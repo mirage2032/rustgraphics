@@ -17,7 +17,7 @@ impl Transform {
     }
 
     pub fn forward(&self) -> Vec3 {
-        self.rotation *  -Vec3::Z
+        self.rotation * -Vec3::Z
     }
 
     pub fn right(&self) -> Vec3 {
@@ -31,7 +31,11 @@ impl Transform {
 
 impl From<Transform> for Mat4 {
     fn from(transform: Transform) -> Self {
-        Mat4::from_scale_rotation_translation(transform.scale, transform.rotation, transform.position)
+        Mat4::from_scale_rotation_translation(
+            transform.scale,
+            transform.rotation,
+            transform.position,
+        )
     }
 }
 

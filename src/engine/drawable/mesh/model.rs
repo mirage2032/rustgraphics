@@ -1,12 +1,7 @@
-use std::fs::File;
-use std::io::BufReader;
-use std::ops::Sub;
 use std::path::Path;
 
-use glam::Mat4;
-use tobj::{load_obj};
+use tobj::load_obj;
 
-use crate::engine::drawable::Drawable;
 use crate::engine::drawable::mesh::{Mesh, MeshData};
 
 pub struct ModelMesh {
@@ -14,7 +9,8 @@ pub struct ModelMesh {
 }
 impl ModelMesh {
     pub fn new<P: AsRef<Path> + std::fmt::Debug>(path: P) -> Self {
-        let (models,materials) = load_obj(path,&tobj::LoadOptions::default()).expect("Failed to load obj file");
+        let (models, _) =
+            load_obj(path, &tobj::LoadOptions::default()).expect("Failed to load obj file");
         let mut vertices: Vec<f32> = vec![];
         let mut indices: Vec<u32> = vec![];
         let mut vertex_offset: usize = 0;
@@ -34,7 +30,7 @@ impl ModelMesh {
             // Update vertex offset
             vertex_offset += mesh.positions.len() / 3;
         }
-        
+
         let mut normals: Vec<f32> = vec![];
         let mut x_range = (f32::MAX, f32::MIN);
         let mut y_range = (f32::MAX, f32::MIN);
@@ -73,7 +69,7 @@ impl ModelMesh {
         }
 
         Self {
-            mesh: MeshData::new(&vertices,&normals, Some(&indices)),
+            mesh: MeshData::new(&vertices, &normals, Some(&indices)),
         }
     }
 }
@@ -85,10 +81,7 @@ impl Mesh for ModelMesh {
     fn get_indices_count(&self) -> u32 {
         self.mesh.indices_count
     }
-}
-
-impl Drawable for ModelMesh {
-    fn draw(&self, modelmat: &Mat4, viewmat: &Mat4) {
-        self.mesh.draw(modelmat, viewmat);
+    fn draw(&self) {
+        self.mesh.draw();
     }
 }

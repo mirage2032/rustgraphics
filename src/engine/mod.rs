@@ -167,7 +167,6 @@ impl Engine {
         });
 
         while !self.window.should_close() {
-
             if let Ok(delta) = recv_rend.try_recv() {
                 let seconds_per_frame = delta.as_secs_f64(); // Convert duration to seconds
                 let fps = {
@@ -180,7 +179,7 @@ impl Engine {
                 self.window.set_title(&format!("FPS: {:.2}", fps));
                 self.glfw.poll_events();
                 let (engine_events, input_changes) =
-                    Self::gather_window_events(&mut self.window, &self.events);
+                    Self::gather_window_events(&self.events);
                 for event in engine_events {
                     match event {
                         EngineWindowEvent::Close => self.window.set_should_close(true),
@@ -286,7 +285,6 @@ impl Engine {
     }
 
     fn gather_window_events(
-        window: &mut PWindow,
         events: &GlfwReceiver<(f64, WindowEvent)>,
     ) -> (Vec<EngineWindowEvent>, EngineKeyState) {
         let mut engine_events = vec![];

@@ -1,19 +1,16 @@
-use glengine::engine::drawable::mesh::{unbind, Mesh, MeshData};
-use glengine::engine::drawable::Drawable;
-use glengine::engine::drawable::mesh::model::ModelMesh;
+use glengine::engine::drawable::mesh::Mesh;
 use glengine::gl;
-use glengine::glam::Mat4;
 
 pub struct ArrayMesh {
     mesh: Box<dyn Mesh>,
     width: usize,
     height: usize,
-    depth:usize,
+    depth: usize,
     transforms: u32,
 }
 
 impl ArrayMesh {
-    pub fn new(mesh:Box<dyn Mesh>,width: usize, height: usize,depth:usize) -> Self {
+    pub fn new(mesh: Box<dyn Mesh>, width: usize, height: usize, depth: usize) -> Self {
         let mut transforms_all: Vec<f32> = vec![];
         let length = 50;
         let scale = 5.0 / length as f32;
@@ -54,7 +51,7 @@ impl ArrayMesh {
             gl::EnableVertexAttribArray(attrib_index);
             gl::VertexAttribDivisor(attrib_index, 1);
 
-            unbind();
+            mesh.unbind();
         }
 
         Self {
@@ -82,10 +79,7 @@ impl Mesh for ArrayMesh {
     fn get_indices_count(&self) -> u32 {
         self.mesh.get_indices_count()
     }
-}
-
-impl Drawable for ArrayMesh {
-    fn draw(&self, modelmat: &Mat4, viewmat: &Mat4) {
+    fn draw(&self) {
         self.bind();
         unsafe {
             gl::DrawElementsInstanced(

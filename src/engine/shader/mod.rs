@@ -59,9 +59,6 @@ impl Drop for Shader {
 
 impl Default for Shader {
     fn default() -> Self {
-        Shader::new(
-            DEFAULT_VERTEX_SHADER,
-            DEFAULT_FRAGMENT_SHADER,
-        )
+        Shader::new(DEFAULT_VERTEX_SHADER, DEFAULT_FRAGMENT_SHADER)
     }
 }

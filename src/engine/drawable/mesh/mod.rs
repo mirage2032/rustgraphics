@@ -1,13 +1,12 @@
-use glam::Mat4;
-
-use crate::engine::drawable::Drawable;
-
 pub mod cube;
 pub mod model;
-
-pub trait Mesh: Drawable {
+pub trait Mesh: Send + Sync {
     fn bind(&self);
+    fn unbind(&self) {
+        unbind();
+    }
     fn get_indices_count(&self) -> u32;
+    fn draw(&self);
 }
 pub struct MeshData {
     vao: u32,
@@ -95,31 +94,25 @@ impl Mesh for MeshData {
     fn get_indices_count(&self) -> u32 {
         self.indices_count
     }
-}
-
-pub fn unbind() {
-    unsafe {
-        gl::BindVertexArray(0);
-    }
-}
-
-impl Drawable for MeshData {
-    fn draw(&self, _: &Mat4, _: &Mat4) {
+    fn draw(&self) {
         self.bind();
-        if self.ebo.is_some() {
-            unsafe {
+        unsafe {
+            if self.ebo.is_some() {
                 gl::DrawElements(
                     gl::TRIANGLES,
                     self.indices_count as i32,
                     gl::UNSIGNED_INT,
                     std::ptr::null(),
                 );
-            }
-        } else {
-            unsafe {
+            } else {
                 gl::DrawArrays(gl::TRIANGLES, 0, self.indices_count as i32);
             }
         }
-        unbind();
+    }
+}
+
+pub fn unbind() {
+    unsafe {
+        gl::BindVertexArray(0);
     }
 }

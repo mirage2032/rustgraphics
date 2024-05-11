@@ -1,8 +1,7 @@
-use std::time::Duration;
-use glam::{Vec3, Mat4};
-use crate::engine::gameobject::{GameObject,GameObjectData,GameObjectRaw};
-use std::sync::{Arc, Mutex};
+use glam::{Mat4, Vec3};
 use glfw::Key;
+
+use crate::engine::gameobject::{GameObject, GameObjectData, GameObjectRaw};
 use crate::engine::GameState;
 
 pub struct CameraControlled {
@@ -10,12 +9,10 @@ pub struct CameraControlled {
 }
 
 impl CameraControlled {
-    pub fn new(parent:Option<GameObject>,position: Vec3,target: Vec3,up:Vec3) -> Self {
+    pub fn new(parent: Option<GameObject>, position: Vec3, target: Vec3, up: Vec3) -> Self {
         let mut data = GameObjectData::new(parent);
         data.transform = Mat4::look_at_rh(position, target, up).inverse().into();
-        Self {
-            data: data,
-        }
+        Self { data: data }
     }
 }
 
@@ -36,8 +33,8 @@ impl GameObjectRaw for CameraControlled {
         &mut self.data
     }
 
-    fn step(&mut self, game:&GameState) {
-        let speed = 10.0*game.delta.as_secs_f32();
+    fn step(&mut self, game: &GameState) {
+        let speed = 10.0 * game.delta.as_secs_f32();
         let forward = self.data.transform.forward();
         let right = self.data.transform.right();
         let up = self.data.transform.up();
@@ -61,24 +58,23 @@ impl GameObjectRaw for CameraControlled {
             transform.position -= up * speed;
         }
         if game.input_changes.keyboard.is_held(Key::Up) {
-            transform.rotation *= glam::Quat::from_rotation_x(speed*0.1);
+            transform.rotation *= glam::Quat::from_rotation_x(speed * 0.1);
         }
         if game.input_changes.keyboard.is_held(Key::Down) {
-            transform.rotation *= glam::Quat::from_rotation_x(-speed*0.1);
-        }
-        
-        if game.input_changes.keyboard.is_held(Key::Left) {
-            transform.rotation *= glam::Quat::from_rotation_y(speed*0.1);
-        }
-        if game.input_changes.keyboard.is_held(Key::Right) {
-            transform.rotation *= glam::Quat::from_rotation_y(-speed*0.1);
-        }
-        if game.input_changes.keyboard.is_held(Key::Q) {
-            transform.rotation *= glam::Quat::from_rotation_z(speed*0.1);
-        }
-        if game.input_changes.keyboard.is_held(Key::E) {
-            transform.rotation *= glam::Quat::from_rotation_z(-speed*0.1);
+            transform.rotation *= glam::Quat::from_rotation_x(-speed * 0.1);
         }
 
+        if game.input_changes.keyboard.is_held(Key::Left) {
+            transform.rotation *= glam::Quat::from_rotation_y(speed * 0.1);
+        }
+        if game.input_changes.keyboard.is_held(Key::Right) {
+            transform.rotation *= glam::Quat::from_rotation_y(-speed * 0.1);
+        }
+        if game.input_changes.keyboard.is_held(Key::Q) {
+            transform.rotation *= glam::Quat::from_rotation_z(speed * 0.1);
+        }
+        if game.input_changes.keyboard.is_held(Key::E) {
+            transform.rotation *= glam::Quat::from_rotation_z(-speed * 0.1);
+        }
     }
 }

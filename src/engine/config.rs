@@ -1,9 +1,9 @@
-use serde::{Serialize, Deserialize};
 use std::fs::File;
 use std::io::{Read, Write};
 use std::sync::RwLock;
-use lazy_static::lazy_static;
 
+use lazy_static::lazy_static;
+use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Config {
@@ -18,18 +18,20 @@ impl Config {
         let config = Config::default();
         config
     }
-    pub fn from_file(path: &str) -> Result<Self,&'static str> {
+    pub fn from_file(path: &str) -> Result<Self, &'static str> {
         let mut file = File::open(path).map_err(|_| "Failed to open file")?;
         let mut contents = String::new();
-        file.read_to_string(&mut contents).map_err(|_| "Failed to read file")?;
+        file.read_to_string(&mut contents)
+            .map_err(|_| "Failed to read file")?;
         let config: Config = serde_json::from_str(&contents).map_err(|_| "Failed to parse JSON")?;
         Ok(config)
     }
 
-    pub fn to_file(&self, path: &str) -> Result<(),&'static str> {
+    pub fn to_file(&self, path: &str) -> Result<(), &'static str> {
         let json = serde_json::to_string(self).map_err(|_| "Failed to serialize JSON")?;
         let mut file = File::create(path).map_err(|_| "Failed to create file")?;
-        file.write_all(json.as_bytes()).map_err(|_| "Failed to write file")?;
+        file.write_all(json.as_bytes())
+            .map_err(|_| "Failed to write file")?;
         Ok(())
     }
     pub fn with_resolution(mut self, resolution: (u32, u32)) -> Self {
@@ -75,7 +77,7 @@ impl Default for Config {
             resolution: (1600, 900),
             fov: 70.0,
             near_clip: 0.1,
-            far_clip: 300.0
+            far_clip: 300.0,
         };
         default
     }
@@ -112,7 +114,12 @@ impl StaticData {
 
     fn calc_projection(&mut self) {
         let aspect_ratio = self.config.resolution.0 as f32 / self.config.resolution.1 as f32;
-        self.projection = glam::Mat4::perspective_rh(self.config.fov.to_radians(), aspect_ratio, self.config.near_clip, self.config.far_clip);
+        self.projection = glam::Mat4::perspective_rh(
+            self.config.fov.to_radians(),
+            aspect_ratio,
+            self.config.near_clip,
+            self.config.far_clip,
+        );
     }
 
     pub fn projection(&self) -> &glam::Mat4 {

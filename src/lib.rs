@@ -1,5 +1,6 @@
 extern crate glfw;
-pub use glam;
+
 pub use gl;
+pub use glam;
 
 pub mod engine;
