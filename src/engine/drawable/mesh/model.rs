@@ -12,14 +12,15 @@ impl ModelMesh {
         let (models, _) =
             load_obj(path, &tobj::LoadOptions::default()).expect("Failed to load obj file");
         let mut vertices: Vec<f32> = vec![];
+        let mut normals: Vec<f32> = vec![];
         let mut indices: Vec<u32> = vec![];
         let mut vertex_offset: usize = 0;
 
         for model in models.iter() {
             let mesh = &model.mesh;
 
-            // Merge positions
             vertices.extend_from_slice(&mesh.positions);
+            normals.extend_from_slice(&mesh.normals);
 
             // Merge indices with correct offset
             for &index in &mesh.indices {
@@ -29,43 +30,6 @@ impl ModelMesh {
 
             // Update vertex offset
             vertex_offset += mesh.positions.len() / 3;
-        }
-
-        let mut normals: Vec<f32> = vec![];
-        let mut x_range = (f32::MAX, f32::MIN);
-        let mut y_range = (f32::MAX, f32::MIN);
-        let mut z_range = (f32::MAX, f32::MIN);
-        for vertex in vertices.chunks_mut(3) {
-            let x = vertex[0];
-            let y = vertex[1];
-            let z = vertex[2];
-            if x < x_range.0 {
-                x_range.0 = x;
-            }
-            if x > x_range.1 {
-                x_range.1 = x;
-            }
-            if y < y_range.0 {
-                y_range.0 = y;
-            }
-            if y > y_range.1 {
-                y_range.1 = y;
-            }
-            if z < z_range.0 {
-                z_range.0 = z;
-            }
-            if z > z_range.1 {
-                z_range.1 = z;
-            }
-        }
-        //iterate in 6 long chunks
-        for vertex in vertices.chunks_mut(3) {
-            let normal_x = (vertex[0] - x_range.0) / (x_range.1 - x_range.0);
-            let normal_y = (vertex[1] - y_range.0) / (y_range.1 - y_range.0);
-            let normal_z = (vertex[2] - z_range.0) / (z_range.1 - z_range.0);
-            normals.push(normal_x);
-            normals.push(normal_y);
-            normals.push(normal_z);
         }
 
         Self {

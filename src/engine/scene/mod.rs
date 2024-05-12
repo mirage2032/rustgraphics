@@ -2,6 +2,7 @@ use glam::{Mat4, vec3};
 
 use crate::engine::gameobject::GameObject;
 use crate::engine::GameState;
+use crate::error::EngineResult;
 
 pub struct SceneData {
     pub objects: Vec<GameObject>,
@@ -11,7 +12,7 @@ pub struct SceneData {
 pub trait Scene: Send {
     fn data(&self) -> &SceneData;
     fn data_mut(&mut self) -> &mut SceneData;
-    fn init_gl(&mut self);
+    fn init_gl(&mut self) -> EngineResult<()>;
     fn render(&self) {
         if let Some(camera) = &self.data().main_camera {
             let camera_transform = camera

@@ -1,6 +1,8 @@
 use gl;
 use gl::types::GLenum;
 use glam::Mat4;
+use std::error::Error;
+use crate::error::EngineResult;
 
 pub static DEFAULT_VERTEX_SHADER: &str = include_str!("glsl/vertex/vertex_shader.glsl");
 pub static DEFAULT_FRAGMENT_SHADER: &str = include_str!("glsl/fragment/fragment_shader.glsl");
@@ -10,28 +12,85 @@ pub struct Shader {
 }
 
 impl Shader {
-    fn compile_shader(source: &str, shader_type: GLenum) -> u32 {
+    fn compile_shader(source: &str, shader_type: GLenum) -> EngineResult<u32> {
         let id = unsafe { gl::CreateShader(shader_type) };
         unsafe {
             let c_str = std::ffi::CString::new(source.as_bytes()).unwrap();
             gl::ShaderSource(id, 1, &c_str.as_ptr(), std::ptr::null());
             gl::CompileShader(id);
         }
-        id
-    }
-    pub fn new(vertex_shader_source: &str, fragment_shader_source: &str) -> Self {
-        let vertex_shader = Self::compile_shader(&vertex_shader_source, gl::VERTEX_SHADER);
-
-        let fragment_shader = Self::compile_shader(&fragment_shader_source, gl::FRAGMENT_SHADER);
-
-        // Link shaders
-        let id = unsafe { gl::CreateProgram() };
+        let mut success = 0;
         unsafe {
-            gl::AttachShader(id, vertex_shader);
-            gl::AttachShader(id, fragment_shader);
-            gl::LinkProgram(id);
+            gl::GetShaderiv(id, gl::COMPILE_STATUS, &mut success);
         }
-        Shader { id }
+        
+        if success == 0{
+            let mut len = 0;
+            unsafe {
+                gl::GetShaderiv(id, gl::INFO_LOG_LENGTH, &mut len);
+            }
+            let mut buffer = vec![0; len as usize];
+            unsafe {
+                gl::GetShaderInfoLog(
+                    id,
+                    len,
+                    std::ptr::null_mut(),
+                    buffer.as_mut_ptr() as *mut i8,
+                );
+            }
+            let error = String::from_utf8(buffer).unwrap();
+            eprintln!("Failed to compile shader: {}", error);
+            return Err(error.into());
+        }
+        
+        Ok(id)
+    }
+
+    fn compile_and_attach_shader(&self, source: &str, shader_type: GLenum) -> EngineResult<()> {
+        let shader = Self::compile_shader(source, shader_type)?;
+        unsafe {
+            gl::AttachShader(self.id, shader);
+        }
+        Ok(())
+    }
+
+    pub fn new(
+        vertex_shader_path: Option<&str>,
+        fragment_shader_path: Option<&str>,
+        geometry_shader_path: Option<&str>,
+    ) -> EngineResult<Self> {
+        // Link shaders
+        let shader = Shader { id: unsafe { gl::CreateProgram() } };
+        unsafe {
+            if let Some(vertex_shader_path) = vertex_shader_path {
+                shader.compile_and_attach_shader(vertex_shader_path, gl::VERTEX_SHADER)?;
+            }
+            if let Some(fragment_shader_path) = fragment_shader_path {
+                shader.compile_and_attach_shader(fragment_shader_path, gl::FRAGMENT_SHADER)?;
+            }
+            if let Some(geometry_shader_path) = geometry_shader_path {
+                shader.compile_and_attach_shader(geometry_shader_path, gl::GEOMETRY_SHADER)?;
+            }
+            gl::LinkProgram(shader.id);
+            //check error
+            let mut success = 0;
+            gl::GetProgramiv(shader.id, gl::LINK_STATUS, &mut success);
+            if success == 0 {
+                let mut len = 0;
+                gl::GetProgramiv(shader.id, gl::INFO_LOG_LENGTH, &mut len);
+                let mut buffer = vec![0; len as usize];
+                gl::GetProgramInfoLog(
+                    shader.id,
+                    len,
+                    std::ptr::null_mut(),
+                    buffer.as_mut_ptr() as *mut i8,
+                );
+                let error = String::from_utf8(buffer).unwrap();
+                eprintln!("Failed to link shader: {}", error);
+                return Err(error.into());
+            }
+        }
+        Ok(shader)
     }
 
     pub fn use_program(&self) {
@@ -59,6 +118,10 @@ impl Drop for Shader {
 
 impl Default for Shader {
     fn default() -> Self {
-        Shader::new(DEFAULT_VERTEX_SHADER, DEFAULT_FRAGMENT_SHADER)
+        Shader::new(
+            Some(DEFAULT_VERTEX_SHADER),
+            Some(DEFAULT_FRAGMENT_SHADER),
+            None,
+        ).expect("Failed to create default shader")
     }
 }

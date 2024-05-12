@@ -12,6 +12,7 @@ use crate::engine::events::EngineKeyState;
 use crate::engine::events::EngineWindowEvent;
 use crate::engine::fpscounter::TimeDelta;
 use crate::engine::scene::Scene;
+use crate::error::EngineResult;
 
 pub mod camera;
 pub mod config;
@@ -149,24 +150,51 @@ impl Engine {
         engine
     }
 
-    pub fn run(&mut self) {
+    pub fn run(&mut self) -> EngineResult<()> {
         let game = self.game.clone();
         let ctx = self.window.render_context();
 
         let render_task = Builder::new().name("render task".to_string());
         let (send_rend, recv_rend) = sync_channel(0);
-        let render_task_done = render_task.spawn(move || {
-            Self::render_task(ctx, game, send_rend);
-        });
+        let render_task_done = render_task.spawn(move || Self::render_task(ctx, game, send_rend));
 
         let game = self.game.clone();
         let step_task = Builder::new().name("update task".to_string());
         let (send_step, recv_step) = sync_channel(0);
-        let step_task_done = step_task.spawn(move || {
-            Self::step_task(game, recv_step);
-        });
-
+        let step_task_done = step_task.spawn(move || Self::step_task(game, recv_step));
+        let mut exit_reason: Option<&str> = None;
         while !self.window.should_close() {
+            //check if render_rask still running and get result else
+            match &render_task_done {
+                Ok(handle) => {
+                    if handle.is_finished() {
+                        self.window.set_should_close(true);
+                        exit_reason = Some("Render task finished");
+                        break;
+                    }
+                }
+                Err(_) => {
+                    self.window.set_should_close(true);
+                    exit_reason = Some("No render task handle");
+                    break;
+                }
+            }
+
+            match &step_task_done {
+                Ok(handle) => {
+                    if handle.is_finished() {
+                        self.window.set_should_close(true);
+                        exit_reason = Some("Step task finished");
+                        break;
+                    }
+                }
+                Err(_) => {
+                    self.window.set_should_close(true);
+                    exit_reason = Some("No step task handle");
+                    break;
+                }
+            }
+
             if let Ok(delta) = recv_rend.try_recv() {
                 let seconds_per_frame = delta.as_secs_f64(); // Convert duration to seconds
                 let fps = {
@@ -178,33 +206,40 @@ impl Engine {
                 };
                 self.window.set_title(&format!("FPS: {:.2}", fps));
                 self.glfw.poll_events();
-                let (engine_events, input_changes) =
-                    Self::gather_window_events(&self.events);
+                let (engine_events, input_changes) = Self::gather_window_events(&self.events);
                 for event in engine_events {
                     match event {
                         EngineWindowEvent::Close => self.window.set_should_close(true),
                         _ => {}
                     }
                 }
-                if input_changes.keyboard.is_held(Key::W) {
-                    println!("Wbefore");
-                }
                 send_step
                     .send((delta, input_changes))
-                    .expect("Could not send delta time to step task");
+                    .map_err(|_| "Could not send delta time to step task")?;
             }
         }
+        drop(recv_rend);
+        drop(send_step);
 
+        let mut error = String::new();
+        if let Some(reason) = exit_reason {
+            error.push_str(reason);
+        }
         // Wait for acknowledgement that the rendering was completed.
-        let _ = render_task_done;
-        let _ = step_task_done;
+        if let Err(e) = render_task_done.unwrap().join() {
+            error.push_str(&format!("\nRender task error: {:?}", e));
+        }
+        if let Err(e) = step_task_done.unwrap().join() {
+            error.push_str(&format!("\nStep task error: {:?}", e));
+        }
+        Err(error.into())
     }
 
     fn render_task(
         mut ctx: PRenderContext,
         game: Arc<Mutex<GameData>>,
         sender: SyncSender<Duration>,
-    ) {
+    ) -> EngineResult<()> {
         ctx.make_current();
         println!(
             "Renderer: {:?}",
@@ -237,7 +272,7 @@ impl Engine {
             .scene
             .as_mut()
             .unwrap()
-            .init_gl();
+            .init_gl()?;
         let mut fps_counter = TimeDelta::new();
 
         unsafe {
@@ -256,7 +291,7 @@ impl Engine {
 
                 let game = game
                     .lock()
-                    .expect("Could not lock game data in render thread");
+                    .map_err(|_| "Could not lock game data in render thread")?;
                 if let Some(scene) = &game.scene {
                     scene.render();
                 }
@@ -268,13 +303,18 @@ impl Engine {
                     }
                 }
             }
-
             ctx.swap_buffers();
-            let _ = sender.send(fps_counter.delta());
+            if let Err(_) = sender.send(fps_counter.delta()) {
+                break;
+            }
         }
+        Ok(())
     }
 
-    fn step_task(game: Arc<Mutex<GameData>>, sender: Receiver<(Duration, EngineKeyState)>) {
+    fn step_task(
+        game: Arc<Mutex<GameData>>,
+        sender: Receiver<(Duration, EngineKeyState)>,
+    ) -> EngineResult<()> {
         while let Ok((delta, changes)) = sender.recv() {
             let game_clone = game.clone();
             let mut game_locked = game_clone
@@ -282,6 +322,7 @@ impl Engine {
                 .expect("Could not lock game data in step thread");
             game_locked.step(delta, changes);
         }
+        Ok(())
     }
 
     fn gather_window_events(

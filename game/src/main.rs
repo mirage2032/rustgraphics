@@ -11,6 +11,7 @@ use glengine::engine::GameData;
 use glengine::engine::gameobject::{BaseGameObject, RotatingGameObject};
 use glengine::engine::scene::Scene;
 use glengine::engine::scene::SceneData;
+use glengine::error::EngineResult;
 use glengine::gl;
 use glengine::glam::vec3;
 
@@ -42,19 +43,19 @@ impl Scene for BaseScene {
         &mut self.data
     }
 
-    fn init_gl(&mut self) {
+    fn init_gl(&mut self) -> EngineResult<()> {
         unsafe {
             gl::ClearColor(0.2, 0.3, 0.3, 1.0);
         }
 
-        //let monkey_mesh: Arc<Box<dyn Mesh>> = Arc::new(Box::new(ModelMesh::new("C:\\Users\\alx\\RustroverProjects\\rustgraphics\\untitled.obj")));
+        // let monkey_mesh: Arc<Box<dyn Mesh>> = Arc::new(Box::new(ModelMesh::new("C:\\Users\\alx\\RustroverProjects\\rustgraphics\\monkeylp.obj")));
         let array_monkey_mesh: Arc<Box<dyn Mesh>> = Arc::new(Box::new(arraymesh::ArrayMesh::new(
             Box::new(ModelMesh::new(
-                "C:\\Users\\alx\\RustroverProjects\\rustgraphics\\untitled.obj",
+                "C:\\Users\\alx\\RustroverProjects\\rustgraphics\\monkeyhp.obj",
             )),
-            50,
-            20,
-            20,
+            10,
+            10,
+            10,
         )));
         let cube_mesh: Arc<Box<dyn Mesh>> = Arc::new(Box::new(CubeMesh::default()));
         let def_shader = Arc::new(glengine::engine::shader::Shader::default());
@@ -68,7 +69,7 @@ impl Scene for BaseScene {
                 .expect("Could not lock gameobject for init");
             data.data_mut().drawable = Some(Box::new(BaseDrawable::new(
                 array_monkey_mesh.clone(),
-                Arc::new(build_array_shader()),
+                Arc::new(build_array_shader()?),
             )));
             data.data_mut().transform.position = vec3(10.0, 0.0, -20.0);
             data.data_mut().transform.scale *= 0.1;
@@ -83,11 +84,11 @@ impl Scene for BaseScene {
             data.data_mut().transform.position = vec3(0.0, -8.0, 0.0);
         }
 
-        let rotator = RotatingGameObject::new(Some(empty.clone()), vec3(0.3, 0.5, 0.6));
+        let rotator = RotatingGameObject::new(Some(empty.clone()), vec3(0.0, 0.0, 0.0));
         {
             let mut data = rotator.lock().expect("Could not lock gameobject for init");
             let mesh: Arc<Box<dyn Mesh>> = Arc::new(Box::new(ModelMesh::new(
-                "C:\\Users\\alx\\RustroverProjects\\rustgraphics\\untitled.obj",
+                "C:\\Users\\alx\\RustroverProjects\\rustgraphics\\monkeyhp.obj",
             )));
             data.data_mut().drawable = Some(Box::new(BaseDrawable::new(mesh, def_shader.clone())));
             data.data_mut().transform.scale *= 4.2;
@@ -103,10 +104,13 @@ impl Scene for BaseScene {
 
         self.data.objects.push(camera.clone());
         self.data.main_camera = Some(camera);
+        Ok(())
     }
 }
 
 fn main() {
     let mut engine = Engine::from_game(GameData::new(Some(Box::new(BaseScene::new()))));
-    engine.run();
+    if let Err(e) = engine.run() {
+        eprintln!("Error: {}", e);
+    }
 }

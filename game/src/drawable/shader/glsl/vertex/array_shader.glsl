@@ -1,6 +1,6 @@
 #version 330 core
 layout(location = 0) in vec3 position;
-layout(location = 1) in vec3 color;
+layout(location = 1) in vec3 normal;
 layout(location = 3) in vec3 transform;
 
 out vec3 fragColor;
@@ -23,5 +23,5 @@ void main() {
     mat4 modelViewProjection = projection * view * translateLocal(model,transform);
     // Transform vertex position
     gl_Position = modelViewProjection * vec4(position, 1.0);
-    fragColor = color;
+    fragColor = normal;
 }
