@@ -19,10 +19,11 @@ pub mod config;
 pub mod drawable;
 mod events;
 pub mod fpscounter;
-pub mod gameobject;
 pub mod scene;
 pub mod shader;
 pub mod transform;
+pub mod components;
+pub mod gameobject;
 
 pub struct GameState {
     pub input_changes: EngineKeyState,

@@ -1,7 +1,9 @@
+use glengine::engine::components::{CompA,CompB};
 use std::sync::{Arc, Mutex};
 
 use drawable::mesh::arraymesh;
 use glengine::engine::camera::CameraControlled;
+use glengine::engine::components::{ComponentMap};
 use glengine::engine::drawable::base::BaseDrawable;
 use glengine::engine::drawable::mesh::cube::CubeMesh;
 use glengine::engine::drawable::mesh::Mesh;
