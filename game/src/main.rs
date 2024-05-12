@@ -13,9 +13,9 @@ use glengine::engine::GameData;
 use glengine::engine::gameobject::{BaseGameObject, RotatingGameObject};
 use glengine::engine::scene::Scene;
 use glengine::engine::scene::SceneData;
-use glengine::error::EngineResult;
 use glengine::gl;
 use glengine::glam::vec3;
+use glengine::result::EngineRenderResult;
 
 use crate::drawable::shader::arrayshader::build_array_shader;
 
@@ -45,7 +45,7 @@ impl Scene for BaseScene {
         &mut self.data
     }
 
-    fn init_gl(&mut self) -> EngineResult<()> {
+    fn init_gl(&mut self) -> EngineRenderResult<()> {
         unsafe {
             gl::ClearColor(0.2, 0.3, 0.3, 1.0);
         }
@@ -53,14 +53,15 @@ impl Scene for BaseScene {
         // let monkey_mesh: Arc<Box<dyn Mesh>> = Arc::new(Box::new(ModelMesh::new("C:\\Users\\alx\\RustroverProjects\\rustgraphics\\monkeylp.obj")));
         let array_monkey_mesh: Arc<Box<dyn Mesh>> = Arc::new(Box::new(arraymesh::ArrayMesh::new(
             Box::new(ModelMesh::new(
-                "C:\\Users\\alx\\RustroverProjects\\rustgraphics\\monkeyhp.obj",
+                "C:\\Users\\alx\\RustroverProjects\\rustgraphics\\monkeylp.obj",
             )),
             10,
             10,
             10,
         )));
-        let cube_mesh: Arc<Box<dyn Mesh>> = Arc::new(Box::new(CubeMesh::default()));
-        let def_shader = Arc::new(glengine::engine::shader::Shader::default());
+        // let cube_mesh: Arc<Box<dyn Mesh>> = Arc::new(Box::new(CubeMesh::default()));
+        let soft_shader = Arc::new(glengine::engine::shader::Shader::default());
+        let hard_shader = Arc::new(glengine::engine::shader::new_face_shader()?);
         let empty = BaseGameObject::new(None);
         self.data.objects.push(empty.clone());
 
@@ -90,9 +91,9 @@ impl Scene for BaseScene {
         {
             let mut data = rotator.lock().expect("Could not lock gameobject for init");
             let mesh: Arc<Box<dyn Mesh>> = Arc::new(Box::new(ModelMesh::new(
-                "C:\\Users\\alx\\RustroverProjects\\rustgraphics\\monkeyhp.obj",
+                "C:\\Users\\alx\\RustroverProjects\\rustgraphics\\bugatti.obj",
             )));
-            data.data_mut().drawable = Some(Box::new(BaseDrawable::new(mesh, def_shader.clone())));
+            data.data_mut().drawable = Some(Box::new(BaseDrawable::new(mesh, soft_shader)));
             data.data_mut().transform.scale *= 4.2;
             data.data_mut().transform.position = vec3(0.0, 0.0, 0.0);
         }
@@ -113,6 +114,6 @@ impl Scene for BaseScene {
 fn main() {
     let mut engine = Engine::from_game(GameData::new(Some(Box::new(BaseScene::new()))));
     if let Err(e) = engine.run() {
-        eprintln!("Error: {}", e);
+        eprintln!("Error: {:?}", e);
     }
 }

@@ -1,7 +1,8 @@
-use glengine::engine::shader::{DEFAULT_FRAGMENT_SHADER, Shader};
-use glengine::error::EngineResult;
+use glengine::engine::shader::Shader;
+use glengine::result::EngineRenderResult;
 
-pub fn build_array_shader() -> EngineResult<Shader> {
-    let array_vertex_shader = include_str!("glsl/vertex/array_shader.glsl");
-    Shader::new(Some(array_vertex_shader), Some(DEFAULT_FRAGMENT_SHADER),None)
+pub fn build_array_shader() -> EngineRenderResult<Shader> {
+    let array_vertex_shader = include_str!("glsl/array_shader/vertex_shader.glsl");
+    let array_fragment_shader = include_str!("glsl/array_shader/fragment_shader.glsl");
+    Shader::new(Some(array_vertex_shader), Some(array_fragment_shader), None)
 }

@@ -4,4 +4,4 @@ pub use gl;
 pub use glam;
 
 pub mod engine;
-pub mod error;
+pub mod result;

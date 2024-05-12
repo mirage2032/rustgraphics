@@ -70,22 +70,28 @@ impl<T: MouseOrKeyboardKey> KeyState<T> {
     }
 }
 
-pub struct EngineKeyState {
+pub struct EngineInputsState {
     //hashmap key to action
     pub keyboard: KeyState<Key>,
     pub mouse: KeyState<MouseButton>,
+    pub mouse_pos: (f64, f64),
+    pub mouse_delta: (f64, f64),
 }
 
-impl EngineKeyState {
+impl EngineInputsState {
     pub fn new() -> Self {
         Self {
             keyboard: KeyState::new(),
             mouse: KeyState::new(),
+            mouse_pos: (0.0, 0.0),
+            mouse_delta: (0.0, 0.0),
         }
     }
 
     pub fn merge(&mut self, other: Self) {
         self.keyboard.merge(other.keyboard);
         self.mouse.merge(other.mouse);
+        self.mouse_delta = (other.mouse_pos.0 - self.mouse_pos.0, self.mouse_pos.1 - other.mouse_pos.1);
+        self.mouse_pos = other.mouse_pos;
     }
 }

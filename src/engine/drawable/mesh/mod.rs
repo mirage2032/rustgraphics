@@ -28,8 +28,9 @@ impl MeshData {
 
         unsafe {
             gl::GenVertexArrays(1, &mut vao);
-            gl::GenBuffers(1, &mut vbo_vertices);
             gl::BindVertexArray(vao);
+            
+            gl::GenBuffers(1, &mut vbo_vertices);
             gl::BindBuffer(gl::ARRAY_BUFFER, vbo_vertices);
             gl::BufferData(
                 gl::ARRAY_BUFFER,

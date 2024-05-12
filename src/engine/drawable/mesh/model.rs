@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use tobj::load_obj;
+use tobj::{load_obj,load_mtl};
 
 use crate::engine::drawable::mesh::{Mesh, MeshData};
 
@@ -10,15 +10,32 @@ pub struct ModelMesh {
 impl ModelMesh {
     pub fn new<P: AsRef<Path> + std::fmt::Debug>(path: P) -> Self {
         let (models, _) =
-            load_obj(path, &tobj::LoadOptions::default()).expect("Failed to load obj file");
+            load_obj(&path, &tobj::GPU_LOAD_OPTIONS).expect("Failed to load obj file");//TODO: handle error
+
+        let mtl_path = path.as_ref().with_extension("mtl");
+        let mtl_data = if mtl_path.exists() {
+            match load_mtl(mtl_path) {
+                Ok(data) => Some(data),
+                Err(_) => {
+                    None
+                }
+            }
+        } else {
+            None
+        };
         let mut vertices: Vec<f32> = vec![];
         let mut normals: Vec<f32> = vec![];
         let mut indices: Vec<u32> = vec![];
         let mut vertex_offset: usize = 0;
 
         for model in models.iter() {
+            if let Some((ref materials, _)) = mtl_data {
+                if let Some(material_id) = &model.mesh.material_id {
+                    let material = &materials[*material_id];
+                    println!("Material: {:?}",material.name);
+                }
+            }
             let mesh = &model.mesh;
-
             vertices.extend_from_slice(&mesh.positions);
             normals.extend_from_slice(&mesh.normals);
 
@@ -29,7 +46,7 @@ impl ModelMesh {
             }
 
             // Update vertex offset
-            vertex_offset += mesh.positions.len() / 3;
+            vertex_offset += mesh.positions.len()/3;
         }
 
         Self {

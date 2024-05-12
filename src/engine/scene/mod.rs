@@ -2,7 +2,7 @@ use glam::{Mat4, vec3};
 
 use crate::engine::gameobject::GameObject;
 use crate::engine::GameState;
-use crate::error::EngineResult;
+use crate::result::EngineRenderResult;
 
 pub struct SceneData {
     pub objects: Vec<GameObject>,
@@ -12,15 +12,14 @@ pub struct SceneData {
 pub trait Scene: Send {
     fn data(&self) -> &SceneData;
     fn data_mut(&mut self) -> &mut SceneData;
-    fn init_gl(&mut self) -> EngineResult<()>;
+    fn init_gl(&mut self) -> EngineRenderResult<()>;
     fn render(&self) {
         if let Some(camera) = &self.data().main_camera {
-            let camera_transform = camera
+            let camera_mat = camera
                 .lock()
                 .expect("Could not lock camera for render")
-                .data()
-                .transform;
-            let viewmat: Mat4 = Mat4::from(camera_transform).inverse();
+                .global_mat();
+            let viewmat: Mat4 = Mat4::from(camera_mat).inverse();
             for object in &self.data().objects {
                 object
                     .lock()

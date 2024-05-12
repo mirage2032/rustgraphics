@@ -3,7 +3,7 @@ layout(location = 0) in vec3 position;
 layout(location = 1) in vec3 normal;
 layout(location = 3) in vec3 transform;
 
-out vec3 fragColor;
+out vec3 fragCol;
 
 uniform mat4 model;
 uniform mat4 view;
@@ -23,5 +23,5 @@ void main() {
     mat4 modelViewProjection = projection * view * translateLocal(model,transform);
     // Transform vertex position
     gl_Position = modelViewProjection * vec4(position, 1.0);
-    fragColor = normal;
+    fragCol = normal;
 }

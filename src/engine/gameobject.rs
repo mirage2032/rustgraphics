@@ -19,6 +19,16 @@ pub trait GameObjectRaw: Drawable + Send {
                 .step(game);
         }
     }
+    fn global_mat(&self) -> Mat4 {
+        let mut transform: Mat4 = self.data().transform.into();
+        let mut parent = self.data().parent.clone();
+        while let Some(parent_object) = parent {
+            let parent_data = parent_object.lock().expect("Could not lock parent gameobject for global transform");
+            transform = Mat4::from(parent_data.data().transform) * transform;
+            parent = parent_data.data().parent.clone();
+        }
+        transform
+    }
 }
 
 pub type GameObject = Arc<Mutex<dyn GameObjectRaw>>;

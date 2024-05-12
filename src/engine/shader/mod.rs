@@ -1,18 +1,14 @@
 use gl;
 use gl::types::GLenum;
 use glam::Mat4;
-use std::error::Error;
-use crate::error::EngineResult;
-
-pub static DEFAULT_VERTEX_SHADER: &str = include_str!("glsl/vertex/vertex_shader.glsl");
-pub static DEFAULT_FRAGMENT_SHADER: &str = include_str!("glsl/fragment/fragment_shader.glsl");
+use crate::result::{EngineRenderResult, ShaderError};
 
 pub struct Shader {
     id: u32,
 }
 
 impl Shader {
-    fn compile_shader(source: &str, shader_type: GLenum) -> EngineResult<u32> {
+    fn compile_shader(source: &str, shader_type: GLenum) -> EngineRenderResult<u32> {
         let id = unsafe { gl::CreateShader(shader_type) };
         unsafe {
             let c_str = std::ffi::CString::new(source.as_bytes()).unwrap();
@@ -40,13 +36,13 @@ impl Shader {
             }
             let error = String::from_utf8(buffer).unwrap();
             eprintln!("Failed to compile shader: {}", error);
-            return Err(error.into());
+            return Err(ShaderError::CompileError.into());
         }
         
         Ok(id)
     }
 
-    fn compile_and_attach_shader(&self, source: &str, shader_type: GLenum) -> EngineResult<()> {
+    fn compile_and_attach_shader(&self, source: &str, shader_type: GLenum) -> EngineRenderResult<()> {
         let shader = Self::compile_shader(source, shader_type)?;
         unsafe {
             gl::AttachShader(self.id, shader);
@@ -58,7 +54,7 @@ impl Shader {
         vertex_shader_path: Option<&str>,
         fragment_shader_path: Option<&str>,
         geometry_shader_path: Option<&str>,
-    ) -> EngineResult<Self> {
+    ) -> EngineRenderResult<Shader> {
         // Link shaders
         let shader = Shader { id: unsafe { gl::CreateProgram() } };
         unsafe {
@@ -86,8 +82,7 @@ impl Shader {
                     buffer.as_mut_ptr() as *mut i8,
                 );
                 let error = String::from_utf8(buffer).unwrap();
-                eprintln!("Failed to link shader: {}", error);
-                return Err(error.into());
+                return Err(ShaderError::LinkError.into());
             }
         }
         Ok(shader)
@@ -119,9 +114,17 @@ impl Drop for Shader {
 impl Default for Shader {
     fn default() -> Self {
         Shader::new(
-            Some(DEFAULT_VERTEX_SHADER),
-            Some(DEFAULT_FRAGMENT_SHADER),
+            Some(include_str!("glsl/basic/vertex_shader.glsl")),
+            Some(include_str!("glsl/basic/fragment_shader.glsl")),
             None,
         ).expect("Failed to create default shader")
     }
+}
+
+pub fn new_face_shader() -> EngineRenderResult<Shader> {
+    Shader::new(
+        Some(include_str!("glsl/face/vertex_shader.glsl")),
+        Some(include_str!("glsl/face/fragment_shader.glsl")),
+        Some(include_str!("glsl/face/geometry_shader.glsl")),
+    )
 }
