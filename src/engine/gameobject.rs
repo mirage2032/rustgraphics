@@ -2,12 +2,12 @@ use std::sync::{Arc, Mutex};
 
 use glam::{Mat4, Vec3};
 
-use crate::engine::drawable::Drawable;
+use crate::engine::drawable::Draw;
 use crate::engine::GameState;
 use crate::engine::transform::Transform;
 use crate::result::EngineStepResult;
 
-pub trait GameObjectRaw: Drawable + Send {
+pub trait GameObjectRaw: Draw + Send {
     fn data(&self) -> &GameObjectData;
     fn data_mut(&mut self) -> &mut GameObjectData;
     fn step(&mut self, game: &GameState) -> EngineStepResult<()>;
@@ -37,7 +37,7 @@ pub trait GameObjectRaw: Drawable + Send {
 
 pub type GameObject = Arc<Mutex<dyn GameObjectRaw>>;
 
-impl<T: GameObjectRaw> Drawable for T {
+impl<T: GameObjectRaw> Draw for T {
     fn draw(&self, modelmat: &Mat4, viewmat: &Mat4) {
         let data = self.data();
         let newmodelmat = *modelmat * Mat4::from(data.transform);
@@ -57,7 +57,7 @@ pub struct GameObjectData {
     pub parent: Option<GameObject>,
     pub children: Vec<GameObject>,
     pub transform: Transform,
-    pub drawable: Option<Box<dyn Drawable>>,
+    pub drawable: Option<Box<dyn Draw>>,
 }
 
 impl GameObjectData {

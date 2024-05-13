@@ -1,4 +1,4 @@
-use glengine::engine::shader::Shader;
+use glengine::engine::drawable::shader::Shader;
 use glengine::result::EngineRenderResult;
 
 pub fn build_array_shader() -> EngineRenderResult<Shader> {

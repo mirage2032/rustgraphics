@@ -1,34 +1,40 @@
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use glam::Mat4;
 
-use crate::engine::drawable::{Drawable, DrawObject};
-use crate::engine::drawable::mesh::{cube::CubeMesh, Mesh};
-use crate::engine::shader::Shader;
+use crate::engine::drawable::{Draw, DrawData};
+use crate::engine::drawable::mesh;
+use super::shader::Shader;
 
-pub struct BaseDrawable {
-    draw_object: DrawObject,
+pub struct Drawable {
+    pub draw_data: Vec<DrawData>,
 }
 
-impl BaseDrawable {
-    pub fn new(mesh: Arc<Box<dyn Mesh>>, shader: Arc<Shader>) -> Self {
-        let draw_object = DrawObject { mesh, shader };
-        Self { draw_object }
+impl Drawable {
+    pub fn new(mesh: Arc<Mutex<dyn mesh::Mesh>>, shader: Arc<Shader>) -> Self {
+        let draw_object = DrawData { mesh, shader };
+        Self {
+            draw_data: vec![draw_object],
+        }
     }
 }
 
-impl Drawable for BaseDrawable {
+impl Draw for Drawable {
     fn draw(&self, modelmat: &Mat4, viewmat: &Mat4) {
-        self.draw_object.draw(modelmat, viewmat);
+        for drawable in self.draw_data.iter() {
+            drawable.draw(modelmat, viewmat);
+        }
     }
 }
 
-impl Default for BaseDrawable {
+impl Default for Drawable {
     fn default() -> Self {
-        let draw_object = DrawObject {
-            mesh: Arc::new(Box::new(CubeMesh::default())),
-            shader: Arc::new(Shader::default()),
+        let draw_object = DrawData {
+            mesh: mesh::cube::new(),
+            shader: Arc::new(Shader::default())
         };
-        Self { draw_object }
+        Self {
+            draw_data: vec![draw_object],
+        }
     }
 }

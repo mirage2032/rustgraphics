@@ -2,6 +2,7 @@ use std::sync::{Arc, Mutex};
 use std::sync::mpsc::{Receiver, sync_channel, SyncSender};
 use std::thread::Builder;
 use std::time::Duration;
+use std::ffi::CString;
 
 use glfw::{
     Action, Context, Glfw, GlfwReceiver, Key, PRenderContext, PWindow, WindowEvent, WindowHint,
@@ -23,7 +24,6 @@ mod events;
 pub mod fpscounter;
 pub mod gameobject;
 pub mod scene;
-pub mod shader;
 pub mod transform;
 
 pub struct GameState {
@@ -277,25 +277,20 @@ impl Engine {
             gl::Enable(gl::DEPTH_TEST);
             gl::Enable(gl::CULL_FACE);
             gl::CullFace(gl::BACK);
+            gl::Enable(gl::DEBUG_OUTPUT);
+            gl::DebugMessageCallback(Some(debug_callback), std::ptr::null());
         }
+        
 
         loop {
             unsafe {
                 gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
-                gl::Enable(gl::DEBUG_OUTPUT);
 
                 let game = game
                     .lock()
                     .expect("Could not lock game data in render thread");
                 if let Some(scene) = &game.scene {
                     scene.render();
-                }
-                while let Some(res) = gl::GetError().into() {
-                    if res != gl::NO_ERROR {
-                        println!("OpenGL error: {}", res);
-                    } else {
-                        break;
-                    }
                 }
             }
             ctx.swap_buffers();
@@ -338,5 +333,23 @@ impl Engine {
             }
         }
         (engine_events, input_changes)
+    }
+}
+
+
+extern "system" fn debug_callback(
+    _source: gl::types::GLenum,
+    _type: gl::types::GLenum,
+    _id: gl::types::GLuint,
+    severity: gl::types::GLenum,
+    _length: gl::types::GLsizei,
+    message: *const gl::types::GLchar,
+    _user_param: *mut std::ffi::c_void,
+) {
+    if severity == gl::DEBUG_SEVERITY_HIGH || severity == gl::DEBUG_SEVERITY_MEDIUM {
+        unsafe {
+            let error_message = CString::from_raw(message as *mut i8);
+            println!("OpenGL Error: {:?}", error_message);
+        }
     }
 }

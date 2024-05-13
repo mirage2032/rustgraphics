@@ -4,10 +4,9 @@ use std::sync::{Arc, Mutex};
 use drawable::mesh::arraymesh;
 use glengine::engine::camera::CameraControlled;
 use glengine::engine::components::{ComponentMap};
-use glengine::engine::drawable::base::BaseDrawable;
-use glengine::engine::drawable::mesh::cube::CubeMesh;
+use glengine::engine::drawable::base::Drawable;
 use glengine::engine::drawable::mesh::Mesh;
-use glengine::engine::drawable::mesh::model::ModelMesh;
+use glengine::engine::drawable::importer;
 use glengine::engine::Engine;
 use glengine::engine::GameData;
 use glengine::engine::gameobject::{BaseGameObject, RotatingGameObject};
@@ -51,52 +50,52 @@ impl Scene for BaseScene {
         }
 
         // let monkey_mesh: Arc<Box<dyn Mesh>> = Arc::new(Box::new(ModelMesh::new("C:\\Users\\alx\\RustroverProjects\\rustgraphics\\monkeylp.obj")));
-        let array_monkey_mesh: Arc<Box<dyn Mesh>> = Arc::new(Box::new(arraymesh::ArrayMesh::new(
-            Box::new(ModelMesh::new(
-                "C:\\Users\\alx\\RustroverProjects\\rustgraphics\\monkeylp.obj",
-            )),
-            10,
-            10,
-            10,
-        )));
+        // let array_monkey_mesh: Arc<Box<dyn Mesh>> = Arc::new(Box::new(arraymesh::ArrayMesh::new(
+        //     importer::obj::import(
+        //         "C:\\Users\\alx\\RustroverProjects\\rustgraphics\\monkeylp.obj",
+        //     ),
+        //     10,
+        //     10,
+        //     10,
+        // )));
         // let cube_mesh: Arc<Box<dyn Mesh>> = Arc::new(Box::new(CubeMesh::default()));
-        let soft_shader = Arc::new(glengine::engine::shader::Shader::default());
-        let hard_shader = Arc::new(glengine::engine::shader::new_face_shader()?);
+        // let soft_shader = Arc::new(glengine::engine::drawable::shader::Shader::default());
+        // let hard_shader = Arc::new(glengine::engine::drawable::shader::new_face_shader()?);
         let empty = BaseGameObject::new(None);
         self.data.objects.push(empty.clone());
 
-        let array_monkey = BaseGameObject::new(Some(empty.clone()));
-        {
-            let mut data = array_monkey
-                .lock()
-                .expect("Could not lock gameobject for init");
-            data.data_mut().drawable = Some(Box::new(BaseDrawable::new(
-                array_monkey_mesh.clone(),
-                Arc::new(build_array_shader()?),
-            )));
-            data.data_mut().transform.position = vec3(10.0, 0.0, -20.0);
-            data.data_mut().transform.scale *= 0.1;
-        }
+        // let array_monkey = BaseGameObject::new(Some(empty.clone()));
+        // {
+        //     let mut data = array_monkey
+        //         .lock()
+        //         .expect("Could not lock gameobject for init");
+        //     data.data_mut().drawable = Some(Box::new(BaseDrawable::new(
+        //         array_monkey_mesh.clone(),
+        //         Arc::new(build_array_shader()?),
+        //     )));
+        //     data.data_mut().transform.position = vec3(10.0, 0.0, -20.0);
+        //     data.data_mut().transform.scale *= 0.1;
+        // }
 
         let floor = BaseGameObject::new(Some(empty.clone()));
         {
             let mut data = floor.lock().expect("Could not lock gameobject for init");
-            data.data_mut().drawable = Some(Box::new(BaseDrawable::default()));
+            data.data_mut().drawable = Some(Box::new(Drawable::default()));
             data.data_mut().transform.scale.x *= 200.0;
             data.data_mut().transform.scale.z *= 200.0;
             data.data_mut().transform.position = vec3(0.0, -8.0, 0.0);
         }
 
-        let rotator = RotatingGameObject::new(Some(empty.clone()), vec3(0.0, 0.0, 0.0));
-        {
-            let mut data = rotator.lock().expect("Could not lock gameobject for init");
-            let mesh: Arc<Box<dyn Mesh>> = Arc::new(Box::new(ModelMesh::new(
-                "C:\\Users\\alx\\RustroverProjects\\rustgraphics\\bugatti.obj",
-            )));
-            data.data_mut().drawable = Some(Box::new(BaseDrawable::new(mesh, soft_shader)));
-            data.data_mut().transform.scale *= 0.2;
-            data.data_mut().transform.position = vec3(0.0, 0.0, 0.0);
-        }
+        // let rotator = RotatingGameObject::new(Some(empty.clone()), vec3(0.0, 0.0, 0.0));
+        // {
+        //     let mut data = rotator.lock().expect("Could not lock gameobject for init");
+        //     let drawable = importer::obj::import(
+        //         "C:\\Users\\alx\\RustroverProjects\\rustgraphics\\bugatti.obj",
+        //     );
+        //     data.data_mut().drawable = Some(Box::new(drawable));
+        //     data.data_mut().transform.scale *= 0.2;
+        //     data.data_mut().transform.position = vec3(0.0, 0.0, 0.0);
+        // }
 
         let camera = Arc::new(Mutex::new(CameraControlled::new(
             None,

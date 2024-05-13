@@ -1,16 +1,16 @@
-use glengine::engine::drawable::mesh::Mesh;
+use glengine::engine::drawable::mesh::{Mesh, MeshData};
 use glengine::gl;
 
-pub struct ArrayMesh {
-    mesh: Box<dyn Mesh>,
+pub struct InstancedMesh {
+    mesh_data: MeshData,
     width: usize,
     height: usize,
     depth: usize,
     transforms: u32,
 }
 
-impl ArrayMesh {
-    pub fn new(mesh: Box<dyn Mesh>, width: usize, height: usize, depth: usize) -> Self {
+impl InstancedMesh {
+    pub fn new(mesh: MeshData, width: usize, height: usize, depth: usize) -> Self {
         let mut transforms_all: Vec<f32> = vec![];
         let length = 50;
         let scale = 5.0 / length as f32;
@@ -24,7 +24,6 @@ impl ArrayMesh {
                 }
             }
         }
-        // let mesh = Box::new(MeshData::new(&vertices, &normals, Some(&indices)));
         mesh.bind();
 
         let mut transforms_vbo = 0;
@@ -55,7 +54,7 @@ impl ArrayMesh {
         }
 
         Self {
-            mesh,
+            mesh_data: mesh,
             width,
             height,
             depth,
@@ -64,7 +63,7 @@ impl ArrayMesh {
     }
 }
 
-impl Drop for ArrayMesh {
+impl Drop for InstancedMesh {
     fn drop(&mut self) {
         unsafe {
             gl::DeleteBuffers(1, &self.transforms);
@@ -72,23 +71,24 @@ impl Drop for ArrayMesh {
     }
 }
 
-impl Mesh for ArrayMesh {
-    fn bind(&self) {
-        self.mesh.bind();
+impl Mesh for InstancedMesh {
+    fn get(&self) -> &MeshData {
+        &self.mesh_data
     }
-    fn get_indices_count(&self) -> u32 {
-        self.mesh.get_indices_count()
+    fn get_mut(&mut self) -> &mut MeshData {
+        &mut self.mesh_data
     }
     fn draw(&self) {
-        self.bind();
+        self.get().bind();
         unsafe {
             gl::DrawElementsInstanced(
                 gl::TRIANGLES,
-                self.mesh.get_indices_count() as i32,
+                self.mesh_data.get_indices_count() as i32,
                 gl::UNSIGNED_INT,
                 std::ptr::null(),
                 (self.width * self.height * self.depth) as i32,
             );
         }
+        self.get().unbind();
     }
 }
