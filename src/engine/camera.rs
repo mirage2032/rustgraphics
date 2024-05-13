@@ -3,6 +3,7 @@ use glfw::Key;
 
 use crate::engine::gameobject::{GameObject, GameObjectData, GameObjectRaw};
 use crate::engine::GameState;
+use crate::result::EngineStepResult;
 
 pub struct CameraControlled {
     pub data: GameObjectData,
@@ -33,7 +34,7 @@ impl GameObjectRaw for CameraControlled {
         &mut self.data
     }
 
-    fn step(&mut self, game: &GameState) {
+    fn step(&mut self, game: &GameState) ->EngineStepResult<()> {
         let speed = 10.0 * game.delta.as_secs_f32();
         let rotation_speed = 0.1 * game.delta.as_secs_f32();
         let forward = self.data.transform.forward();
@@ -67,5 +68,6 @@ impl GameObjectRaw for CameraControlled {
         if game.input_state.keyboard.is_held(Key::E) {
             transform.rotation *= glam::Quat::from_rotation_z(-speed * 0.1);
         }
+        Ok(())
     }
 }

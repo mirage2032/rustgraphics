@@ -5,25 +5,29 @@ use glam::{Mat4, Vec3};
 use crate::engine::drawable::Drawable;
 use crate::engine::GameState;
 use crate::engine::transform::Transform;
+use crate::result::EngineStepResult;
 
 pub trait GameObjectRaw: Drawable + Send {
     fn data(&self) -> &GameObjectData;
     fn data_mut(&mut self) -> &mut GameObjectData;
-    fn step(&mut self, game: &GameState);
-    fn step_recursive(&mut self, game: &GameState) {
+    fn step(&mut self, game: &GameState) -> EngineStepResult<()>;
+    fn step_recursive(&mut self, game: &GameState) -> EngineStepResult<()> {
         self.step(game);
         for child in &mut self.data_mut().children {
             child
                 .lock()
                 .expect("Could not lock child gameobject for step")
-                .step(game);
+                .step(game)?;
         }
+        Ok(())
     }
     fn global_mat(&self) -> Mat4 {
         let mut transform: Mat4 = self.data().transform.into();
         let mut parent = self.data().parent.clone();
         while let Some(parent_object) = parent {
-            let parent_data = parent_object.lock().expect("Could not lock parent gameobject for global transform");
+            let parent_data = parent_object
+                .lock()
+                .expect("Could not lock parent gameobject for global transform");
             transform = Mat4::from(parent_data.data().transform) * transform;
             parent = parent_data.data().parent.clone();
         }
@@ -97,7 +101,7 @@ impl GameObjectRaw for BaseGameObject {
         &mut self.data
     }
 
-    fn step(&mut self, _game: &GameState) {}
+    fn step(&mut self, _game: &GameState) -> EngineStepResult<()> {Ok(())}
 }
 
 pub struct RotatingGameObject {
@@ -132,12 +136,13 @@ impl GameObjectRaw for RotatingGameObject {
         &mut self.data
     }
 
-    fn step(&mut self, game: &GameState) {
+    fn step(&mut self, game: &GameState) -> EngineStepResult<()> {
         let duration = game.delta.as_secs_f32();
         let rotation = self.rotation * duration;
         let data = self.data_mut();
         data.transform.rotation *= glam::Quat::from_rotation_x(rotation.x);
         data.transform.rotation *= glam::Quat::from_rotation_y(rotation.y);
         data.transform.rotation *= glam::Quat::from_rotation_z(rotation.z);
+        Ok(())
     }
 }

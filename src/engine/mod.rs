@@ -44,12 +44,13 @@ impl GameData {
         }
     }
 
-    fn step(&mut self, duration: Duration, input: EngineInputsState) {
+    fn step(&mut self, duration: Duration, input: EngineInputsState) -> EngineStepResult<()> {
         self.state.input_state.merge(input);
         self.state.delta = duration;
         if let Some(scene) = &mut self.scene {
-            scene.step(&self.state);
+            scene.step(&self.state)?;
         }
+        Ok(())
     }
 }
 
@@ -228,7 +229,7 @@ impl Engine {
         self.window.set_should_close(true);
         drop(recv_rend);
         drop(send_step);
-        
+
         let mut exit_status = EngineRunOut::new();
         exit_status.render_result = match render_task_done {
             Ok(result) => {
@@ -313,8 +314,8 @@ impl Engine {
             let game_clone = game.clone();
             let mut game_locked = game_clone
                 .lock()
-                .expect("Could not lock game data in step thread");
-            game_locked.step(delta, changes);
+                .map_err(|_|"Could not lock game data in step thread")?;
+            game_locked.step(delta, changes)?;
         }
         Ok(())
     }

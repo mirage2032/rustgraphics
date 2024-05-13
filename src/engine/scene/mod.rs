@@ -2,7 +2,7 @@ use glam::{Mat4, vec3};
 
 use crate::engine::gameobject::GameObject;
 use crate::engine::GameState;
-use crate::result::EngineRenderResult;
+use crate::result::{EngineRenderResult, EngineStepResult};
 
 pub struct SceneData {
     pub objects: Vec<GameObject>,
@@ -28,12 +28,13 @@ pub trait Scene: Send {
             }
         }
     }
-    fn step(&mut self, state: &GameState) {
+    fn step(&mut self, state: &GameState) -> EngineStepResult<()> {
         for object in &mut self.data_mut().objects {
             object
                 .lock()
                 .expect("Could not lock gameobject for step")
-                .step_recursive(state);
+                .step_recursive(state)?;
         }
+        Ok(())
     }
 }

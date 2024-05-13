@@ -94,7 +94,7 @@ impl Scene for BaseScene {
                 "C:\\Users\\alx\\RustroverProjects\\rustgraphics\\bugatti.obj",
             )));
             data.data_mut().drawable = Some(Box::new(BaseDrawable::new(mesh, soft_shader)));
-            data.data_mut().transform.scale *= 4.2;
+            data.data_mut().transform.scale *= 0.2;
             data.data_mut().transform.position = vec3(0.0, 0.0, 0.0);
         }
 
