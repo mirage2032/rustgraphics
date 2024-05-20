@@ -1,4 +1,4 @@
-use std::sync::{Arc, Mutex};
+use std::sync::{Mutex, Weak};
 
 use directional::{DirectionalLight, DirectionalLightData};
 use point::{PointLight, PointLightData};
@@ -17,33 +17,38 @@ pub struct LightsData {
     pub spot: Vec<SpotLightData>,
 }
 pub struct Lights {
-    pub directional: Option<Arc<Mutex<DirectionalLight>>>,
-    pub point: Vec<Arc<Mutex<PointLight>>>,
-    pub spot: Vec<Arc<Mutex<SpotLight>>>,
+    pub directional: Weak<Mutex<DirectionalLight>>,
+    pub point: Vec<Weak<Mutex<PointLight>>>,
+    pub spot: Vec<Weak<Mutex<SpotLight>>>,
 }
 
 impl Lights {
     pub fn light_data(&self) -> LightsData {
-        let (directional,is_directional) = match &self.directional {
-            Some(light) => (light
-                .lock()
-                .expect("Could not lock directional light")
-                .light_data(),true),
-            None => (DirectionalLightData::empty(),false),
+        let (directional, is_directional) = match &self.directional.upgrade() {
+            Some(light) => (
+                light
+                    .lock()
+                    .expect("Could not lock directional light")
+                    .light_data(),
+                true,
+            ),
+            None => (DirectionalLightData::empty(), false),
         };
         let point = self
             .point
             .iter()
+            .filter_map(|light| light.upgrade())
             .map(|light| {
                 light
                     .lock()
-                    .expect("Could not lock point light")
+                    .expect("Could not lock pointlight")
                     .light_data()
             })
             .collect();
         let spot = self
             .spot
             .iter()
+            .filter_map(|light| light.upgrade())
             .map(|light| light.lock().expect("Could not lock spotlight").light_data())
             .collect();
         LightsData {
@@ -58,7 +63,7 @@ impl Lights {
 impl Default for Lights {
     fn default() -> Self {
         Self {
-            directional: None,
+            directional: Weak::new(),
             point: Vec::new(),
             spot: Vec::new(),
         }

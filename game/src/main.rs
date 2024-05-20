@@ -3,7 +3,7 @@ use glengine::engine::scene::gameobject::RotatingGameObject;
 use glengine::engine::scene::gameobject::BaseGameObject;
 use glengine::engine::components::{CompA,CompB};
 use glengine::engine::scene::lights::Lights;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex,Weak};
 use glengine::engine::drawable::base::Drawable;
 use glengine::engine::drawable::importer;
 use glengine::engine::Engine;
@@ -25,7 +25,7 @@ impl BaseScene {
         Self {
             data: SceneData {
                 objects: Vec::new(),
-                main_camera: None,
+                main_camera: Weak::new(),
                 lights: Lights::default(),
             },
         }
@@ -100,9 +100,10 @@ impl Scene for BaseScene {
             vec3(0.0, 0.0, 0.0),
             vec3(0.0, 1.0, 0.0),
         )));
+        let weak = Arc::downgrade(&camera);
 
         self.data.objects.push(camera.clone());
-        self.data.main_camera = Some(camera);
+        self.data.main_camera = weak;
         Ok(())
     }
 }

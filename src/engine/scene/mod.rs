@@ -1,4 +1,4 @@
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex,Weak};
 
 use glam::{Mat4, vec3};
 
@@ -13,7 +13,7 @@ pub mod lights;
 
 pub struct SceneData {
     pub objects: Vec<GameObject>,
-    pub main_camera: Option<Arc<Mutex<CameraControlled>>>,
+    pub main_camera: Weak<Mutex<CameraControlled>>,
     pub lights: lights::Lights,
 }
 
@@ -22,7 +22,7 @@ pub trait Scene: Send {
     fn data_mut(&mut self) -> &mut SceneData;
     fn init_gl(&mut self) -> EngineRenderResult<()>;
     fn render(&self) {
-        if let Some(camera) = &self.data().main_camera {
+        if let Some(camera) = &self.data().main_camera.upgrade() {
             let camera_mat = camera
                 .lock()
                 .expect("Could not lock camera for render")
