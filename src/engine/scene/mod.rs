@@ -1,12 +1,20 @@
+use std::sync::{Arc, Mutex};
+
 use glam::{Mat4, vec3};
 
-use crate::engine::gameobject::GameObject;
 use crate::engine::GameState;
+use crate::engine::scene::camera::CameraControlled;
+use crate::engine::scene::gameobject::{GameObject, GameObjectRaw};
 use crate::result::{EngineRenderResult, EngineStepResult};
+
+pub mod camera;
+pub mod gameobject;
+pub mod lights;
 
 pub struct SceneData {
     pub objects: Vec<GameObject>,
-    pub main_camera: Option<GameObject>,
+    pub main_camera: Option<Arc<Mutex<CameraControlled>>>,
+    pub lights: lights::Lights,
 }
 
 pub trait Scene: Send {

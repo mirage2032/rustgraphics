@@ -10,9 +10,9 @@ use crate::result::EngineStepResult;
 pub trait GameObjectRaw: Draw + Send {
     fn data(&self) -> &GameObjectData;
     fn data_mut(&mut self) -> &mut GameObjectData;
-    fn step(&mut self, game: &GameState) -> EngineStepResult<()>;
+    fn step(&mut self, _: &GameState) -> EngineStepResult<()>{ Ok(()) }
     fn step_recursive(&mut self, game: &GameState) -> EngineStepResult<()> {
-        self.step(game);
+        self.step(game)?;
         for child in &mut self.data_mut().children {
             child
                 .lock()
@@ -101,7 +101,9 @@ impl GameObjectRaw for BaseGameObject {
         &mut self.data
     }
 
-    fn step(&mut self, _game: &GameState) -> EngineStepResult<()> {Ok(())}
+    fn step(&mut self, _game: &GameState) -> EngineStepResult<()> {
+        Ok(())
+    }
 }
 
 pub struct RotatingGameObject {

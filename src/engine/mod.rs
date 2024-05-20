@@ -1,8 +1,8 @@
+use std::ffi::CString;
 use std::sync::{Arc, Mutex};
 use std::sync::mpsc::{Receiver, sync_channel, SyncSender};
 use std::thread::Builder;
 use std::time::Duration;
-use std::ffi::CString;
 
 use glfw::{
     Action, Context, Glfw, GlfwReceiver, Key, PRenderContext, PWindow, WindowEvent, WindowHint,
@@ -13,16 +13,17 @@ use crate::engine::events::EngineInputsState;
 use crate::engine::events::EngineWindowEvent;
 use crate::engine::fpscounter::TimeDelta;
 use crate::engine::scene::Scene;
-use crate::result::{EngineRunError, EngineRunOut, EngineRunResult, EngineRenderResult, EngineRenderError,EngineStepResult};
+use crate::result::{
+    EngineRenderError, EngineRenderResult, EngineRunError, EngineRunOut, EngineRunResult,
+    EngineStepResult,
+};
 use crate::result::EngineRunError::ThreadError;
 
-pub mod camera;
 pub mod components;
 pub mod config;
 pub mod drawable;
 mod events;
 pub mod fpscounter;
-pub mod gameobject;
 pub mod scene;
 pub mod transform;
 
@@ -178,7 +179,7 @@ impl Engine {
                 match &render_task_done {
                     Ok(handle) => {
                         if handle.is_finished() {
-                            break Some(ThreadError("Render task exited".to_string()))
+                            break Some(ThreadError("Render task exited".to_string()));
                         }
                     }
                     Err(_) => break Some(ThreadError("No render task handle".to_string())),
@@ -187,10 +188,10 @@ impl Engine {
                 match &step_task_done {
                     Ok(handle) => {
                         if handle.is_finished() {
-                            break Some(ThreadError("Step task exited".to_string()))
+                            break Some(ThreadError("Step task exited".to_string()));
                         }
                     }
-                    Err(_) => break Some(ThreadError("No step task handle".to_string()))
+                    Err(_) => break Some(ThreadError("No step task handle".to_string())),
                 }
 
                 if let Ok(delta) = recv_rend.try_recv() {
@@ -204,8 +205,7 @@ impl Engine {
                     };
                     self.window.set_title(&format!("FPS: {:.2}", fps));
                     self.glfw.poll_events();
-                    let (engine_events, mut input_changes) =
-                        self.gather_window_events();
+                    let (engine_events, mut input_changes) = self.gather_window_events();
                     input_changes.mouse_pos = self.window.get_cursor_pos();
                     let mut exit_event = None;
                     for event in engine_events {
@@ -218,10 +218,10 @@ impl Engine {
                         }
                     }
                     if let Some(reason) = exit_event {
-                        break reason
+                        break reason;
                     }
                     if let Err(_) = send_step.send((delta, input_changes)) {
-                        break  Some(ThreadError("Could not send step".to_string()));
+                        break Some(ThreadError("Could not send step".to_string()));
                     }
                 }
             }
@@ -232,20 +232,16 @@ impl Engine {
 
         let mut exit_status = EngineRunOut::new();
         exit_status.render_result = match render_task_done {
-            Ok(result) => {
-                match result.join() {
-                    Ok(result) => result,
-                    Err(_) => Err(EngineRenderError::JoinThreadError),
-                }
+            Ok(result) => match result.join() {
+                Ok(result) => result,
+                Err(_) => Err(EngineRenderError::JoinThreadError),
             },
             Err(_) => Ok(()),
         };
         exit_status.step_result = match step_task_done {
-            Ok(result) => {
-                match result.join() {
-                    Ok(result) => result,
-                    Err(_) => Err("Could not join step thread".to_string()),
-                }
+            Ok(result) => match result.join() {
+                Ok(result) => result,
+                Err(_) => Err("Could not join step thread".to_string()),
             },
             Err(_) => Ok(()),
         };
@@ -280,7 +276,6 @@ impl Engine {
             gl::Enable(gl::DEBUG_OUTPUT);
             gl::DebugMessageCallback(Some(debug_callback), std::ptr::null());
         }
-        
 
         loop {
             unsafe {
@@ -309,7 +304,7 @@ impl Engine {
             let game_clone = game.clone();
             let mut game_locked = game_clone
                 .lock()
-                .map_err(|_|"Could not lock game data in step thread")?;
+                .map_err(|_| "Could not lock game data in step thread")?;
             game_locked.step(delta, changes)?;
         }
         Ok(())
@@ -335,7 +330,6 @@ impl Engine {
         (engine_events, input_changes)
     }
 }
-
 
 extern "system" fn debug_callback(
     _source: gl::types::GLenum,

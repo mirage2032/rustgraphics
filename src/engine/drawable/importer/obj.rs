@@ -1,11 +1,13 @@
 use std::path::Path;
 use std::sync::{Arc, Mutex};
 
+use lazy_static::lazy_static;
 use tobj::{load_mtl, load_obj};
 
 use crate::engine::drawable::base::Drawable;
 use crate::engine::drawable::DrawData;
-use crate::engine::drawable::mesh::{MeshData, BaseMesh};
+use crate::engine::drawable::mesh::{BaseMesh, MeshData};
+use crate::engine::drawable::shader::color::{new_lit_color_shader,new_unlit_color_shader};
 use crate::engine::drawable::shader::Shader;
 
 pub fn import<P: AsRef<Path> + std::fmt::Debug>(path: P) -> Drawable {
@@ -20,9 +22,10 @@ pub fn import<P: AsRef<Path> + std::fmt::Debug>(path: P) -> Drawable {
     } else {
         None
     };
-    let mut vertices: Vec<f32> = vec![];
     let mut drawables: Vec<DrawData> = vec![];
-
+    lazy_static! {
+        static ref NO_SHADER: Arc<Shader> = Arc::new(Shader::default());
+    }
     for model in models.iter() {
         let material = match (&mtl_data, &model.mesh.material_id) {
             (Some((ref materials, _)), Some(material_id)) => Some(&materials[*material_id]),
@@ -32,10 +35,21 @@ pub fn import<P: AsRef<Path> + std::fmt::Debug>(path: P) -> Drawable {
             .with_normals(&model.mesh.normals)
             .with_indices(&model.mesh.indices)
             .with_texcoords(&model.mesh.texcoords);
-        let mesh = BaseMesh{ mesh_data};
+        let mesh = BaseMesh { mesh_data };
+        let shader = match material {
+            Some(material) => {
+                if let Some(ref albedo_texture) = material.diffuse {
+                    Arc::new(new_unlit_color_shader(albedo_texture))
+                } else {
+                    NO_SHADER.clone()
+                }
+            }
+            None => NO_SHADER.clone(),
+        };
         drawables.push(DrawData {
             mesh: Arc::new(Mutex::new(mesh)),
-            shader: Arc::new(Shader::default()),
+            shader,
+            material: Arc::new(material.cloned()),
         })
     }
 

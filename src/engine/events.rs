@@ -91,7 +91,10 @@ impl EngineInputsState {
     pub fn merge(&mut self, other: Self) {
         self.keyboard.merge(other.keyboard);
         self.mouse.merge(other.mouse);
-        self.mouse_delta = (other.mouse_pos.0 - self.mouse_pos.0, self.mouse_pos.1 - other.mouse_pos.1);
+        self.mouse_delta = (
+            other.mouse_pos.0 - self.mouse_pos.0,
+            self.mouse_pos.1 - other.mouse_pos.1,
+        );
         self.mouse_pos = other.mouse_pos;
     }
 }

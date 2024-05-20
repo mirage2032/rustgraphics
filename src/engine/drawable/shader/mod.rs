@@ -1,7 +1,10 @@
 use gl;
 use gl::types::GLenum;
 use glam::Mat4;
+
 use crate::result::{EngineRenderResult, ShaderError};
+
+pub mod color;
 
 pub struct Shader {
     id: u32,
@@ -19,8 +22,8 @@ impl Shader {
         unsafe {
             gl::GetShaderiv(id, gl::COMPILE_STATUS, &mut success);
         }
-        
-        if success == 0{
+
+        if success == 0 {
             let mut len = 0;
             unsafe {
                 gl::GetShaderiv(id, gl::INFO_LOG_LENGTH, &mut len);
@@ -38,11 +41,15 @@ impl Shader {
             eprintln!("Failed to compile shader: {}", error);
             return Err(ShaderError::CompileError.into());
         }
-        
+
         Ok(id)
     }
 
-    fn compile_and_attach_shader(&self, source: &str, shader_type: GLenum) -> EngineRenderResult<()> {
+    fn compile_and_attach_shader(
+        &self,
+        source: &str,
+        shader_type: GLenum,
+    ) -> EngineRenderResult<()> {
         let shader = Self::compile_shader(source, shader_type)?;
         unsafe {
             gl::AttachShader(self.id, shader);
@@ -51,20 +58,22 @@ impl Shader {
     }
 
     pub fn new(
-        vertex_shader_path: Option<&str>,
-        fragment_shader_path: Option<&str>,
-        geometry_shader_path: Option<&str>,
+        vertex_shader: Option<&str>,
+        fragment_shader: Option<&str>,
+        geometry_shader: Option<&str>,
     ) -> EngineRenderResult<Shader> {
         // Link shaders
-        let shader = Shader { id: unsafe { gl::CreateProgram() } };
+        let shader = Shader {
+            id: unsafe { gl::CreateProgram() },
+        };
         unsafe {
-            if let Some(vertex_shader_path) = vertex_shader_path {
+            if let Some(vertex_shader_path) = vertex_shader {
                 shader.compile_and_attach_shader(vertex_shader_path, gl::VERTEX_SHADER)?;
             }
-            if let Some(fragment_shader_path) = fragment_shader_path {
+            if let Some(fragment_shader_path) = fragment_shader {
                 shader.compile_and_attach_shader(fragment_shader_path, gl::FRAGMENT_SHADER)?;
             }
-            if let Some(geometry_shader_path) = geometry_shader_path {
+            if let Some(geometry_shader_path) = geometry_shader {
                 shader.compile_and_attach_shader(geometry_shader_path, gl::GEOMETRY_SHADER)?;
             }
             gl::LinkProgram(shader.id);
@@ -81,7 +90,6 @@ impl Shader {
                     std::ptr::null_mut(),
                     buffer.as_mut_ptr() as *mut i8,
                 );
-                let error = String::from_utf8(buffer).unwrap();
                 return Err(ShaderError::LinkError.into());
             }
         }
@@ -91,6 +99,32 @@ impl Shader {
     pub fn use_program(&self) {
         unsafe {
             gl::UseProgram(self.id);
+        }
+    }
+
+    pub fn set_texture(&self, name: &str, texture: u32, index: u32) {
+        unsafe {
+            let name_cstring = std::ffi::CString::new(name).unwrap();
+            let location = gl::GetUniformLocation(self.id, name_cstring.as_ptr());
+            gl::Uniform1i(location, index as i32);
+            gl::ActiveTexture(gl::TEXTURE0 + index);
+            gl::BindTexture(gl::TEXTURE_2D, texture);
+        }
+    }
+
+    pub fn set_float(&self, name: &str, value: f32) {
+        unsafe {
+            let name_cstring = std::ffi::CString::new(name).unwrap();
+            let location = gl::GetUniformLocation(self.id, name_cstring.as_ptr());
+            gl::Uniform1f(location, value);
+        }
+    }
+
+    pub fn set_vec3(&self, name: &str, vec: &glam::Vec3) {
+        unsafe {
+            let name_cstring = std::ffi::CString::new(name).unwrap();
+            let location = gl::GetUniformLocation(self.id, name_cstring.as_ptr());
+            gl::Uniform3fv(location, 1, vec.as_ref().as_ptr());
         }
     }
 
@@ -114,17 +148,18 @@ impl Drop for Shader {
 impl Default for Shader {
     fn default() -> Self {
         Shader::new(
-            Some(include_str!("glsl/basic/vertex_shader.glsl")),
-            Some(include_str!("glsl/basic/fragment_shader.glsl")),
+            Some(include_str!("glsl/unlit/basic/vertex_shader.glsl")),
+            Some(include_str!("glsl/unlit/basic/fragment_shader.glsl")),
             None,
-        ).expect("Failed to create default shader")
+        )
+        .expect("Failed to create default shader")
     }
 }
 
 pub fn new_face_shader() -> EngineRenderResult<Shader> {
     Shader::new(
-        Some(include_str!("glsl/face/vertex_shader.glsl")),
-        Some(include_str!("glsl/face/fragment_shader.glsl")),
-        Some(include_str!("glsl/face/geometry_shader.glsl")),
+        Some(include_str!("glsl/unlit/face/vertex_shader.glsl")),
+        Some(include_str!("glsl/unlit/face/fragment_shader.glsl")),
+        Some(include_str!("glsl/unlit/face/geometry_shader.glsl")),
     )
 }

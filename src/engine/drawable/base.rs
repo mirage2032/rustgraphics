@@ -4,6 +4,7 @@ use glam::Mat4;
 
 use crate::engine::drawable::{Draw, DrawData};
 use crate::engine::drawable::mesh;
+
 use super::shader::Shader;
 
 pub struct Drawable {
@@ -12,7 +13,11 @@ pub struct Drawable {
 
 impl Drawable {
     pub fn new(mesh: Arc<Mutex<dyn mesh::Mesh>>, shader: Arc<Shader>) -> Self {
-        let draw_object = DrawData { mesh, shader };
+        let draw_object = DrawData {
+            mesh,
+            shader,
+            material: Arc::new(None),
+        };
         Self {
             draw_data: vec![draw_object],
         }
@@ -31,7 +36,8 @@ impl Default for Drawable {
     fn default() -> Self {
         let draw_object = DrawData {
             mesh: mesh::cube::new(),
-            shader: Arc::new(Shader::default())
+            shader: Arc::new(Shader::default()),
+            material: Arc::new(None),
         };
         Self {
             draw_data: vec![draw_object],

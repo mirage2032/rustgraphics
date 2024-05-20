@@ -1,8 +1,8 @@
 use glam::{Mat4, Vec3};
 use glfw::Key;
 
-use crate::engine::gameobject::{GameObject, GameObjectData, GameObjectRaw};
 use crate::engine::GameState;
+use crate::engine::scene::gameobject::{GameObject, GameObjectData, GameObjectRaw};
 use crate::result::EngineStepResult;
 
 pub struct CameraControlled {
@@ -34,7 +34,7 @@ impl GameObjectRaw for CameraControlled {
         &mut self.data
     }
 
-    fn step(&mut self, game: &GameState) ->EngineStepResult<()> {
+    fn step(&mut self, game: &GameState) -> EngineStepResult<()> {
         let speed = 10.0 * game.delta.as_secs_f32();
         let rotation_speed = 0.1 * game.delta.as_secs_f32();
         let forward = self.data.transform.forward();
@@ -54,14 +54,15 @@ impl GameObjectRaw for CameraControlled {
             transform.position -= right * speed;
         }
         if game.input_state.keyboard.is_held(Key::Space) {
-            transform.position += up * speed;
+            transform.position.y += speed;
         }
         if game.input_state.keyboard.is_held(Key::LeftShift) {
-            transform.position -= up * speed;
+            transform.position.y -= speed;
         }
-        transform.rotation *= glam::Quat::from_rotation_x(rotation_speed *game.input_state.mouse_delta.1 as f32);
-
-        transform.rotation *= glam::Quat::from_rotation_y(rotation_speed * - game.input_state.mouse_delta.0 as f32);
+        transform.rotation *=
+            glam::Quat::from_rotation_x(rotation_speed * game.input_state.mouse_delta.1 as f32);
+        transform.rotation =
+            glam::Quat::from_rotation_y(rotation_speed * -game.input_state.mouse_delta.0 as f32) * transform.rotation;
         if game.input_state.keyboard.is_held(Key::Q) {
             transform.rotation *= glam::Quat::from_rotation_z(speed * 0.1);
         }

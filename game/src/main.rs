@@ -1,22 +1,18 @@
+use glengine::engine::scene::camera::CameraControlled;
+use glengine::engine::scene::gameobject::RotatingGameObject;
+use glengine::engine::scene::gameobject::BaseGameObject;
 use glengine::engine::components::{CompA,CompB};
+use glengine::engine::scene::lights::Lights;
 use std::sync::{Arc, Mutex};
-
-use drawable::mesh::arraymesh;
-use glengine::engine::camera::CameraControlled;
-use glengine::engine::components::{ComponentMap};
 use glengine::engine::drawable::base::Drawable;
-use glengine::engine::drawable::mesh::Mesh;
 use glengine::engine::drawable::importer;
 use glengine::engine::Engine;
 use glengine::engine::GameData;
-use glengine::engine::gameobject::{BaseGameObject, RotatingGameObject};
 use glengine::engine::scene::Scene;
 use glengine::engine::scene::SceneData;
 use glengine::gl;
 use glengine::glam::vec3;
 use glengine::result::EngineRenderResult;
-
-use crate::drawable::shader::arrayshader::build_array_shader;
 
 mod drawable;
 
@@ -30,6 +26,7 @@ impl BaseScene {
             data: SceneData {
                 objects: Vec::new(),
                 main_camera: None,
+                lights: Lights::default(),
             },
         }
     }
@@ -86,16 +83,16 @@ impl Scene for BaseScene {
             data.data_mut().transform.position = vec3(0.0, -8.0, 0.0);
         }
 
-        // let rotator = RotatingGameObject::new(Some(empty.clone()), vec3(0.0, 0.0, 0.0));
-        // {
-        //     let mut data = rotator.lock().expect("Could not lock gameobject for init");
-        //     let drawable = importer::obj::import(
-        //         "C:\\Users\\alx\\RustroverProjects\\rustgraphics\\bugatti.obj",
-        //     );
-        //     data.data_mut().drawable = Some(Box::new(drawable));
-        //     data.data_mut().transform.scale *= 0.2;
-        //     data.data_mut().transform.position = vec3(0.0, 0.0, 0.0);
-        // }
+        let rotator = RotatingGameObject::new(Some(empty.clone()), vec3(0.0, 0.0, 0.0));
+        {
+            let mut data = rotator.lock().expect("Could not lock gameobject for init");
+            let drawable = importer::obj::import(
+                "C:\\Users\\alx\\RustroverProjects\\rustgraphics\\bugatti.obj",
+            );
+            data.data_mut().drawable = Some(Box::new(drawable));
+            data.data_mut().transform.scale *= 0.2;
+            data.data_mut().transform.position = vec3(0.0, 0.0, 0.0);
+        }
 
         let camera = Arc::new(Mutex::new(CameraControlled::new(
             None,

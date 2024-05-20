@@ -1,6 +1,6 @@
 pub mod cube;
 
-pub trait Mesh: Send+Sync{
+pub trait Mesh: Send + Sync {
     fn get(&self) -> &MeshData;
     fn get_mut(&mut self) -> &mut MeshData;
     fn draw(&self);
@@ -62,7 +62,7 @@ impl MeshData {
             vbo
         };
         unsafe {
-            // gl::BindVertexArray(0);
+            gl::BindVertexArray(0);
         }
         Self {
             vao,
@@ -90,7 +90,7 @@ impl MeshData {
             gl::EnableVertexAttribArray(1);
             Some(vbo)
         };
-        // self.unbind();
+        self.unbind();
         self
     }
 
@@ -110,7 +110,7 @@ impl MeshData {
             gl::EnableVertexAttribArray(2);
             Some(vbo)
         };
-        // self.unbind();
+        self.unbind();
         self
     }
 
@@ -128,7 +128,8 @@ impl MeshData {
             );
             Some(ebo)
         };
-        // self.unbind();
+        self.indices_count = indices.len() as u32;
+        self.unbind();
         self
     }
 

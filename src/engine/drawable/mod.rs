@@ -19,6 +19,7 @@ pub trait Draw: Send {
 pub struct DrawData {
     mesh: Arc<Mutex<dyn mesh::Mesh>>,
     shader: Arc<Shader>,
+    material: Arc<Option<tobj::Material>>,
 }
 
 impl Draw for DrawData {

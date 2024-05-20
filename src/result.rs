@@ -1,6 +1,4 @@
 use thiserror::Error;
-use std::collections::HashMap;
-use std::fmt;
 
 pub type EngineRunResult = Result<(), EngineRunOut>;
 pub type EngineRenderResult<T> = Result<T, EngineRenderError>;
@@ -8,10 +6,9 @@ pub type EngineStepResult<T> = Result<T, String>;
 
 #[derive(Debug, Clone)]
 pub struct EngineRunOut {
-    pub main_result: Result<(),EngineRunError>,
+    pub main_result: Result<(), EngineRunError>,
     pub step_result: EngineStepResult<()>,
     pub render_result: EngineRenderResult<()>,
-    
 }
 
 impl EngineRunOut {
