@@ -23,7 +23,7 @@ pub struct Lights {
 }
 
 impl Lights {
-    pub fn light_data(&self) -> LightsData {
+    pub fn light_data(&mut self) -> LightsData {
         let (directional, is_directional) = match &self.directional.upgrade() {
             Some(light) => (
                 light
@@ -34,6 +34,8 @@ impl Lights {
             ),
             None => (DirectionalLightData::empty(), false),
         };
+        
+        self.point.retain(|light| light.upgrade().is_some()); //CLEANUP
         let point = self
             .point
             .iter()
@@ -45,6 +47,8 @@ impl Lights {
                     .light_data()
             })
             .collect();
+        
+        self.spot.retain(|light| light.upgrade().is_some()); //CLEANUP
         let spot = self
             .spot
             .iter()

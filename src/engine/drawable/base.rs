@@ -16,7 +16,7 @@ impl Drawable {
         let draw_object = DrawData {
             mesh,
             shader,
-            material: Arc::new(None),
+            material: None,
         };
         Self {
             draw_data: vec![draw_object],
@@ -37,7 +37,7 @@ impl Default for Drawable {
         let draw_object = DrawData {
             mesh: mesh::cube::new(),
             shader: Arc::new(Shader::default()),
-            material: Arc::new(None),
+            material: None,
         };
         Self {
             draw_data: vec![draw_object],

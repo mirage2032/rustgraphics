@@ -12,6 +12,7 @@ serde = { version = "1.0.200", features = ["derive"] }
 serde_json = "1.0.116"
 tobj = {git = "https://github.com/Twinklebear/tobj", branch = "master"}
 thiserror = "1.0.60"
+image = "0.25.1"
 
 [lib]
 crate-type = ["lib"]

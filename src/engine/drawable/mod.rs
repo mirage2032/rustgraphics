@@ -11,15 +11,16 @@ pub mod base;
 pub mod importer;
 pub mod mesh;
 pub mod shader;
+pub mod material;
 
 pub trait Draw: Send {
     fn draw(&self, modelmat: &Mat4, viewmat: &Mat4);
 }
 
 pub struct DrawData {
-    mesh: Arc<Mutex<dyn mesh::Mesh>>,
-    shader: Arc<Shader>,
-    material: Arc<Option<tobj::Material>>,
+    pub mesh: Arc<Mutex<dyn mesh::Mesh>>,
+    pub shader: Arc<Shader>,
+    pub material: Option<Arc<material::Material>>,
 }
 
 impl Draw for DrawData {
@@ -36,6 +37,11 @@ impl Draw for DrawData {
             data
         };
         self.shader.set_mat4("projection", &projection);
+        
+        if let Some(ref material) = self.material {
+            material.set_uniforms(&self.shader);
+        }
+        
         self.mesh.lock().expect("Failed to lock mesh").draw();
         unbind();
         unsafe { gl::UseProgram(0) };

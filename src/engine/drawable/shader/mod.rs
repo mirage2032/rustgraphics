@@ -106,11 +106,11 @@ impl Shader {
         unsafe {
             let name_cstring = std::ffi::CString::new(name).unwrap();
             let location = gl::GetUniformLocation(self.id, name_cstring.as_ptr());
-            gl::Uniform1i(location, index as i32);
             gl::ActiveTexture(gl::TEXTURE0 + index);
             gl::BindTexture(gl::TEXTURE_2D, texture);
+            gl::Uniform1i(location, index as i32);
         }
-    }
+    }   
 
     pub fn set_float(&self, name: &str, value: f32) {
         unsafe {
