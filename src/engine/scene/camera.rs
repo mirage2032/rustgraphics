@@ -39,7 +39,6 @@ impl GameObjectRaw for CameraControlled {
         let rotation_speed = 0.1 * game.delta.as_secs_f32();
         let forward = self.data.transform.forward();
         let right = self.data.transform.right();
-        let up = self.data.transform.up();
         let transform = &mut self.data.transform;
         if game.input_state.keyboard.is_held(Key::W) {
             transform.position += forward * speed;

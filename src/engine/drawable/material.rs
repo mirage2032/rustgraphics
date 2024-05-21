@@ -1,6 +1,6 @@
 use gl;
 use gl::types::GLuint;
-use glam::Vec3;
+use glam::{Vec3,vec3};
 
 use crate::engine::drawable::importer::img::Image;
 use crate::engine::drawable::shader::Shader;
@@ -17,9 +17,9 @@ pub struct MaterialData {
 impl Default for MaterialData {
     fn default() -> Self {
         Self {
-            ambient: Vec3::new(1.0, 1.0, 1.0),
-            diffuse: Vec3::new(1.0, 1.0, 1.0),
-            specular: Vec3::new(1.0, 1.0, 1.0),
+            ambient: vec3(1.0, 1.0, 1.0),
+            diffuse: vec3(1.0, 1.0, 1.0),
+            specular: vec3(1.0, 1.0, 1.0),
             shininess: 32.0,
         }
     }
