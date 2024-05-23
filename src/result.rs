@@ -50,9 +50,11 @@ pub enum EngineRenderError {
 #[derive(Error, Debug, Clone)]
 pub enum EngineRunError {
     #[error("Engine rendering error:{0}")]
-    RenderError(EngineRenderError),
+    RenderError(#[from] EngineRenderError),
     #[error("Engine stepping error:{0}")]
     StepError(String),
+    #[error("Engine import error:{0}")]
+    ImportError(String),
     #[error("Engine thread error:{0}")]
     ThreadError(String),
 }

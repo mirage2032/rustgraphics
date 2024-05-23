@@ -1,6 +1,7 @@
 use gl;
 use gl::types::GLuint;
-use glam::{Vec3,vec3};
+use glam::{vec3, Vec3};
+use russimp::material::{PropertyTypeInfo, TextureType};
 
 use crate::engine::drawable::importer::img::Image;
 use crate::engine::drawable::shader::Shader;
@@ -8,19 +9,19 @@ use crate::engine::drawable::shader::Shader;
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct MaterialData {
-    pub ambient: Vec3,
-    pub diffuse: Vec3,
-    pub specular: Vec3,
-    pub shininess: f32,
+    pub ambient: Option<Vec3>,
+    pub diffuse: Option<Vec3>,
+    pub specular: Option<Vec3>,
+    pub shininess: Option<f32>,
 }
 
 impl Default for MaterialData {
     fn default() -> Self {
         Self {
-            ambient: vec3(1.0, 1.0, 1.0),
-            diffuse: vec3(1.0, 1.0, 1.0),
-            specular: vec3(1.0, 1.0, 1.0),
-            shininess: 32.0,
+            ambient: None,
+            diffuse: None,
+            specular: None,
+            shininess: None,
         }
     }
 }
@@ -32,15 +33,11 @@ pub struct Material {
 
 impl From<tobj::Material> for Material {
     fn from(material: tobj::Material) -> Self {
-        let ambient: Vec3 = material.ambient.unwrap_or([1.0, 1.0, 1.0]).into();
-        let diffuse: Vec3 = material.diffuse.unwrap_or([1.0, 1.0, 1.0]).into();
-        let specular: Vec3 = material.specular.unwrap_or([1.0, 1.0, 1.0]).into();
-        let shininess = material.shininess.unwrap_or(32.0);
         let data = MaterialData {
-            ambient,
-            diffuse,
-            specular,
-            shininess,
+            ambient: material.ambient.map(|a| a.into()),
+            diffuse: material.diffuse.map(|a| a.into()),
+            specular: material.specular.map(|a| a.into()),
+            shininess: material.shininess.map(|a| a.into()),
         };
 
         let diffuse_texture = {
@@ -60,12 +57,61 @@ impl From<tobj::Material> for Material {
         }
     }
 }
+
+impl From<russimp::material::Material> for Material {
+    fn from(material: russimp::material::Material) -> Self {
+        let mut data = MaterialData::default();
+        material
+            .properties
+            .iter()
+            .for_each(|prop| match (&*prop.key, &prop.data) {
+                ("$clr.ambient", &PropertyTypeInfo::FloatArray(ref color)) => {
+                    data.ambient = Some(vec3(color[0], color[1], color[2]));
+                }
+                ("$clr.diffuse", &PropertyTypeInfo::FloatArray(ref color)) => {
+                    data.diffuse = Some(vec3(color[0], color[1], color[2]));
+                }
+                ("$clr.specular", &PropertyTypeInfo::FloatArray(ref color)) => {
+                    data.specular = Some(vec3(color[0], color[1], color[2]));
+                }
+                ("$mat.shininess", &PropertyTypeInfo::FloatArray(ref val)) => {
+                    data.shininess = Some(val[0] / 250.0);
+                }
+                // (a,b) => {
+                //     println!("Unknown property: {:?} {:?}", a,b);
+                // }
+                _ => {}
+            });
+        let diffuse_texture = match material.textures.get(&TextureType::Diffuse) {
+            Some(texture) => {
+                let image = Image::load(&texture.borrow().filename).expect(
+                    format!("Failed to load texture: {}", &texture.borrow().filename).as_str(),
+                );
+                Some(Texture::from(image))
+            }
+            None => None,
+        };
+
+        Self {
+            data,
+            diffuse_texture,
+        }
+    }
+}
 impl Material {
     pub fn set_uniforms(&self, shader: &Shader) {
-        shader.set_vec3("material.ambient", &self.data.ambient);
-        shader.set_vec3("material.diffuse", &self.data.diffuse);
-        shader.set_vec3("material.specular", &self.data.specular);
-        shader.set_float("material.shininess", self.data.shininess);
+        if let Some(ambient) = self.data.ambient {
+            shader.set_vec3("material.ambient", &ambient);
+        }
+        if let Some(diffuse) = self.data.diffuse {
+            shader.set_vec3("material.diffuse", &diffuse);
+        }
+        if let Some(specular) = self.data.specular {
+            shader.set_vec3("material.specular", &specular);
+        }
+        if let Some(shininess) = self.data.shininess {
+            shader.set_float("material.shininess", shininess);
+        }
         if let Some(texture) = &self.diffuse_texture {
             shader.set_texture("material.diffuse_texture", texture.id(), 0);
         }

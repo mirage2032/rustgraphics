@@ -5,7 +5,7 @@ use glengine::engine::components::{CompA,CompB};
 use glengine::engine::scene::lights::Lights;
 use std::sync::{Arc, Mutex,Weak};
 use glengine::engine::drawable::base::Drawable;
-use glengine::engine::drawable::importer::obj;
+use glengine::engine::drawable::importer::assimp;
 use glengine::engine::Engine;
 use glengine::engine::GameData;
 use glengine::engine::scene::Scene;
@@ -49,7 +49,7 @@ impl Scene for BaseScene {
 
         let monkey = BaseGameObject::new(Some(empty.clone()));
         {
-            let monkey_draw = obj::import("C:\\Users\\alx\\RustroverProjects\\rustgraphics\\monkeyhp.obj");
+            let monkey_draw = assimp::import("C:\\Users\\alx\\RustroverProjects\\rustgraphics\\monkeyhp.obj");
             let mut data = monkey.lock().expect("Could not lock gameobject for init");
             data.data_mut().drawable = Some(Box::new(monkey_draw));
             data.data_mut().transform.position = vec3(5.0, 2.0, -4.0);
@@ -65,10 +65,10 @@ impl Scene for BaseScene {
             data.data_mut().transform.position = vec3(0.0, -8.0, 0.0);
         }
 
-        let rotator = RotatingGameObject::new(Some(empty.clone()), vec3(0.0, 0.0, 0.0));
+        let rotator = RotatingGameObject::new(Some(empty.clone()), vec3(0.0, 0.04, 0.0));
         {
             let mut data = rotator.lock().expect("Could not lock gameobject for init");
-            let drawable = obj::import(
+            let drawable = assimp::import(
                 "C:\\Users\\alx\\RustroverProjects\\rustgraphics\\bugatticlean.obj",
             );
             data.data_mut().drawable = Some(Box::new(drawable));
