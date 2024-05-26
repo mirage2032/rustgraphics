@@ -4,6 +4,7 @@ use glam::Mat4;
 
 use crate::engine::drawable::{Draw, DrawData};
 use crate::engine::drawable::mesh;
+use crate::engine::scene::lights::Lights;
 
 use super::shader::Shader;
 
@@ -25,9 +26,9 @@ impl Drawable {
 }
 
 impl Draw for Drawable {
-    fn draw(&self, modelmat: &Mat4, viewmat: &Mat4) {
+    fn draw(&self, modelmat: &Mat4, viewmat: &Mat4,lights:&Lights) {
         for drawable in self.draw_data.iter() {
-            drawable.draw(modelmat, viewmat);
+            drawable.draw(modelmat, viewmat,lights);
         }
     }
 }

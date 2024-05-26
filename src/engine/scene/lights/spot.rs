@@ -15,6 +15,22 @@ pub struct SpotLightData {
     pub outer_cut_off: f32,
 }
 
+impl SpotLightData {
+    pub fn empty() -> Self {
+        Self {
+            intensity: 0.0,
+            color: Vec3::ZERO,
+            position: Vec3::ZERO,
+            direction: Vec3::ZERO,
+            constant: 0.0,
+            linear: 0.0,
+            quadratic: 0.0,
+            cut_off: 0.0,
+            outer_cut_off: 0.0,
+        }
+    }
+}
+
 pub struct SpotLight {
     data: GameObjectData,
     pub intensity: f32,

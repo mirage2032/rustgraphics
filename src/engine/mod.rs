@@ -77,7 +77,7 @@ pub struct Engine {
 impl Engine {
     pub fn new() -> Self {
         let mut glfw = glfw::init(glfw::fail_on_errors).unwrap();
-        glfw.window_hint(WindowHint::ContextVersion(4, 4));
+        glfw.window_hint(WindowHint::ContextVersion(4, 6));
         glfw.window_hint(WindowHint::CocoaGraphicsSwitching(false));
         glfw.window_hint(WindowHint::OpenGlForwardCompat(true));
         glfw.window_hint(WindowHint::OpenGlDebugContext(true));
@@ -340,10 +340,10 @@ extern "system" fn debug_callback(
     message: *const gl::types::GLchar,
     _user_param: *mut std::ffi::c_void,
 ) {
-    if severity == gl::DEBUG_SEVERITY_HIGH || severity == gl::DEBUG_SEVERITY_MEDIUM {
+    // if severity == gl::DEBUG_SEVERITY_HIGH || severity == gl::DEBUG_SEVERITY_MEDIUM {
         unsafe {
             let error_message = CString::from_raw(message as *mut i8);
             println!("OpenGL Error: {:?}", error_message);
         }
-    }
+    // }
 }

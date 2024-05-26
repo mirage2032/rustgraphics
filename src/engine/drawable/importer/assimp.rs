@@ -60,6 +60,15 @@ pub fn import(path: &str) -> Drawable {
                 .flat_map(|face| face.0.clone())
                 .collect::<Vec<u32>>(),
         );
+        if mesh.normals.len() == 0 {
+            mesh_data = mesh_data.with_normals(
+                &mesh
+                    .vertices
+                    .iter()
+                    .flat_map(|_| vec![0.0, 0.0, 0.0])
+                    .collect::<Vec<f32>>(),
+            );
+        }
         if let Some(Some(tex_coords)) = mesh.texture_coords.get(0){
             mesh_data = mesh_data.with_texcoords(
                 &tex_coords
@@ -69,7 +78,7 @@ pub fn import(path: &str) -> Drawable {
             );
         }
         let shader = match material.data.ambient{
-            Some(color) => Arc::new(new_unlit_color_shader(color.as_ref())),
+            Some(_) => Arc::new(new_unlit_color_shader().expect("Failed to create color shader")),
             None => Arc::new(Shader::default()),
         };
         

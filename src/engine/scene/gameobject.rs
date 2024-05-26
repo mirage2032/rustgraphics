@@ -4,6 +4,7 @@ use glam::{Mat4, Vec3};
 
 use crate::engine::drawable::Draw;
 use crate::engine::GameState;
+use crate::engine::scene::lights::Lights;
 use crate::engine::transform::Transform;
 use crate::result::EngineStepResult;
 
@@ -38,17 +39,17 @@ pub trait GameObjectRaw: Draw + Send {
 pub type GameObject = Arc<Mutex<dyn GameObjectRaw>>;
 
 impl<T: GameObjectRaw> Draw for T {
-    fn draw(&self, modelmat: &Mat4, viewmat: &Mat4) {
+    fn draw(&self, modelmat: &Mat4, viewmat: &Mat4, lights: &Lights) {
         let data = self.data();
         let newmodelmat = *modelmat * Mat4::from(data.transform);
         if let Some(drawable) = &data.drawable {
-            drawable.draw(&newmodelmat, viewmat);
+            drawable.draw(&newmodelmat, viewmat,lights);
         }
         for child in &data.children {
             child
                 .lock()
                 .expect("Could not lock child gameobject for draw")
-                .draw(&newmodelmat, viewmat);
+                .draw(&newmodelmat, viewmat,lights);
         }
     }
 }

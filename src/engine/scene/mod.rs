@@ -28,11 +28,12 @@ pub trait Scene: Send {
                 .expect("Could not lock camera for render")
                 .global_mat();
             let viewmat: Mat4 = Mat4::from(camera_mat).inverse();
+            self.data().lights.update_ssbo();
             for object in &self.data().objects {
                 object
                     .lock()
                     .expect("Could not lock gameobject for draw")
-                    .draw(&Mat4::from_translation(vec3(0.0, 0.0, 0.0)), &viewmat);
+                    .draw(&Mat4::from_translation(vec3(0.0, 0.0, 0.0)), &viewmat, &self.data().lights);
             }
         }
     }

@@ -11,6 +11,19 @@ pub struct PointLightData {
     pub linear: f32,
     pub quadratic: f32,
 }
+
+impl PointLightData {
+    pub fn empty() -> Self {
+        Self {
+            intensity: 0.0,
+            color: Vec3::ZERO,
+            position: Vec3::ZERO,
+            constant: 0.0,
+            linear: 0.0,
+            quadratic: 0.0,
+        }
+    }
+}
 pub struct PointLight {
     data: GameObjectData,
     pub intensity: f32,
@@ -51,6 +64,7 @@ impl PointLight {
             quadratic: self.quadratic,
         }
     }
+    
 }
 
 impl GameObjectRaw for PointLight {

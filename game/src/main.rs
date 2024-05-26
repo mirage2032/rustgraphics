@@ -41,6 +41,7 @@ impl Scene for BaseScene {
     }
 
     fn init_gl(&mut self) -> EngineRenderResult<()> {
+        self.data_mut().lights.init_ssbo();
         unsafe {
             gl::ClearColor(0.2, 0.3, 0.3, 1.0);
         }

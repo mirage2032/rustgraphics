@@ -90,6 +90,10 @@ impl Shader {
                     std::ptr::null_mut(),
                     buffer.as_mut_ptr() as *mut i8,
                 );
+                println!(
+                    "Failed to link shader: {}",
+                    String::from_utf8(buffer).unwrap()
+                );
                 return Err(ShaderError::LinkError.into());
             }
         }

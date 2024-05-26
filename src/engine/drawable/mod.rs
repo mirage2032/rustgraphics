@@ -6,15 +6,16 @@ use shader::Shader;
 
 use crate::engine::config::STATIC_DATA;
 use crate::engine::drawable::mesh::unbind;
+use crate::engine::scene::lights::Lights;
 
 pub mod base;
 pub mod importer;
+pub mod material;
 pub mod mesh;
 pub mod shader;
-pub mod material;
 
 pub trait Draw: Send {
-    fn draw(&self, modelmat: &Mat4, viewmat: &Mat4);
+    fn draw(&self, modelmat: &Mat4, viewmat: &Mat4, lights: &Lights);
 }
 
 pub struct DrawData {
@@ -24,8 +25,10 @@ pub struct DrawData {
 }
 
 impl Draw for DrawData {
-    fn draw(&self, modelmat: &Mat4, viewmat: &Mat4) {
+    fn draw(&self, modelmat: &Mat4, viewmat: &Mat4, lights: &Lights) {
         self.shader.use_program();
+
+        lights.use_ssbo(0);
         self.mesh.lock().expect("Failed to lock mesh").get().bind();
         self.shader.set_mat4("model", modelmat);
         self.shader.set_mat4("view", viewmat);
@@ -37,11 +40,10 @@ impl Draw for DrawData {
             data
         };
         self.shader.set_mat4("projection", &projection);
-        
+
         if let Some(ref material) = self.material {
             material.set_uniforms(&self.shader);
         }
-        
         self.mesh.lock().expect("Failed to lock mesh").draw();
         unbind();
         unsafe { gl::UseProgram(0) };
