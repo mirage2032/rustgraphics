@@ -1,6 +1,8 @@
+use std::mem;
 use std::sync::{Mutex, Weak};
 
-use gl::types::GLuint;
+use gl::types::{GLsizeiptr, GLuint};
+use glsl_layout::{boolean, int, Std140, Uniform};
 
 use directional::{DirectionalLight, DirectionalLightData};
 use point::{PointLight, PointLightData};
@@ -10,28 +12,25 @@ pub mod directional;
 pub mod point;
 pub mod spot;
 
-const MAX_POINT_LIGHTS: usize = 4;
-const MAX_SPOT_LIGHTS: usize = 4;
-#[repr(C)]
-#[derive(Debug, Clone)]
+const MAX_POINT_LIGHTS: usize = 5;
+const MAX_SPOT_LIGHTS: usize = 5;
+#[derive(Debug, Copy,Default, Clone, Uniform)]
 pub struct LightsData {
-    pub is_directional: bool,
+    pub is_directional: boolean,
     pub directional: DirectionalLightData,
-    pub point_count: u32,
+    pub point_count: int,
     pub point: [PointLightData; MAX_POINT_LIGHTS],
-    pub spot_count: u32,
+    pub spot_count: int,
     pub spot: [SpotLightData; MAX_SPOT_LIGHTS],
 }
 
-impl Default for LightsData {
-    fn default() -> Self {
-        Self {
-            is_directional: false,
-            directional: DirectionalLightData::empty(),
-            point_count: 0,
-            point: [PointLightData::empty(); MAX_POINT_LIGHTS],
-            spot_count: 0,
-            spot: [SpotLightData::empty(); MAX_SPOT_LIGHTS],
+impl LightsData {
+    fn as_bytes(&self) -> &[u8] {
+        unsafe {
+            std::slice::from_raw_parts(
+                (self as *const LightsData) as *const u8,
+                mem::size_of::<LightsData>(),
+            )
         }
     }
 }
@@ -43,7 +42,7 @@ pub struct Lights {
 }
 
 impl Lights {
-    pub fn light_data(&self) -> LightsData {
+    pub fn light_data(&mut self) -> LightsData {
         let (directional, is_directional) = match &self.directional.upgrade() {
             Some(light) => (
                 light
@@ -52,77 +51,85 @@ impl Lights {
                     .light_data(),
                 true,
             ),
-            None => (DirectionalLightData::empty(), true),
+            None => (DirectionalLightData::empty(), false),
         };
 
-        // self.point.retain(|light| light.upgrade().is_some()); //CLEANUP
         let mut point = [PointLightData::empty(); MAX_POINT_LIGHTS];
-        for (index, light) in self
-            .point
-            .iter()
-            .filter_map(|light| light.upgrade())
-            .enumerate()
-        {
-            point[index] = light
-                .lock()
-                .expect("Could not lock pointlight")
-                .light_data();
-        }
+        let mut point_count = 0;
+        self.point.retain(|light|
+            {
+                if let Some(light) = light.upgrade() {
+                    point[point_count] = light.lock().expect("Could not lock pointlight").light_data();
+                    point_count += 1;
+                    true
+                } else {
+                    false
+                }
+            }
+        );
 
-        // self.spot.retain(|light| light.upgrade().is_some()); //CLEANUP
         let mut spot = [SpotLightData::empty(); MAX_SPOT_LIGHTS];
-        for (i, light) in self
-            .spot
-            .iter()
-            .filter_map(|light| light.upgrade())
-            .enumerate()
-        {
-            spot[i] = light.lock().expect("Could not lock spotlight").light_data();
-        }
+        let mut spot_count = 0;
+        self.spot.retain(|light|
+            {
+                if let Some(light) = light.upgrade() {
+                    spot[spot_count] = light.lock().expect("Could not lock spotlight").light_data();
+                    spot_count += 1;
+                    true
+                } else {
+                    false
+                }
+            }
+        );
         LightsData {
-            is_directional,
+            is_directional: is_directional.into(),
             directional,
-            point_count: point.len() as u32,
-            point,
-            spot_count: spot.len() as u32,
+            point_count: point_count as i32,
+            point ,
+            spot_count: spot_count as i32,
             spot,
         }
     }
 
     pub fn init_ssbo(&mut self) {
-        let size = std::mem::size_of::<LightsData>();
         let empty = LightsData::default();
         unsafe {
             gl::GenBuffers(1, &mut self.ssbo);
-            gl::BindBuffer(gl::SHADER_STORAGE_BUFFER, self.ssbo);
+            gl::BindBuffer(gl::UNIFORM_BUFFER, self.ssbo);
             gl::BufferData(
-                gl::SHADER_STORAGE_BUFFER,
-                size as isize,
-                &empty as *const LightsData as *const std::ffi::c_void,
+                gl::UNIFORM_BUFFER,
+                mem::size_of::<LightsData>() as GLsizeiptr,
+                empty.std140().as_raw().as_ptr() as *const _,
                 gl::DYNAMIC_DRAW,
             );
-            gl::BindBuffer(gl::SHADER_STORAGE_BUFFER, 0);
+            gl::BindBuffer(gl::UNIFORM_BUFFER, 0);
         }
     }
 
-    pub fn update_ssbo(&self) {
+    pub fn update_ssbo(&mut self) {
         let data = self.light_data();
         unsafe {
-            gl::BindBuffer(gl::SHADER_STORAGE_BUFFER, self.ssbo);
+            gl::BindBuffer(gl::UNIFORM_BUFFER, self.ssbo);
 
-            gl::BufferData(
-                gl::SHADER_STORAGE_BUFFER,
-                std::mem::size_of::<LightsData>() as isize,
-                &data as *const LightsData as *const std::ffi::c_void,
-                gl::DYNAMIC_DRAW,
+            gl::BufferSubData(
+                gl::UNIFORM_BUFFER,
+                0,
+                mem::size_of::<LightsData>() as GLsizeiptr,
+                data.std140().as_raw().as_ptr() as *const _,
             );
 
-            gl::BindBuffer(gl::SHADER_STORAGE_BUFFER, 0);
+            gl::BindBuffer(gl::UNIFORM_BUFFER, 0);
         }
     }
-    pub fn use_ssbo(&self, binding: u32) {
+    pub fn bind(&self, binding: u32) {
         unsafe {
-            gl::BindBufferBase(gl::SHADER_STORAGE_BUFFER, binding, self.ssbo);
+            gl::BindBufferBase(gl::UNIFORM_BUFFER, binding, self.ssbo);
+        }
+    }
+
+    pub fn unbind(binding: u32) {
+        unsafe {
+            gl::BindBufferBase(gl::UNIFORM_BUFFER, binding, 0);
         }
     }
 }

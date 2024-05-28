@@ -1,27 +1,28 @@
 use glam::Vec3;
+use glsl_layout::{float, Uniform, vec3};
+
 use crate::engine::scene::gameobject::{GameObject, GameObjectData, GameObjectRaw};
 
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy,Default, Clone, Uniform)]
 pub struct SpotLightData {
-    pub intensity: f32,
-    pub color: Vec3,
-    pub position: Vec3,
-    pub direction: Vec3,
-    pub constant: f32,
-    pub linear: f32,
-    pub quadratic: f32,
-    pub cut_off: f32,
-    pub outer_cut_off: f32,
+    pub intensity: float,
+    pub color: vec3,
+    pub position: vec3,
+    pub direction: vec3,
+    pub constant: float,
+    pub linear: float,
+    pub quadratic: float,
+    pub cut_off: float,
+    pub outer_cut_off: float,
 }
 
 impl SpotLightData {
     pub fn empty() -> Self {
         Self {
             intensity: 0.0,
-            color: Vec3::ZERO,
-            position: Vec3::ZERO,
-            direction: Vec3::ZERO,
+            color: vec3::from([0.0, 0.0, 0.0]),
+            position: vec3::from([0.0, 0.0, 0.0]),
+            direction: vec3::from([0.0, 0.0, 0.0]),
             constant: 0.0,
             linear: 0.0,
             quadratic: 0.0,
@@ -71,9 +72,9 @@ impl SpotLight {
         let direction = self.data.transform.forward();
         SpotLightData {
             intensity: self.intensity,
-            color: self.color,
-            position,
-            direction,
+            color: vec3::from([self.color.x, self.color.y, self.color.z]),
+            position: vec3::from([position.x, position.y, position.z]),
+            direction: vec3::from([direction.x, direction.y, direction.z]),
             constant: self.constant,
             linear: self.linear,
             quadratic: self.quadratic,

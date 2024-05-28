@@ -21,14 +21,14 @@ pub trait Scene: Send {
     fn data(&self) -> &SceneData;
     fn data_mut(&mut self) -> &mut SceneData;
     fn init_gl(&mut self) -> EngineRenderResult<()>;
-    fn render(&self) {
+    fn render(&mut self) {
         if let Some(camera) = &self.data().main_camera.upgrade() {
             let camera_mat = camera
                 .lock()
                 .expect("Could not lock camera for render")
                 .global_mat();
             let viewmat: Mat4 = Mat4::from(camera_mat).inverse();
-            self.data().lights.update_ssbo();
+            self.data_mut().lights.update_ssbo();
             for object in &self.data().objects {
                 object
                     .lock()

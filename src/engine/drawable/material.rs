@@ -112,9 +112,9 @@ impl Material {
         if let Some(shininess) = self.data.shininess {
             shader.set_float("material.shininess", shininess);
         }
-        if let Some(texture) = &self.diffuse_texture {
-            shader.set_texture("material.diffuse_texture", texture.id(), 0);
-        }
+        // if let Some(texture) = &self.diffuse_texture {
+        //     shader.set_texture("material.diffuse_texture", texture.id(), 0);
+        // }
     }
 }
 

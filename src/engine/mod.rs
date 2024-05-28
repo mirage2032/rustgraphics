@@ -274,17 +274,17 @@ impl Engine {
             gl::Enable(gl::CULL_FACE);
             gl::CullFace(gl::BACK);
             gl::Enable(gl::DEBUG_OUTPUT);
-            gl::DebugMessageCallback(Some(debug_callback), std::ptr::null());
+            // gl::DebugMessageCallback(Some(debug_callback), std::ptr::null());
         }
 
         loop {
             unsafe {
                 gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
 
-                let game = game
+                let mut game = game
                     .lock()
                     .expect("Could not lock game data in render thread");
-                if let Some(scene) = &game.scene {
+                if let Some(scene) = &mut game.scene {
                     scene.render();
                 }
             }

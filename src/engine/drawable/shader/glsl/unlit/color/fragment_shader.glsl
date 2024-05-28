@@ -1,6 +1,11 @@
 #version 460 core
+#define MAX_POINT_LIGHTS 5
+#define MAX_SPOT_LIGHTS 5
 
-in vec3 fragNormal;
+
+in vec3 Normal;
+in vec3 FragPos;
+in vec3 ViewPos;
 
 struct DirectionalLight {
     float intensity;
@@ -29,14 +34,18 @@ struct SpotLight {
     float outer_cut_off;
 };
 
-layout (std430, binding = 0) buffer Light {
+struct Light {
     bool is_directional;
     DirectionalLight directional_light;
-    int num_point_lights;
-    PointLight point_light[4];
-    int num_spot_lights;
-    SpotLight spot_light[4];
-} light;
+    int point_count;
+    PointLight point_lights[MAX_POINT_LIGHTS];
+    int spot_count;
+    SpotLight spot_lights[MAX_SPOT_LIGHTS];
+};
+
+layout (std140,binding=5) uniform Lights {
+    Light light;
+};
 
 uniform struct Material {
     vec3 ambient;
@@ -47,6 +56,36 @@ uniform struct Material {
 
 out vec4 FragColor;
 
+vec3 CalculatePointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir) {
+    vec3 lightDir = normalize(light.position - fragPos);
+    // Diffuse shading
+    float diff = max(dot(normal, lightDir), 0.0);
+    // Specular shading
+    vec3 reflectDir = reflect(-lightDir, normal);
+    float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
+    // Attenuation
+    float distance = length(light.position - fragPos);
+    float attenuation = 1.0 / (light.constant + light.linear * distance + light.quadratic * (distance * distance));
+    // Final light intensity
+    vec3 ambient = light.color * light.intensity * material.ambient;
+    vec3 diffuse = light.color * diff * material.diffuse;
+    vec3 specular = light.color * spec * material.specular;
+    ambient *= attenuation;
+    diffuse *= attenuation;
+    specular *= attenuation;
+    return ambient + diffuse + specular;
+}
+
 void main() {
-    FragColor = vec4(fragNormal, 1.0);
+    vec3 normal = normalize(Normal);
+    vec3 viewDir = normalize(ViewPos - FragPos);
+    vec3 result = vec3(0.0);
+    // Calculate directional light
+    if (!light.is_directional) {
+        for (int i = 0; i < light.point_count; ++i) {
+            result += CalculatePointLight(light.point_lights[i], normal, FragPos, viewDir);
+        }
+    }
+    // Output final color
+    FragColor = vec4(result, 1.0);
 }

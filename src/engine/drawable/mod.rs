@@ -28,10 +28,9 @@ impl Draw for DrawData {
     fn draw(&self, modelmat: &Mat4, viewmat: &Mat4, lights: &Lights) {
         self.shader.use_program();
 
-        lights.use_ssbo(0);
         self.mesh.lock().expect("Failed to lock mesh").get().bind();
-        self.shader.set_mat4("model", modelmat);
-        self.shader.set_mat4("view", viewmat);
+        self.shader.set_mat4("view_mat", viewmat);
+        self.shader.set_mat4("model_mat", modelmat);
         let projection = {
             let data = *STATIC_DATA
                 .read()
@@ -39,13 +38,19 @@ impl Draw for DrawData {
                 .projection();
             data
         };
-        self.shader.set_mat4("projection", &projection);
-
+        self.shader.set_mat4("projection_mat", &projection);
         if let Some(ref material) = self.material {
             material.set_uniforms(&self.shader);
         }
+        
+        self.shader.set_uniform_block("Lights", 5);
+        lights.bind(5);
         self.mesh.lock().expect("Failed to lock mesh").draw();
+        Lights::unbind(5);
         unbind();
-        unsafe { gl::UseProgram(0) };
+
+        unsafe { 
+            gl::UseProgram(0);
+        };
     }
 }

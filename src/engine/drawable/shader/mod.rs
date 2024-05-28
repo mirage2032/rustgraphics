@@ -139,6 +139,14 @@ impl Shader {
             gl::UniformMatrix4fv(location, 1, gl::FALSE, mat.as_ref().as_ptr());
         }
     }
+    
+    pub fn set_uniform_block(&self, name: &str, binding: u32) {
+        unsafe {
+            let name_cstring = std::ffi::CString::new(name).unwrap();
+            let index = gl::GetUniformBlockIndex(self.id, name_cstring.as_ptr());
+            gl::UniformBlockBinding(self.id, index, binding);
+        }
+    }
 }
 
 impl Drop for Shader {

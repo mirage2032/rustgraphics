@@ -34,6 +34,19 @@ pub trait GameObjectRaw: Draw + Send {
         }
         transform
     }
+    
+    fn glob_pos(&self) -> Vec3 {
+        let mut position = self.data().transform.position;
+        let mut parent = self.data().parent.clone();
+        while let Some(parent_object) = parent {
+            let parent_data = parent_object
+                .lock()
+                .expect("Could not lock parent gameobject for global transform");
+            position = parent_data.data().transform.position + position;
+            parent = parent_data.data().parent.clone();
+        }
+        position
+    }
 }
 
 pub type GameObject = Arc<Mutex<dyn GameObjectRaw>>;

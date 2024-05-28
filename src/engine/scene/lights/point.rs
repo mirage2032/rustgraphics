@@ -1,23 +1,26 @@
+use std::sync::{Arc, Mutex};
+
 use glam::Vec3;
+use glsl_layout::{float, Uniform, vec3};
+
 use crate::engine::scene::gameobject::{GameObject, GameObjectData, GameObjectRaw};
 
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Default, Clone, Uniform)]
 pub struct PointLightData {
-    pub intensity: f32,
-    pub color: Vec3,
-    pub position: Vec3,
-    pub constant: f32,
-    pub linear: f32,
-    pub quadratic: f32,
+    pub intensity: float,
+    pub color: vec3,
+    pub position: vec3,
+    pub constant: float,
+    pub linear: float,
+    pub quadratic: float,
 }
 
 impl PointLightData {
     pub fn empty() -> Self {
         Self {
             intensity: 0.0,
-            color: Vec3::ZERO,
-            position: Vec3::ZERO,
+            color: vec3::from([0.0, 0.0, 0.0]),
+            position: vec3::from([0.0, 0.0, 0.0]),
             constant: 0.0,
             linear: 0.0,
             quadratic: 0.0,
@@ -41,30 +44,37 @@ impl PointLight {
         constant: f32,
         linear: f32,
         quadratic: f32,
-    ) -> Self {
-        let data = GameObjectData::new(parent);
-        Self {
-            data,
+    ) -> Arc<Mutex<Self>> {
+        let light = Arc::new(Mutex::new(Self {
+            data: GameObjectData::new(parent),
             intensity,
             color,
             constant,
             linear,
             quadratic,
+        }));
+        if let Some(parent) = &light.lock().unwrap().data.parent {
+            parent
+                .lock()
+                .unwrap()
+                .data_mut()
+                .children
+                .push(light.clone());
         }
+        light
     }
 
     pub fn light_data(&self) -> PointLightData {
-        let position = self.data.transform.position;
+        let position = self.glob_pos();
         PointLightData {
             intensity: self.intensity,
-            color: self.color,
-            position,
+            color: vec3::from([self.color.x, self.color.y, self.color.z]),
+            position: vec3::from([position.x, position.y, position.z]),
             constant: self.constant,
             linear: self.linear,
             quadratic: self.quadratic,
         }
     }
-    
 }
 
 impl GameObjectRaw for PointLight {

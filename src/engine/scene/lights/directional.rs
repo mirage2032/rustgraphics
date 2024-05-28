@@ -1,20 +1,20 @@
 use glam::Vec3;
+use glsl_layout::{float, Uniform, vec3};
 use crate::engine::scene::gameobject::{GameObject, GameObjectData, GameObjectRaw};
 
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy,Default, Clone,Uniform)]
 pub struct DirectionalLightData {
-    pub intensity: f32,
-    pub color: Vec3,
-    pub direction: Vec3,
+    pub intensity: float,
+    pub color: vec3,
+    pub direction: vec3,
 }
 
 impl DirectionalLightData {
     pub fn empty() -> Self {
         Self {
             intensity: 0.0,
-            color: Vec3::ZERO,
-            direction: Vec3::ZERO,
+            color: vec3::from([0.0, 0.0, 0.0]),
+            direction: vec3::from([0.0, 0.0, 0.0])
         }
     }
 }
@@ -38,8 +38,8 @@ impl DirectionalLight {
         let direction = self.data.transform.forward();
         DirectionalLightData {
             intensity: self.intensity,
-            color: self.color,
-            direction,
+            color: vec3::from([self.color.x, self.color.y, self.color.z]),
+            direction: vec3::from([direction.x, direction.y, direction.z])
         }
     }
 }
