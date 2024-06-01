@@ -43,7 +43,6 @@ impl Draw for DrawData {
             material.set_uniforms(&self.shader);
         }
         
-        self.shader.set_uniform_block("Lights", 5);
         lights.bind(5);
         self.mesh.lock().expect("Failed to lock mesh").draw();
         Lights::unbind(5);
