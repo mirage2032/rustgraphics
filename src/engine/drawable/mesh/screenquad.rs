@@ -3,7 +3,7 @@ use std::sync::{Arc, Mutex};
 use crate::engine::drawable::mesh::*;
 
 //for the quad that will be used to render the screen
-pub fn new(size_x:usize,size_y:usize) -> Arc<Mutex<dyn Mesh>> {
+pub fn new() -> Arc<Mutex<dyn Mesh>> {
     let vertices = vec![
         -1.0, -1.0, 0.0, // bottom left
         1.0, -1.0, 0.0, // bottom right

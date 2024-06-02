@@ -57,8 +57,8 @@ impl Draw for DrawData {
     }
 }
 
-pub fn screenquad(size_x:usize,size_y:usize,texture:GLuint) ->DrawData{
-    let mesh = mesh::screenquad::new(size_x,size_y);
+pub fn screenquad(texture:GLuint) ->DrawData{
+    let mesh = mesh::screenquad::new();
     let shader = Arc::new(shader::new_quad_shader().expect("Could not create quad shader"));
     let material = Material{
         data: MaterialData::default(),

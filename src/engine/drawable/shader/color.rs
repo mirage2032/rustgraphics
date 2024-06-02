@@ -1,5 +1,3 @@
-use gl;
-
 use crate::engine::drawable::shader::Shader;
 use crate::result::EngineRenderResult;
 

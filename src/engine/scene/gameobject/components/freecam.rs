@@ -39,7 +39,7 @@ impl Component for FreeCamController {
     fn step(
         &mut self,
         object: &mut GameObjectData,
-        _: &ComponentMap,
+        components: &ComponentMap,
         state: &GameState,
     ) -> EngineStepResult<()> {
         // let poses = vr_system
