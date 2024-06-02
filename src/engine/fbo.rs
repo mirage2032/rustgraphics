@@ -82,3 +82,13 @@ impl Fbo{
         }
     }
 }
+
+impl Drop for Fbo {
+    fn drop(&mut self) {
+        unsafe {
+            gl::DeleteFramebuffers(1, &self.fbo);
+            gl::DeleteTextures(1, &self.texture);
+            gl::DeleteRenderbuffers(1, &self.depth_buffer);
+        }
+    }
+}

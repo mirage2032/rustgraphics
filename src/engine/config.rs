@@ -135,5 +135,5 @@ impl Default for StaticData {
 }
 
 lazy_static! {
-    pub static ref STATIC_DATA: RwLock<StaticData> = RwLock::new(StaticData::default());
+    pub static ref CONFIG: RwLock<StaticData> = RwLock::new(StaticData::default());
 }

@@ -1,5 +1,6 @@
 pub mod cube;
 pub mod screenquad;
+mod bounding;
 
 pub trait Mesh: Send + Sync {
     fn get(&self) -> &MeshData;

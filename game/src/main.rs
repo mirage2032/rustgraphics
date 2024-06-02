@@ -1,13 +1,13 @@
 use glengine::engine::scene::lights::point::PointLight;
-use glengine::engine::scene::gameobject::RotatingGameObject;
+use glengine::engine::scene::gameobject::rotating::RotatingGameObject;
 use std::sync::{Arc, Mutex, Weak};
-
+use glengine::glam::Quat;
 use glengine::engine::drawable::base::Drawable;
 use glengine::engine::drawable::importer::assimp;
 use glengine::engine::drawable::material::{Material,MaterialData};
 use glengine::engine::drawable::shader::color::new_unlit_color_shader;
 use glengine::engine::scene::camera::CameraControlled;
-use glengine::engine::scene::gameobject::{BaseGameObject, GameObjectRaw};
+use glengine::engine::scene::gameobject::{base::BaseGameObject, GameObjectTrait};
 use glengine::engine::scene::lights::Lights;
 use glengine::engine::scene::Scene;
 use glengine::engine::scene::SceneData;
@@ -51,7 +51,7 @@ impl Scene for BaseScene {
         self.data.objects.push(empty.clone());
 
 
-        let monkey = BaseGameObject::new(Some(empty.clone()));
+        let mut monkey = BaseGameObject::new(Some(empty.clone()));
         {
             let monkey_draw =
                 assimp::import("C:\\Users\\alx\\RustroverProjects\\rustgraphics\\monkeyhp.obj");
@@ -101,23 +101,36 @@ impl Scene for BaseScene {
 
         let point_light = PointLight::new(
             Some(camera.clone()),
-            0.3,
+            1.3,
             vec3(1.0, 1.0, 1.0),
             1.0,
             0.05,
             0.025,
         );
         self.data_mut().lights.point.push(Arc::downgrade(&point_light));
-
-        //TODO: WTF not there when attached to camera?
-        let small_cube = BaseGameObject::new(Some(camera.clone()));
-        {
-            let drawable = Drawable::default();
-            let mut data = small_cube.lock().expect("Could not lock gameobject for init");
-            data.data_mut().drawable = Some(Box::new(drawable));
-            data.data_mut().transform.scale *= 0.5;
-            data.data_mut().transform.position = vec3(0.0, 0.0, 10.0);
-        }
+        
+        // for i in 0..20 {
+        //     let new_monkey = BaseGameObject::new(Some(monkey.clone()));
+        //     {
+        //         let drawable = Drawable::default();
+        //         let mut data = monkey.lock().expect("Could not lock gameobject for init");
+        //         data.data_mut().drawable = Some(Box::new(drawable));
+        //         data.data_mut().transform.scale *= 1.05;
+        //         data.data_mut().transform.position = vec3(0.0, 0.0, -1.0);
+        //         data.data_mut().transform.rotation *= Quat::from_rotation_y(0.03 * i as f32);
+        //         data.data_mut().transform.rotation *= Quat::from_rotation_x(0.01 * i as f32);
+        //         data.data_mut().transform.rotation *= Quat::from_rotation_z(-0.024 * i as f32);
+        //     }
+        //     monkey = new_monkey;
+        // }
+        // let small_cube = BaseGameObject::new(Some(camera.clone()));
+        // {
+        //     let drawable = Drawable::default();
+        //     let mut data = small_cube.lock().expect("Could not lock gameobject for init");
+        //     data.data_mut().drawable = Some(Box::new(drawable));
+        //     data.data_mut().transform.scale *= 3.0;
+        //     data.data_mut().transform.position = vec3(0.0, 0.0, -10.0);
+        // }
         
         let point_light2 = PointLight::new(
             Some(empty.clone()),

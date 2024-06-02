@@ -1,6 +1,7 @@
 use glam::Vec3;
 use glsl_layout::{float, Uniform, vec3};
-use crate::engine::scene::gameobject::{GameObject, GameObjectData, GameObjectRaw};
+use crate::engine::scene::gameobject::{GameObject, GameObjectData, GameObjectTrait};
+use crate::engine::scene::gameobject::components::ComponentMap;
 
 #[derive(Debug, Copy,Default, Clone,Uniform)]
 pub struct DirectionalLightData {
@@ -21,6 +22,7 @@ impl DirectionalLightData {
 
 pub struct DirectionalLight {
     data: GameObjectData,
+    components: ComponentMap,
     pub intensity: f32,
     pub color: Vec3,
 }
@@ -29,6 +31,7 @@ impl DirectionalLight {
         let data = GameObjectData::new(parent);
         Self {
             data,
+            components: ComponentMap::new(),
             intensity,
             color,
         }
@@ -44,7 +47,11 @@ impl DirectionalLight {
     }
 }
 
-impl GameObjectRaw for DirectionalLight {
+impl GameObjectTrait for DirectionalLight {
+    fn step(&mut self, state: &crate::engine::GameState) -> crate::result::EngineStepResult<()> {
+        self.components.step(&mut self.data, state)?;
+        Ok(())
+    }
     fn data(&self) -> &GameObjectData {
         &self.data
     }
@@ -52,4 +59,13 @@ impl GameObjectRaw for DirectionalLight {
     fn data_mut(&mut self) -> &mut GameObjectData {
         &mut self.data
     }
+    
+    fn components(&self) -> Option<&ComponentMap> {
+        Some(&self.components)
+    }
+    
+    fn components_mut(&mut self) -> Option<&mut ComponentMap> {
+        Some(&mut self.components)
+    }
+    
 }

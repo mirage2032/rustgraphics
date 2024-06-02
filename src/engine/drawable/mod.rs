@@ -5,7 +5,7 @@ use glam::Mat4;
 
 use shader::Shader;
 
-use crate::engine::config::STATIC_DATA;
+use crate::engine::config::CONFIG;
 use crate::engine::drawable::mesh::unbind;
 use crate::engine::scene::lights::Lights;
 use crate::engine::drawable::material::{Material,MaterialData,Texture};
@@ -34,7 +34,7 @@ impl Draw for DrawData {
         self.shader.set_mat4("view_mat", viewmat);
         self.shader.set_mat4("model_mat", modelmat);
         let projection = {
-            let data = *STATIC_DATA
+            let data = *CONFIG
                 .read()
                 .expect("Failed to read config")
                 .projection();

@@ -1,11 +1,11 @@
-use std::sync::Mutex;
-use glam::{Mat4, Vec3};
-use glfw::Key;
-use lazy_static::lazy_static;
 extern crate openvr;
-use crate::engine::{GameState};
-use crate::engine::scene::gameobject::{GameObject, GameObjectData, GameObjectRaw};
-use crate::engine::transform::Transform;
+
+use glam::{Mat4, Vec3, Vec4};
+
+use crate::engine::config::CONFIG;
+use crate::engine::GameState;
+use crate::engine::scene::gameobject::{GameObject, GameObjectData, GameObjectTrait};
+use crate::engine::scene::gameobject::components::{ComponentMap, freecam};
 use crate::result::EngineStepResult;
 
 fn to_mat4(mat: [[f32; 4]; 4]) -> Mat4 {
@@ -22,13 +22,42 @@ fn to_mat4_3x4(mat: &[[f32; 4]; 3]) -> Mat4 {
 }
 pub struct CameraControlled {
     pub data: GameObjectData,
+    pub components: ComponentMap,
 }
 
 impl CameraControlled {
     pub fn new(parent: Option<GameObject>, position: Vec3, target: Vec3, up: Vec3) -> Self {
         let mut data = GameObjectData::new(parent);
         data.transform = Mat4::look_at_rh(position, target, up).inverse().into();
-        Self { data: data }
+        let mut components = ComponentMap::new();
+        components.add_component(freecam::FreeCamController {});
+        Self {
+            data,
+            components,
+        }
+    }
+
+    pub fn frustum(&self) -> Mat4 {
+        let perspective = *CONFIG.read().expect("Failed to read config").projection();
+        perspective * self.global_mat().inverse()
+    }
+
+    pub fn frustum_planes(&self) -> [Vec4; 6] {
+        let frustum = self.frustum();
+        let left_plane = frustum.row(3) + frustum.row(0);
+        let right_plane = frustum.row(3) - frustum.row(0);
+        let bottom_plane = frustum.row(3) + frustum.row(1);
+        let top_plane = frustum.row(3) - frustum.row(1);
+        let near_plane = frustum.row(3) + frustum.row(2);
+        let far_plane = frustum.row(3) - frustum.row(2);
+        [
+            left_plane,
+            right_plane,
+            bottom_plane,
+            top_plane,
+            near_plane,
+            far_plane,
+        ]
     }
 }
 
@@ -36,60 +65,29 @@ impl Default for CameraControlled {
     fn default() -> Self {
         Self {
             data: GameObjectData::new(None),
+            components: ComponentMap::new(),
         }
     }
 }
 
-impl GameObjectRaw for CameraControlled {
+impl GameObjectTrait for CameraControlled {
     fn data(&self) -> &GameObjectData {
         &self.data
     }
-
     fn data_mut(&mut self) -> &mut GameObjectData {
         &mut self.data
     }
 
-    fn step(&mut self, game: &GameState) -> EngineStepResult<()> {
-        // let poses = vr_system
-        //     .device_to_absolute_tracking_pose(openvr::TrackingUniverseOrigin::RawAndUncalibrated, 0.0);
-        // let head_pose = poses[0];
-        // let transform = Transform::from(to_mat4_3x4(&head_pose.device_to_absolute_tracking()).inverse());
-        // self.data_mut().transform.rotation = transform.rotation;
-        
-        
-        let speed = 10.0 * game.delta.as_secs_f32();
-        let rotation_speed = 0.1 * game.delta.as_secs_f32();
-        let forward = self.data.transform.forward();
-        let right = self.data.transform.right();
-        let transform = &mut self.data.transform;
-        if game.input_state.keyboard.is_held(Key::W) {
-            transform.position += forward * speed;
-        }
-        if game.input_state.keyboard.is_held(Key::S) {
-            transform.position -= forward * speed;
-        }
-        if game.input_state.keyboard.is_held(Key::D) {
-            transform.position += right * speed;
-        }
-        if game.input_state.keyboard.is_held(Key::A) {
-            transform.position -= right * speed;
-        }
-        if game.input_state.keyboard.is_held(Key::Space) {
-            transform.position.y += speed;
-        }
-        if game.input_state.keyboard.is_held(Key::LeftShift) {
-            transform.position.y -= speed;
-        }
-        transform.rotation *=
-            glam::Quat::from_rotation_x(rotation_speed * game.input_state.mouse_delta.1 as f32);
-        transform.rotation =
-            glam::Quat::from_rotation_y(rotation_speed * -game.input_state.mouse_delta.0 as f32) * transform.rotation;
-        if game.input_state.keyboard.is_held(Key::Q) {
-            transform.rotation *= glam::Quat::from_rotation_z(speed * 0.1);
-        }
-        if game.input_state.keyboard.is_held(Key::E) {
-            transform.rotation *= glam::Quat::from_rotation_z(-speed * 0.1);
-        }
+    fn components(&self) -> Option<&ComponentMap> {
+        Some(&self.components)
+    }
+
+    fn components_mut(&mut self) -> Option<&mut ComponentMap> {
+        Some(&mut self.components)
+    }
+
+    fn step(&mut self, state: &GameState) -> EngineStepResult<()> {
+        self.components.step(&mut self.data, state)?;
         Ok(())
     }
 }

@@ -12,9 +12,8 @@ use glfw::{
 };
 
 
-use crate::engine::config::STATIC_DATA;
+use crate::engine::config::CONFIG;
 use crate::engine::drawable::Draw;
-use crate::engine::drawable::shader::new_quad_shader;
 use crate::engine::events::EngineInputsState;
 use crate::engine::events::EngineWindowEvent;
 use crate::engine::fbo::Fbo;
@@ -26,7 +25,6 @@ use crate::result::{
 };
 use crate::result::EngineRunError::ThreadError;
 
-pub mod components;
 pub mod config;
 pub mod drawable;
 pub mod events;
@@ -103,7 +101,7 @@ impl Engine {
         glfw.window_hint(WindowHint::TransparentFramebuffer(true));
         glfw.window_hint(WindowHint::Samples(Some(4))); // Set the number of samples for multi-sampling
 
-        let resolution = STATIC_DATA
+        let resolution = CONFIG
             .read()
             .expect("Failed to read config")
             .config()
@@ -268,6 +266,15 @@ impl Engine {
         }
         Ok(())
     }
+    
+    fn render_fbo(fbo: &Fbo, scene:&mut Box<dyn Scene>) {
+        unsafe {
+            fbo.bind();
+            gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
+            scene.render();
+            Fbo::unbind();
+        }
+    }
 
     fn render_task(
         mut ctx: PRenderContext,
@@ -283,11 +290,11 @@ impl Engine {
             .init_gl()?;
         let mut fps_counter = TimeDelta::new();
 
-        let resolution = STATIC_DATA.read()
+        let resolution = CONFIG.read()
             .expect("Failed to read config")
             .config()
             .get_resolution();
-        let fbo = fbo::Fbo::new(resolution.0, resolution.1);
+        let fbo = Fbo::new(resolution.0, resolution.1);
         let screen_drawable = drawable::screenquad(resolution.0 as usize, resolution.1 as usize,fbo.texture);
             
         unsafe {
@@ -303,18 +310,14 @@ impl Engine {
 
         loop {
             unsafe {
-                fbo.bind();
-                gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
-
                 let mut game = game
                     .lock()
                     .expect("Could not lock game data in render thread");
                 if let Some(scene) = &mut game.scene {
-                    scene.render();
+                    Self::render_fbo(&fbo, scene);
+                    gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
+                    screen_drawable.draw(&Mat4::ZERO, &Mat4::ZERO, None);
                 }
-                Fbo::unbind();
-                gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
-                screen_drawable.draw(&Mat4::ZERO, &Mat4::ZERO, None);
             }
             ctx.swap_buffers();
             if let Err(_) = sender.send(fps_counter.delta()) {

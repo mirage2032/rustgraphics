@@ -6,7 +6,7 @@ use glam::{Mat4, vec3};
 
 use crate::engine::GameState;
 use crate::engine::scene::camera::CameraControlled;
-use crate::engine::scene::gameobject::{GameObject, GameObjectRaw};
+use crate::engine::scene::gameobject::{GameObject, GameObjectTrait};
 use crate::result::{EngineRenderResult, EngineStepResult};
 
 pub mod camera;
