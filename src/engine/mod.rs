@@ -1,5 +1,3 @@
-extern crate openvr;
-
 use std::ffi::CString;
 use std::sync::{Arc, Mutex};
 use std::sync::mpsc::{Receiver, sync_channel, SyncSender};

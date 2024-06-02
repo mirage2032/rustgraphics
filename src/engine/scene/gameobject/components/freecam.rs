@@ -1,12 +1,33 @@
+use glam::Mat4;
 use glfw::Key;
-use crate::engine::scene::gameobject::components::Component;
+
+use crate::engine::scene::gameobject::components::{Component, ComponentMap};
+use crate::engine::scene::gameobject::GameObjectData;
+use crate::engine::GameState;
 use crate::result::EngineStepResult;
 
-pub struct FreeCamController {
-    
+fn to_mat4(mat: [[f32; 4]; 4]) -> Mat4 {
+    Mat4::from_cols_array_2d(&mat)
 }
 
-impl Component for FreeCamController{
+fn to_mat4_3x4(mat: &[[f32; 4]; 3]) -> Mat4 {
+    Mat4::from_cols_array_2d(&[
+        [mat[0][0], mat[0][1], mat[0][2], 0.0],
+        [mat[1][0], mat[1][1], mat[1][2], 0.0],
+        [mat[2][0], mat[2][1], mat[2][2], 0.0],
+        [0.0, 0.0, 0.0, 1.0],
+    ])
+}
+
+pub struct FreeCamController {}
+
+impl FreeCamController {
+    pub fn new() -> Self {
+        Self {}
+    }
+}
+
+impl Component for FreeCamController {
     fn as_any(&self) -> &dyn std::any::Any {
         self
     }
@@ -15,13 +36,17 @@ impl Component for FreeCamController{
         self
     }
 
-    fn step(&mut self, object: &mut crate::engine::scene::gameobject::GameObjectData, state: &crate::engine::GameState)->EngineStepResult<()> {
+    fn step(
+        &mut self,
+        object: &mut GameObjectData,
+        _: &ComponentMap,
+        state: &GameState,
+    ) -> EngineStepResult<()> {
         // let poses = vr_system
         //     .device_to_absolute_tracking_pose(openvr::TrackingUniverseOrigin::RawAndUncalibrated, 0.0);
         // let head_pose = poses[0];
         // let transform = Transform::from(to_mat4_3x4(&head_pose.device_to_absolute_tracking()).inverse());
         // self.data_mut().transform.rotation = transform.rotation;
-
         let speed = 10.0 * state.delta.as_secs_f32();
         let rotation_speed = 0.1 * state.delta.as_secs_f32();
         let forward = object.transform.forward();

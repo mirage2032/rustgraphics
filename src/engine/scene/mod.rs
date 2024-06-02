@@ -1,5 +1,3 @@
-extern crate openvr;
-
 use std::sync::{Mutex, Weak};
 
 use glam::{Mat4, vec3};

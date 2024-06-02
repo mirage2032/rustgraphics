@@ -589,8 +589,8 @@ dependencies = [
  "glfw",
  "glsl-layout",
  "image",
+ "indexmap",
  "lazy_static",
- "openvr",
  "russimp",
  "serde",
  "serde_json",
@@ -1224,25 +1224,6 @@ dependencies = [
  "libc",
  "pkg-config",
  "vcpkg",
-]
-
-[[package]]
-name = "openvr"
-version = "0.6.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "93a827c3232d7e9065068234b794ab61aed3381ba40e97d99fac85a469e23360"
-dependencies = [
- "lazy_static",
- "openvr_sys",
-]
-
-[[package]]
-name = "openvr_sys"
-version = "2.0.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "46af40862e3c6be0c176d4b8cf1f7af0f8038cfb500e9cd57c82ad945a29b4b8"
-dependencies = [
- "cmake",
 ]
 
 [[package]]

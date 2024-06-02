@@ -1,5 +1,3 @@
-extern crate openvr;
-
 use glam::{Mat4, Vec3, Vec4};
 
 use crate::engine::config::CONFIG;
@@ -8,18 +6,6 @@ use crate::engine::scene::gameobject::{GameObject, GameObjectData, GameObjectTra
 use crate::engine::scene::gameobject::components::{ComponentMap, freecam};
 use crate::result::EngineStepResult;
 
-fn to_mat4(mat: [[f32; 4]; 4]) -> Mat4 {
-    Mat4::from_cols_array_2d(&mat)
-}
-
-fn to_mat4_3x4(mat: &[[f32; 4]; 3]) -> Mat4 {
-    Mat4::from_cols_array_2d(&[
-        [mat[0][0], mat[0][1], mat[0][2], 0.0],
-        [mat[1][0], mat[1][1], mat[1][2], 0.0],
-        [mat[2][0], mat[2][1], mat[2][2], 0.0],
-        [0.0, 0.0, 0.0, 1.0],
-    ])
-}
 pub struct CameraControlled {
     pub data: GameObjectData,
     pub components: ComponentMap,
@@ -30,7 +16,7 @@ impl CameraControlled {
         let mut data = GameObjectData::new(parent);
         data.transform = Mat4::look_at_rh(position, target, up).inverse().into();
         let mut components = ComponentMap::new();
-        components.add_component(freecam::FreeCamController {});
+        components.add_component(freecam::FreeCamController::new());
         Self {
             data,
             components,
