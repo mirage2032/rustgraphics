@@ -26,7 +26,7 @@ impl Drawable {
 }
 
 impl Draw for Drawable {
-    fn draw(&self, modelmat: &Mat4, viewmat: &Mat4,lights:&Lights) {
+    fn draw(&self, modelmat: &Mat4, viewmat: &Mat4,lights:Option<&Lights>) {
         for drawable in self.draw_data.iter() {
             drawable.draw(modelmat, viewmat,lights);
         }

@@ -1,16 +1,23 @@
+extern crate openvr;
+
 use std::ffi::CString;
 use std::sync::{Arc, Mutex};
 use std::sync::mpsc::{Receiver, sync_channel, SyncSender};
 use std::thread::Builder;
 use std::time::Duration;
+use glam::Mat4;
 
 use glfw::{
     Action, Context, Glfw, GlfwReceiver, Key, PRenderContext, PWindow, WindowEvent, WindowHint,
 };
 
+
 use crate::engine::config::STATIC_DATA;
+use crate::engine::drawable::Draw;
+use crate::engine::drawable::shader::new_quad_shader;
 use crate::engine::events::EngineInputsState;
 use crate::engine::events::EngineWindowEvent;
+use crate::engine::fbo::Fbo;
 use crate::engine::fpscounter::TimeDelta;
 use crate::engine::scene::Scene;
 use crate::result::{
@@ -22,10 +29,20 @@ use crate::result::EngineRunError::ThreadError;
 pub mod components;
 pub mod config;
 pub mod drawable;
-mod events;
+pub mod events;
+
+pub mod fbo;
 pub mod fpscounter;
 pub mod scene;
 pub mod transform;
+
+// lazy_static! {
+//     pub static ref vr_context: Mutex<openvr::Context> =
+//         unsafe { Mutex::new(openvr::init(openvr::ApplicationType::Scene).unwrap()) };
+//     pub static ref vr_system: openvr::System = vr_context.lock().unwrap().system().unwrap();
+//     pub static ref vr_compositor: openvr::Compositor =
+//         vr_context.lock().unwrap().compositor().unwrap();
+// }
 
 pub struct GameState {
     pub input_state: EngineInputsState,
@@ -266,6 +283,13 @@ impl Engine {
             .init_gl()?;
         let mut fps_counter = TimeDelta::new();
 
+        let resolution = STATIC_DATA.read()
+            .expect("Failed to read config")
+            .config()
+            .get_resolution();
+        let fbo = fbo::Fbo::new(resolution.0, resolution.1);
+        let screen_drawable = drawable::screenquad(resolution.0 as usize, resolution.1 as usize,fbo.texture);
+            
         unsafe {
             gl::Enable(gl::MULTISAMPLE); // Enable multi-sampling
             gl::Enable(gl::BLEND); // Enable blending for better anti-aliasing
@@ -274,11 +298,12 @@ impl Engine {
             gl::Enable(gl::CULL_FACE);
             gl::CullFace(gl::BACK);
             gl::Enable(gl::DEBUG_OUTPUT);
-            // gl::DebugMessageCallback(Some(debug_callback), std::ptr::null());
+            gl::DebugMessageCallback(Some(debug_callback), std::ptr::null());
         }
 
         loop {
             unsafe {
+                fbo.bind();
                 gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
 
                 let mut game = game
@@ -287,6 +312,9 @@ impl Engine {
                 if let Some(scene) = &mut game.scene {
                     scene.render();
                 }
+                Fbo::unbind();
+                gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
+                screen_drawable.draw(&Mat4::ZERO, &Mat4::ZERO, None);
             }
             ctx.swap_buffers();
             if let Err(_) = sender.send(fps_counter.delta()) {
@@ -340,10 +368,10 @@ extern "system" fn debug_callback(
     message: *const gl::types::GLchar,
     _user_param: *mut std::ffi::c_void,
 ) {
-    // if severity == gl::DEBUG_SEVERITY_HIGH || severity == gl::DEBUG_SEVERITY_MEDIUM {
-        unsafe {
-            let error_message = CString::from_raw(message as *mut i8);
-            println!("OpenGL Error: {:?}", error_message);
-        }
-    // }
+    if severity == gl::DEBUG_SEVERITY_HIGH || severity == gl::DEBUG_SEVERITY_MEDIUM {
+    unsafe {
+        let error_message = CString::from_raw(message as *mut i8);
+        println!("OpenGL Error: {:?}", error_message);
+    }
+    }
 }

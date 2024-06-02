@@ -1,4 +1,5 @@
 use std::sync::{Arc, Mutex};
+use gl::types::GLuint;
 
 use glam::Mat4;
 
@@ -7,6 +8,7 @@ use shader::Shader;
 use crate::engine::config::STATIC_DATA;
 use crate::engine::drawable::mesh::unbind;
 use crate::engine::scene::lights::Lights;
+use crate::engine::drawable::material::{Material,MaterialData,Texture};
 
 pub mod base;
 pub mod importer;
@@ -15,7 +17,7 @@ pub mod mesh;
 pub mod shader;
 
 pub trait Draw: Send {
-    fn draw(&self, modelmat: &Mat4, viewmat: &Mat4, lights: &Lights);
+    fn draw(&self, modelmat: &Mat4, viewmat: &Mat4, lights: Option<&Lights>);
 }
 
 pub struct DrawData {
@@ -25,7 +27,7 @@ pub struct DrawData {
 }
 
 impl Draw for DrawData {
-    fn draw(&self, modelmat: &Mat4, viewmat: &Mat4, lights: &Lights) {
+    fn draw(&self, modelmat: &Mat4, viewmat: &Mat4, lights: Option<&Lights>) {
         self.shader.use_program();
 
         self.mesh.lock().expect("Failed to lock mesh").get().bind();
@@ -42,8 +44,9 @@ impl Draw for DrawData {
         if let Some(ref material) = self.material {
             material.set_uniforms(&self.shader);
         }
-        
-        lights.bind(5);
+        if let Some(lights) = lights {
+            lights.bind(5);
+        }
         self.mesh.lock().expect("Failed to lock mesh").draw();
         Lights::unbind(5);
         unbind();
@@ -52,4 +55,19 @@ impl Draw for DrawData {
             gl::UseProgram(0);
         };
     }
+}
+
+pub fn screenquad(size_x:usize,size_y:usize,texture:GLuint) ->DrawData{
+    let mesh = mesh::screenquad::new(size_x,size_y);
+    let shader = Arc::new(shader::new_quad_shader().expect("Could not create quad shader"));
+    let material = Material{
+        data: MaterialData::default(),
+        diffuse_texture:Some(Texture{id:texture}),
+    };
+    DrawData {
+        mesh,
+        shader,
+        material:Some(Arc::new(material)),
+    }
+    
 }

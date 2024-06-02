@@ -175,3 +175,11 @@ pub fn new_face_shader() -> EngineRenderResult<Shader> {
         Some(include_str!("glsl/unlit/face/geometry_shader.glsl")),
     )
 }
+
+pub fn new_quad_shader() -> EngineRenderResult<Shader> {
+    Shader::new(
+        Some(include_str!("glsl/quad/vertex_shader.glsl")),
+        Some(include_str!("glsl/quad/fragment_shader.glsl")),
+        None,
+    )
+}

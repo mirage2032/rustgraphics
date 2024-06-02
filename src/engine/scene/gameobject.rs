@@ -52,7 +52,7 @@ pub trait GameObjectRaw: Draw + Send {
 pub type GameObject = Arc<Mutex<dyn GameObjectRaw>>;
 
 impl<T: GameObjectRaw> Draw for T {
-    fn draw(&self, modelmat: &Mat4, viewmat: &Mat4, lights: &Lights) {
+    fn draw(&self, modelmat: &Mat4, viewmat: &Mat4, lights: Option<&Lights>) {
         let data = self.data();
         let newmodelmat = *modelmat * Mat4::from(data.transform);
         if let Some(drawable) = &data.drawable {

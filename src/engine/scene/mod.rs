@@ -1,4 +1,6 @@
-use std::sync::{Mutex,Weak};
+extern crate openvr;
+
+use std::sync::{Mutex, Weak};
 
 use glam::{Mat4, vec3};
 
@@ -27,13 +29,18 @@ pub trait Scene: Send {
                 .lock()
                 .expect("Could not lock camera for render")
                 .global_mat();
-            let viewmat: Mat4 = Mat4::from(camera_mat).inverse();
+            
+            let viewmat: Mat4 = camera_mat.inverse();
             self.data_mut().lights.update_ssbo();
             for object in &self.data().objects {
                 object
                     .lock()
                     .expect("Could not lock gameobject for draw")
-                    .draw(&Mat4::from_translation(vec3(0.0, 0.0, 0.0)), &viewmat, &self.data().lights);
+                    .draw(
+                        &Mat4::from_translation(vec3(0.0, 0.0, 0.0)),
+                        &viewmat,
+                        Some(&self.data().lights),
+                    );
             }
         }
     }

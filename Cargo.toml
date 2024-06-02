@@ -15,6 +15,7 @@ tobj = { git = "https://github.com/Twinklebear/tobj", branch = "master" }
 thiserror = "1.0.61"
 image = "0.25.1"
 russimp = { version = "3.2.0", features = ["prebuilt"] }
+openvr = "0.6.0"
 
 [lib]
 crate-type = ["lib"]

@@ -81,16 +81,16 @@ impl Scene for BaseScene {
             data.data_mut().transform.position = vec3(0.0, -4.0, 0.0);
         }
 
-        let rotator = RotatingGameObject::new(Some(empty.clone()), vec3(0.0, 0.04, 0.0));
-        {
-            let mut data = rotator.lock().expect("Could not lock gameobject for init");
-            let drawable = assimp::import(
-                "C:\\Users\\alx\\RustroverProjects\\rustgraphics\\bugatticlean.obj",
-            );
-            data.data_mut().drawable = Some(Box::new(drawable));
-            data.data_mut().transform.scale *= 0.3;
-            data.data_mut().transform.position = vec3(0.0, 0.0, 0.0);
-        }
+        // let rotator = RotatingGameObject::new(Some(empty.clone()), vec3(0.0, 0.04, 0.0));
+        // {
+        //     let mut data = rotator.lock().expect("Could not lock gameobject for init");
+        //     let drawable = assimp::import(
+        //         "C:\\Users\\alx\\RustroverProjects\\rustgraphics\\bugatticlean.obj",
+        //     );
+        //     data.data_mut().drawable = Some(Box::new(drawable));
+        //     data.data_mut().transform.scale *= 0.3;
+        //     data.data_mut().transform.position = vec3(0.0, 0.0, 0.0);
+        // }
 
         let camera = Arc::new(Mutex::new(CameraControlled::new(
             None,
@@ -112,7 +112,7 @@ impl Scene for BaseScene {
         //TODO: WTF not there when attached to camera?
         let small_cube = BaseGameObject::new(Some(camera.clone()));
         {
-            let mut drawable = Drawable::default();
+            let drawable = Drawable::default();
             let mut data = small_cube.lock().expect("Could not lock gameobject for init");
             data.data_mut().drawable = Some(Box::new(drawable));
             data.data_mut().transform.scale *= 0.5;
