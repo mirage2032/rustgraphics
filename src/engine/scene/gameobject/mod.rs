@@ -2,9 +2,10 @@ use std::sync::{Arc, Mutex};
 
 use glam::{Mat4, Vec3};
 
-use crate::engine::drawable::Draw;
+use crate::engine::drawable::Drawable;
 use crate::engine::GameState;
 use crate::engine::scene::gameobject::components::ComponentMap;
+use crate::engine::scene::gameobject::components::drawable::DrawableComponent;
 use crate::engine::scene::lights::Lights;
 use crate::engine::transform::Transform;
 use crate::result::EngineStepResult;
@@ -13,7 +14,7 @@ pub mod base;
 pub mod components;
 pub mod rotating;
 
-pub trait GameObjectTrait: Draw + Send {
+pub trait GameObjectTrait: Drawable + Send {
     fn data(&self) -> &GameObjectData;
     fn data_mut(&mut self) -> &mut GameObjectData;
     fn components(&self) -> Option<&ComponentMap>;
@@ -58,13 +59,16 @@ pub trait GameObjectTrait: Draw + Send {
 
 pub type GameObject = Arc<Mutex<dyn GameObjectTrait>>;
 
-impl<T: GameObjectTrait> Draw for T {
+impl<T: GameObjectTrait> Drawable for T {
     fn draw(&self, modelmat: &Mat4, viewmat: &Mat4, lights: Option<&Lights>) {
         let data = self.data();
         let newmodelmat = *modelmat * Mat4::from(data.transform);
-        if let Some(drawable) = &data.drawable {
-            drawable.draw(&newmodelmat, viewmat, lights);
+        if let Some(components) = self.components() {
+            if let Some(drawable) = components.get_component::<DrawableComponent>(){
+                drawable.borrow().drawable.draw(&newmodelmat, viewmat, lights);
+            }
         }
+        
         for child in &data.children {
             child
                 .lock()
@@ -77,8 +81,7 @@ impl<T: GameObjectTrait> Draw for T {
 pub struct GameObjectData {
     pub parent: Option<GameObject>,
     pub children: Vec<GameObject>,
-    pub transform: Transform,
-    pub drawable: Option<Box<dyn Draw>>,
+    pub transform: Transform
 }
 
 impl GameObjectData {
@@ -86,8 +89,7 @@ impl GameObjectData {
         Self {
             parent,
             children: Vec::new(),
-            transform: Transform::default(),
-            drawable: None,
+            transform: Transform::default()
         }
     }
 }

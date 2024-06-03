@@ -16,7 +16,7 @@ pub mod material;
 pub mod mesh;
 pub mod shader;
 
-pub trait Draw: Send {
+pub trait Drawable: Send {
     fn draw(&self, modelmat: &Mat4, viewmat: &Mat4, lights: Option<&Lights>);
 }
 
@@ -26,7 +26,7 @@ pub struct DrawData {
     pub material: Option<Arc<material::Material>>,
 }
 
-impl Draw for DrawData {
+impl Drawable for DrawData {
     fn draw(&self, modelmat: &Mat4, viewmat: &Mat4, lights: Option<&Lights>) {
         self.shader.use_program();
 

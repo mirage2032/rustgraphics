@@ -48,10 +48,6 @@ impl DirectionalLight {
 }
 
 impl GameObjectTrait for DirectionalLight {
-    fn step(&mut self, state: &crate::engine::GameState) -> crate::result::EngineStepResult<()> {
-        self.components.step(&mut self.data, state)?;
-        Ok(())
-    }
     fn data(&self) -> &GameObjectData {
         &self.data
     }
@@ -66,6 +62,11 @@ impl GameObjectTrait for DirectionalLight {
     
     fn components_mut(&mut self) -> Option<&mut ComponentMap> {
         Some(&mut self.components)
+    }
+    
+    fn step(&mut self, state: &crate::engine::GameState) -> crate::result::EngineStepResult<()> {
+        self.components.step(&mut self.data, state)?;
+        Ok(())
     }
     
 }

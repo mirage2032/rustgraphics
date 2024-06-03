@@ -88,10 +88,6 @@ impl SpotLight {
 }
 
 impl GameObjectTrait for SpotLight {
-    fn step(&mut self, state: &crate::engine::GameState) -> crate::result::EngineStepResult<()> {
-        self.components.step(&mut self.data, state)?;
-        Ok(())
-    }
     fn data(&self) -> &GameObjectData {
         &self.data
     }
@@ -106,5 +102,9 @@ impl GameObjectTrait for SpotLight {
 
     fn components_mut(&mut self) -> Option<&mut ComponentMap> {
         Some(&mut self.components)
+    }
+    fn step(&mut self, state: &crate::engine::GameState) -> crate::result::EngineStepResult<()> {
+        self.components.step(&mut self.data, state)?;
+        Ok(())
     }
 }

@@ -3,14 +3,14 @@ use std::sync::{Arc, Mutex};
 use russimp::scene::PostProcess;
 use russimp::scene::Scene;
 
-use crate::engine::drawable::base::Drawable;
+use crate::engine::drawable::base::BaseDrawable;
 use crate::engine::drawable::DrawData;
 use crate::engine::drawable::material::Material;
 use crate::engine::drawable::mesh::{BaseMesh, MeshData};
 use crate::engine::drawable::shader::color::new_unlit_color_shader;
 use crate::engine::drawable::shader::Shader;
 
-pub fn import(path: &str) -> Drawable {
+pub fn import(path: &str) -> BaseDrawable {
     let scene = Scene::from_file(
         path,
         vec![
@@ -90,5 +90,5 @@ pub fn import(path: &str) -> Drawable {
         draw_data.push(draw);
     });
 
-    Drawable { draw_data }
+    BaseDrawable { draw_data }
 }

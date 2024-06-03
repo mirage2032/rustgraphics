@@ -11,7 +11,7 @@ use glfw::{
 
 
 use crate::engine::config::CONFIG;
-use crate::engine::drawable::Draw;
+use crate::engine::drawable::Drawable;
 use crate::engine::events::EngineInputsState;
 use crate::engine::events::EngineWindowEvent;
 use crate::engine::fbo::Fbo;

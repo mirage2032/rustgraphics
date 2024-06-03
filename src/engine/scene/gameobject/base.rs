@@ -44,7 +44,7 @@ impl GameObjectTrait for BaseGameObject {
     fn components_mut(&mut self) -> Option<&mut ComponentMap> {
         Some(&mut self.components)
     }
-
+    
     fn step(&mut self, state: &GameState) -> EngineStepResult<()> {
         self.components.step(&mut self.data, state)?;
         Ok(())

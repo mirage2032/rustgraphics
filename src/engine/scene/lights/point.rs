@@ -81,14 +81,9 @@ impl PointLight {
 }
 
 impl GameObjectTrait for PointLight {
-    fn step(&mut self, state: &crate::engine::GameState) -> crate::result::EngineStepResult<()> {
-        self.components.step(&mut self.data, state)?;
-        Ok(())
-    }
     fn data(&self) -> &GameObjectData {
         &self.data
     }
-
     fn data_mut(&mut self) -> &mut GameObjectData {
         &mut self.data
     }
@@ -99,5 +94,10 @@ impl GameObjectTrait for PointLight {
 
     fn components_mut(&mut self) -> Option<&mut ComponentMap> {
         Some(&mut self.components)
+    }
+    
+    fn step(&mut self, state: &crate::engine::GameState) -> crate::result::EngineStepResult<()> {
+        self.components.step(&mut self.data, state)?;
+        Ok(())
     }
 }

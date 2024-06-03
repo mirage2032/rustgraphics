@@ -1,6 +1,5 @@
 use std::any::{Any, TypeId};
-use std::cell::{Ref, RefCell};
-use std::sync::Mutex;
+use std::cell::RefCell;
 
 use indexmap::IndexMap;
 
@@ -9,8 +8,10 @@ use crate::engine::scene::gameobject::GameObjectData;
 use crate::result::EngineStepResult;
 
 pub mod freecam;
+pub mod drawable;
+pub mod rotating;
 
-pub trait Component: Any + Send + Sync {
+pub trait Component: Any + Send {
     fn as_any(&self) -> &dyn Any;
     fn as_any_mut(&mut self) -> &mut dyn Any;
     fn step(
@@ -18,7 +19,8 @@ pub trait Component: Any + Send + Sync {
         object: &mut GameObjectData,
         components: &ComponentMap,
         state: &GameState,
-    ) -> EngineStepResult<()>;
+    ) -> EngineStepResult<()> {
+        Ok(())}
 }
 
 pub struct ComponentMap {

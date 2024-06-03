@@ -2,17 +2,17 @@ use std::sync::{Arc, Mutex};
 
 use glam::Mat4;
 
-use crate::engine::drawable::{Draw, DrawData};
+use crate::engine::drawable::{Drawable, DrawData};
 use crate::engine::drawable::mesh;
 use crate::engine::scene::lights::Lights;
 
 use super::shader::Shader;
 
-pub struct Drawable {
+pub struct BaseDrawable {
     pub draw_data: Vec<DrawData>,
 }
 
-impl Drawable {
+impl BaseDrawable {
     pub fn new(mesh: Arc<Mutex<dyn mesh::Mesh>>, shader: Arc<Shader>) -> Self {
         let draw_object = DrawData {
             mesh,
@@ -25,7 +25,7 @@ impl Drawable {
     }
 }
 
-impl Draw for Drawable {
+impl Drawable for BaseDrawable {
     fn draw(&self, modelmat: &Mat4, viewmat: &Mat4,lights:Option<&Lights>) {
         for drawable in self.draw_data.iter() {
             drawable.draw(modelmat, viewmat,lights);
@@ -33,7 +33,7 @@ impl Draw for Drawable {
     }
 }
 
-impl Default for Drawable {
+impl Default for BaseDrawable {
     fn default() -> Self {
         let draw_object = DrawData {
             mesh: mesh::cube::new(),

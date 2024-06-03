@@ -54,6 +54,9 @@ impl GameObjectTrait for RotatingGameObject {
         data.transform.rotation *= glam::Quat::from_rotation_x(rotation.x);
         data.transform.rotation *= glam::Quat::from_rotation_y(rotation.y);
         data.transform.rotation *= glam::Quat::from_rotation_z(rotation.z);
+        
+        self.components.step(&mut self.data, game)?;
+        
         Ok(())
     }
 }

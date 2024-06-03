@@ -1,7 +1,7 @@
 use glam::{Vec3, Vec4};
 use crate::engine::transform::Transform;
 
-//TODO: USE TRANSFORM NOT CENTERj
+//TODO: USE TRANSFORM NOT CENTER
 pub trait BoundingArea {
     fn in_frustum(&self, transform: &Transform, frustum: &[Vec4; 6]) -> bool;
 }
