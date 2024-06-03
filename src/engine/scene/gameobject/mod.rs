@@ -12,7 +12,6 @@ use crate::result::EngineStepResult;
 
 pub mod base;
 pub mod components;
-pub mod rotating;
 
 pub trait GameObjectTrait: Drawable + Send {
     fn data(&self) -> &GameObjectData;
@@ -64,11 +63,11 @@ impl<T: GameObjectTrait> Drawable for T {
         let data = self.data();
         let newmodelmat = *modelmat * Mat4::from(data.transform);
         if let Some(components) = self.components() {
-            if let Some(drawable) = components.get_component::<DrawableComponent>(){
-                drawable.borrow().drawable.draw(&newmodelmat, viewmat, lights);
+            if let Some(drawable) = components.get_component::<DrawableComponent>() {
+                drawable.borrow().draw(&newmodelmat, viewmat, lights);
             }
         }
-        
+
         for child in &data.children {
             child
                 .lock()
@@ -81,7 +80,7 @@ impl<T: GameObjectTrait> Drawable for T {
 pub struct GameObjectData {
     pub parent: Option<GameObject>,
     pub children: Vec<GameObject>,
-    pub transform: Transform
+    pub transform: Transform,
 }
 
 impl GameObjectData {
@@ -89,7 +88,7 @@ impl GameObjectData {
         Self {
             parent,
             children: Vec::new(),
-            transform: Transform::default()
+            transform: Transform::default(),
         }
     }
 }

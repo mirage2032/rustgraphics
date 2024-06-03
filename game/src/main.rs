@@ -89,10 +89,9 @@ impl Scene for BaseScene {
         let rotator = BaseGameObject::new(Some(empty.clone()));
         {
             let mut data = rotator.lock().expect("Could not lock gameobject for init");
-            let mut components = data.components_mut().unwrap();
-            let drawable = assimp::import(
-                "C:\\Users\\alx\\RustroverProjects\\rustgraphics\\bugatticlean.obj",
-            );
+            let components = data.components_mut().unwrap();
+            let drawable =
+                assimp::import("C:\\Users\\alx\\RustroverProjects\\rustgraphics\\bugatticlean.obj");
             components.add_component(DrawableComponent::new(Box::new(drawable)));
             components.add_component(RotatingComponent::new(vec3(0.0, 0.04, 0.0)));
             data.data_mut().transform.scale *= 0.3;

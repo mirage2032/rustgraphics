@@ -2,16 +2,16 @@ use glam::{Vec3, Vec4};
 use crate::engine::transform::Transform;
 
 //TODO: USE TRANSFORM NOT CENTER
-pub trait BoundingArea {
+pub trait ColliderArea {
     fn in_frustum(&self, transform: &Transform, frustum: &[Vec4; 6]) -> bool;
 }
 
-pub struct BoundingSphere {
+pub struct ColliderSphere {
     pub center: Vec3,
     pub radius: f32,
 }
 
-impl BoundingArea for BoundingSphere {
+impl ColliderArea for ColliderSphere {
     fn in_frustum(&self, transform: &Transform, frustum: &[Vec4; 6]) -> bool {
         let distances: Vec<_> = frustum
             .iter()
@@ -30,14 +30,14 @@ impl BoundingArea for BoundingSphere {
     }
 }
 
-struct BoundingRectBox {
+struct ColliderRectBox {
     pub center: Vec3,
     pub half_width: f32,
     pub half_height: f32,
     pub half_depth: f32,
 }
 
-impl BoundingArea for BoundingRectBox {
+impl ColliderArea for ColliderRectBox {
     fn in_frustum(&self, transform: &Transform,frustum: &[Vec4; 6]) -> bool {
         let half_diagonal_vec = Vec4::new(self.half_width, self.half_height, self.half_depth, 1.0);
         let half_diagonal = half_diagonal_vec.length();
@@ -57,13 +57,13 @@ impl BoundingArea for BoundingRectBox {
     }
 }
 
-struct BoundingCylinder {
+struct ColliderCylinder {
     pub center: Vec3,
     pub radius: f32,
     pub half_height: f32,
 }
 
-impl BoundingArea for BoundingCylinder {
+impl ColliderArea for ColliderCylinder {
     fn in_frustum(&self, transform: &Transform, frustum: &[Vec4; 6]) -> bool {
         // Calculate the top and bottom center points of the cylinder
         let top_center = self.center + Vec3::new(0.0, self.half_height, 0.0);
@@ -84,11 +84,11 @@ impl BoundingArea for BoundingCylinder {
     }
 }
 
-struct BoundingVertices {
+struct BoundingCollider {
     pub vertices: Vec<Vec3>,
 }
 
-impl BoundingArea for BoundingVertices {
+impl ColliderArea for BoundingCollider {
     fn in_frustum(&self, transform: &Transform, frustum: &[Vec4; 6]) -> bool {
         for plane in frustum {
             let mut all_outside = true;
