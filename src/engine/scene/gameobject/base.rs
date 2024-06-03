@@ -1,4 +1,4 @@
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, RwLock};
 
 use crate::engine::GameState;
 use crate::engine::scene::gameobject::{GameObject, GameObjectData, GameObjectTrait};
@@ -12,13 +12,13 @@ pub struct BaseGameObject {
 
 impl BaseGameObject {
     pub fn new(parent: Option<GameObject>) -> GameObject {
-        let newgameobject = Arc::new(Mutex::new(Self {
+        let newgameobject = Arc::new(RwLock::new(Self {
             data: GameObjectData::new(parent.clone()),
             components: ComponentMap::new(),
         }));
         if let Some(parent) = parent {
             parent
-                .lock()
+                .write()
                 .expect("Could not lock parent gameobject for init")
                 .data_mut()
                 .children

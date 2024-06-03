@@ -1,4 +1,4 @@
-use std::sync::{Arc, Mutex, Weak};
+use std::sync::{Arc, Mutex, RwLock, Weak};
 
 use glengine::engine::drawable::base::BaseDrawable;
 use glengine::engine::drawable::importer::assimp;
@@ -55,7 +55,7 @@ impl Scene for BaseScene {
         {
             let monkey_draw =
                 assimp::import("C:\\Users\\alx\\RustroverProjects\\rustgraphics\\monkeyhp.obj");
-            let mut data = monkey.lock().expect("Could not lock gameobject for init");
+            let mut data = monkey.write().expect("Could not lock gameobject for init");
             data.components_mut()
                 .unwrap()
                 .add_component(DrawableComponent::new(Box::new(monkey_draw)));
@@ -77,7 +77,7 @@ impl Scene for BaseScene {
                 },
                 diffuse_texture: None,
             }));
-            let mut data = floor.lock().expect("Could not lock gameobject for init");
+            let mut data = floor.write().expect("Could not lock gameobject for init");
             data.components_mut()
                 .unwrap()
                 .add_component(DrawableComponent::new(Box::new(drawable)));
@@ -88,7 +88,7 @@ impl Scene for BaseScene {
 
         let rotator = BaseGameObject::new(Some(empty.clone()));
         {
-            let mut data = rotator.lock().expect("Could not lock gameobject for init");
+            let mut data = rotator.write().expect("Could not lock gameobject for init");
             let components = data.components_mut().unwrap();
             let drawable =
                 assimp::import("C:\\Users\\alx\\RustroverProjects\\rustgraphics\\bugatticlean.obj");
@@ -98,7 +98,7 @@ impl Scene for BaseScene {
             data.data_mut().transform.position = vec3(0.0, 0.0, 0.0);
         }
 
-        let camera = Arc::new(Mutex::new(CameraControlled::new(
+        let camera = Arc::new(RwLock::new(CameraControlled::new(
             None,
             vec3(20.0, 20.0, 20.0),
             vec3(0.0, 0.0, 0.0),
@@ -149,7 +149,7 @@ impl Scene for BaseScene {
             0.05,
             0.025,
         );
-        point_light2.lock().unwrap().data_mut().transform.position = vec3(7.0, 2.0, 7.0);
+        point_light2.write().unwrap().data_mut().transform.position = vec3(7.0, 2.0, 7.0);
         self.data_mut()
             .lights
             .point

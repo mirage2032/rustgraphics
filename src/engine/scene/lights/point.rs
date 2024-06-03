@@ -1,4 +1,4 @@
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, RwLock};
 
 use glam::Vec3;
 use glsl_layout::{float, Uniform, vec3};
@@ -46,8 +46,8 @@ impl PointLight {
         constant: f32,
         linear: f32,
         quadratic: f32,
-    ) -> Arc<Mutex<Self>> {
-        let light = Arc::new(Mutex::new(Self {
+    ) -> Arc<RwLock<Self>> {
+        let light = Arc::new(RwLock::new(Self {
             data: GameObjectData::new(parent),
             components: ComponentMap::new(),
             intensity,
@@ -56,9 +56,9 @@ impl PointLight {
             linear,
             quadratic,
         }));
-        if let Some(parent) = &light.lock().unwrap().data.parent {
+        if let Some(parent) = &light.write().unwrap().data.parent {
             parent
-                .lock()
+                .write()
                 .unwrap()
                 .data_mut()
                 .children

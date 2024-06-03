@@ -1,4 +1,4 @@
-use std::sync::{Mutex, Weak};
+use std::sync::{Mutex, RwLock, Weak};
 
 use glam::{Mat4, vec3};
 
@@ -13,7 +13,7 @@ pub mod lights;
 
 pub struct SceneData {
     pub objects: Vec<GameObject>,
-    pub main_camera: Weak<Mutex<CameraControlled>>,
+    pub main_camera: Weak<RwLock<CameraControlled>>,
     pub lights: lights::Lights,
 }
 
@@ -24,7 +24,7 @@ pub trait Scene: Send {
     fn render(&mut self) {
         if let Some(camera) = &self.data().main_camera.upgrade() {
             let camera_mat = camera
-                .lock()
+                .read()
                 .expect("Could not lock camera for render")
                 .global_mat();
             
@@ -32,7 +32,7 @@ pub trait Scene: Send {
             self.data_mut().lights.update_ssbo();
             for object in &self.data().objects {
                 object
-                    .lock()
+                    .read()
                     .expect("Could not lock gameobject for draw")
                     .draw(
                         &Mat4::from_translation(vec3(0.0, 0.0, 0.0)),
@@ -43,9 +43,9 @@ pub trait Scene: Send {
         }
     }
     fn step(&mut self, state: &GameState) -> EngineStepResult<()> {
-        for object in &mut self.data_mut().objects {
+        for object in &self.data_mut().objects {
             object
-                .lock()
+                .write()
                 .expect("Could not lock gameobject for step")
                 .step_recursive(state)?;
         }

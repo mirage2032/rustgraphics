@@ -1,5 +1,5 @@
 use std::mem;
-use std::sync::{Mutex, Weak};
+use std::sync::{Mutex, RwLock, Weak};
 
 use gl::types::{GLsizeiptr, GLuint};
 use glsl_layout::{boolean, int, Std140, Uniform};
@@ -35,9 +35,9 @@ impl LightsData {
     }
 }
 pub struct Lights {
-    pub directional: Weak<Mutex<DirectionalLight>>,
-    pub point: Vec<Weak<Mutex<PointLight>>>,
-    pub spot: Vec<Weak<Mutex<SpotLight>>>,
+    pub directional: Weak<RwLock<DirectionalLight>>,
+    pub point: Vec<Weak<RwLock<PointLight>>>,
+    pub spot: Vec<Weak<RwLock<SpotLight>>>,
     pub ssbo: GLuint,
 }
 
@@ -46,7 +46,7 @@ impl Lights {
         let (directional, is_directional) = match &self.directional.upgrade() {
             Some(light) => (
                 light
-                    .lock()
+                    .read()
                     .expect("Could not lock directional light")
                     .light_data(),
                 true,
@@ -59,7 +59,7 @@ impl Lights {
         self.point.retain(|light|
             {
                 if let Some(light) = light.upgrade() {
-                    point[point_count] = light.lock().expect("Could not lock pointlight").light_data();
+                    point[point_count] = light.read().expect("Could not lock pointlight").light_data();
                     point_count += 1;
                     true
                 } else {
@@ -73,7 +73,7 @@ impl Lights {
         self.spot.retain(|light|
             {
                 if let Some(light) = light.upgrade() {
-                    spot[spot_count] = light.lock().expect("Could not lock spotlight").light_data();
+                    spot[spot_count] = light.read().expect("Could not lock spotlight").light_data();
                     spot_count += 1;
                     true
                 } else {

@@ -16,7 +16,7 @@ pub mod material;
 pub mod mesh;
 pub mod shader;
 
-pub trait Drawable: Send {
+pub trait Drawable: Send + Sync {
     fn draw(&self, modelmat: &Mat4, viewmat: &Mat4, lights: Option<&Lights>);
 }
 
