@@ -16,6 +16,7 @@ thiserror = "1.0.61"
 image = "0.25.1"
 russimp = { version = "3.2.0", features = ["prebuilt"] }
 indexmap = "2.2.6"
+#rapier3d = "0.19.0" #TODO: Use for physics
 #openvr = "0.6.0"
 
 [lib]
