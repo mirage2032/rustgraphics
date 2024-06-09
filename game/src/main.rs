@@ -1,9 +1,9 @@
-use std::sync::{Arc, Mutex, RwLock, Weak};
+use glengine::engine::drawable::shader::color::new_lit_color_shader;
+use std::sync::{Arc, RwLock, Weak};
 
 use glengine::engine::drawable::base::BaseDrawable;
 use glengine::engine::drawable::importer::assimp;
 use glengine::engine::drawable::material::{Material, MaterialData};
-use glengine::engine::drawable::shader::color::new_unlit_color_shader;
 use glengine::engine::Engine;
 use glengine::engine::GameData;
 use glengine::engine::scene::camera::CameraControlled;
@@ -67,13 +67,13 @@ impl Scene for BaseScene {
         {
             let mut drawable = BaseDrawable::default();
             drawable.draw_data[0].shader =
-                Arc::new(new_unlit_color_shader().expect("Failed to create color shader"));
+                Arc::new(new_lit_color_shader().expect("Failed to create color shader"));
             drawable.draw_data[0].material = Some(Arc::new(Material {
                 data: MaterialData {
-                    ambient: Some(vec3(0.0, 0.0, 0.0)),
-                    diffuse: Some(vec3(0.0, 0.0, 1.0)),
-                    specular: Some(vec3(0.0, 0.0, 0.0)),
-                    shininess: Some(1.0),
+                    ambient: Some(vec3(0.1, 0.1, 0.1)),
+                    diffuse: Some(vec3(0.4, 1.0, 1.0)),
+                    specular: Some(vec3(0.1, 0.1, 0.1)),
+                    shininess: Some(0.4),
                 },
                 diffuse_texture: None,
             }));
@@ -107,7 +107,7 @@ impl Scene for BaseScene {
 
         let point_light = PointLight::new(
             Some(camera.clone()),
-            1.3,
+            1.0,
             vec3(1.0, 1.0, 1.0),
             1.0,
             0.05,
@@ -143,13 +143,13 @@ impl Scene for BaseScene {
 
         let point_light2 = PointLight::new(
             Some(empty.clone()),
-            0.5,
-            vec3(0.1, 0.1, 1.0),
+            0.3,
+            vec3(0.5, 0.0, 0.0),
             1.0,
             0.05,
             0.025,
         );
-        point_light2.write().unwrap().data_mut().transform.position = vec3(7.0, 2.0, 7.0);
+        point_light2.write().unwrap().data_mut().transform.position = vec3(7.0, 2.0, -4.0);
         self.data_mut()
             .lights
             .point

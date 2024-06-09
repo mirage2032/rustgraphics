@@ -159,12 +159,7 @@ impl Drop for Shader {
 
 impl Default for Shader {
     fn default() -> Self {
-        Shader::new(
-            Some(include_str!("glsl/unlit/basic/vertex_shader.glsl")),
-            Some(include_str!("glsl/unlit/basic/fragment_shader.glsl")),
-            None,
-        )
-        .expect("Failed to create default shader")
+        new_unlit_color_shader().unwrap()
     }
 }
 
@@ -182,4 +177,8 @@ pub fn new_quad_shader() -> EngineRenderResult<Shader> {
         Some(include_str!("glsl/quad/fragment_shader.glsl")),
         None,
     )
+}
+
+pub fn new_unlit_color_shader() -> EngineRenderResult<Shader> {
+    new_face_shader()
 }

@@ -1,4 +1,4 @@
-use std::sync::{Mutex, RwLock, Weak};
+use std::sync::{RwLock, Weak};
 
 use glam::{Mat4, vec3};
 
