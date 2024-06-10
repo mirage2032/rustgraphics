@@ -15,5 +15,12 @@ void main()
     vec3 mapped = hdrColor / (hdrColor + vec3(1.0));
 //    mapped = vec3(1.0) - exp(-mapped * exposure);
 
-    FragColor = vec4(mapped, 1.0);
+//    float near = 0.1; // Adjust this value to match your near plane distance
+//    float far = 100.0; // Adjust this value to match your far plane distance
+//
+//    float depthVal = texture(depth_texture,TexCoord).r;
+//    float linearDepth = (2.0 * near) / (far + near - depthVal * (far - near));
+//    vec3 depthCol = vec3(1.0-linearDepth);
+
+    FragColor = vec4(hdrColor, 1.0);
 }

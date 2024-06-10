@@ -76,7 +76,7 @@ impl Scene for BaseScene {
                     specular: Some(vec3(1.0, 0.5, 0.7)),
                     shininess: Some(0.02),
                 },
-                diffuse_texture: None,
+                textures: Default::default(),
             }));
             let mut data = floor.write().expect("Could not lock gameobject for init");
             data.components_mut()

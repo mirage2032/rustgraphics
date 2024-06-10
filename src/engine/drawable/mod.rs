@@ -1,15 +1,16 @@
+use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
-use gl::types::GLuint;
 
 use glam::Mat4;
 
 use shader::Shader;
 
 use crate::engine::config::CONFIG;
+use crate::engine::drawable::material::{Material, MaterialData, Texture};
 use crate::engine::drawable::mesh::unbind;
-use crate::engine::scene::lights::Lights;
-use crate::engine::drawable::material::{Material,MaterialData,Texture};
 use crate::engine::drawable::shader::unlit::QUAD_SHADER;
+use crate::engine::fbo::Fbo;
+use crate::engine::scene::lights::Lights;
 
 pub mod base;
 pub mod importer;
@@ -35,10 +36,7 @@ impl Drawable for DrawData {
         self.shader.set_mat4("view_mat", viewmat);
         self.shader.set_mat4("model_mat", modelmat);
         let projection = {
-            let data = *CONFIG
-                .read()
-                .expect("Failed to read config")
-                .projection();
+            let data = *CONFIG.read().expect("Failed to read config").projection();
             data
         };
         self.shader.set_mat4("projection_mat", &projection);
@@ -52,23 +50,31 @@ impl Drawable for DrawData {
         Lights::unbind(5);
         unbind();
 
-        unsafe { 
+        unsafe {
             gl::UseProgram(0);
         };
     }
 }
 
-pub fn screenquad(texture:GLuint) ->DrawData{
+pub fn screenquad(fbo: &Fbo) -> DrawData {
     let mesh = mesh::screenquad::new();
     let shader = QUAD_SHADER.clone();
-    let material = Material{
+    let mut textures = HashMap::new();
+    textures.insert("diffuse_texture", Texture { id: fbo.texture });
+    textures.insert(
+        "depth_texture",
+        Texture {
+            id: fbo.depth_texture,
+        },
+    );
+
+    let material = Material {
         data: MaterialData::default(),
-        diffuse_texture:Some(Texture{id:texture}),
+        textures,
     };
     DrawData {
         mesh,
         shader,
-        material:Some(Arc::new(material)),
+        material: Some(Arc::new(material)),
     }
-    
 }

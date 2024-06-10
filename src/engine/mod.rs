@@ -293,7 +293,7 @@ impl Engine {
             .config()
             .get_resolution();
         let fbo = Fbo::new(resolution.0, resolution.1);
-        let screen_drawable = drawable::screenquad(fbo.texture);
+        let screen_drawable = drawable::screenquad(&fbo);
             
         unsafe {
             gl::Enable(gl::MULTISAMPLE); // Enable multi-sampling

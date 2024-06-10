@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use gl;
 use gl::types::GLuint;
 use glam::{vec3, Vec3};
@@ -28,39 +30,14 @@ impl Default for MaterialData {
 
 pub struct Material {
     pub data: MaterialData,
-    pub diffuse_texture: Option<Texture>,
-}
-
-impl From<tobj::Material> for Material {
-    fn from(material: tobj::Material) -> Self {
-        let data = MaterialData {
-            ambient: material.ambient.map(|a| a.into()),
-            diffuse: material.diffuse.map(|a| a.into()),
-            specular: material.specular.map(|a| a.into()),
-            shininess: material.shininess.map(|a| a.into()),
-        };
-
-        let diffuse_texture = {
-            match material.diffuse_texture {
-                Some(diffuse_texture) => {
-                    let image = Image::load(&diffuse_texture)
-                        .expect(format!("Failed to load texture: {}", diffuse_texture).as_str());
-                    Some(Texture::from(image))
-                }
-                None => None,
-            }
-        };
-
-        Self {
-            data,
-            diffuse_texture,
-        }
-    }
+    pub textures: HashMap<&'static str, Texture>,
 }
 
 impl From<russimp::material::Material> for Material {
     fn from(material: russimp::material::Material) -> Self {
         let mut data = MaterialData::default();
+        let mut textures = HashMap::new();
+
         material
             .properties
             .iter()
@@ -82,19 +59,20 @@ impl From<russimp::material::Material> for Material {
                 // }
                 _ => {}
             });
-        let diffuse_texture = match material.textures.get(&TextureType::Diffuse) {
-            Some(texture) => {
-                let image = Image::load(&texture.borrow().filename).expect(
-                    format!("Failed to load texture: {}", &texture.borrow().filename).as_str(),
-                );
-                Some(Texture::from(image))
-            }
-            None => None,
+        if let Some(diffuse_texture) = material.textures.get(&TextureType::Diffuse) {
+            let image = Image::load(&diffuse_texture.borrow().filename).expect(
+                format!(
+                    "Failed to load texture: {}",
+                    &diffuse_texture.borrow().filename
+                )
+                .as_str(),
+            );
+            textures.insert("diffuse_texture", image.into());
         };
 
         Self {
             data,
-            diffuse_texture,
+            textures,
         }
     }
 }
@@ -112,8 +90,9 @@ impl Material {
         if let Some(shininess) = self.data.shininess {
             shader.set_float("material.shininess", shininess);
         }
-        if let Some(texture) = &self.diffuse_texture {
-            shader.set_texture("diffuse_texture", texture.id(), 0);
+        
+        for (idx,(name, texture)) in self.textures.iter().enumerate() {
+            shader.set_texture(name, texture.id(), idx as u32);
         }
     }
 }
