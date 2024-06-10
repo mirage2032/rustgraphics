@@ -4,6 +4,7 @@ use std::sync::mpsc::{Receiver, sync_channel, SyncSender};
 use std::thread::Builder;
 use std::time::Duration;
 use glam::Mat4;
+use gl;
 
 use glfw::{
     Action, Context, Glfw, GlfwReceiver, Key, PRenderContext, PWindow, WindowEvent, WindowHint,
@@ -90,11 +91,12 @@ pub struct Engine {
 impl Engine {
     pub fn new() -> Self {
         let mut glfw = glfw::init(glfw::fail_on_errors).unwrap();
-        glfw.window_hint(WindowHint::ContextVersion(4, 6));
+        glfw.window_hint(WindowHint::ContextVersion(3, 1));
         glfw.window_hint(WindowHint::CocoaGraphicsSwitching(false));
         glfw.window_hint(WindowHint::OpenGlForwardCompat(true));
         glfw.window_hint(WindowHint::OpenGlDebugContext(true));
         glfw.window_hint(WindowHint::OpenGlProfile(glfw::OpenGlProfileHint::Core));
+        glfw.window_hint(WindowHint::ClientApi(glfw::ClientApiHint::OpenGlEs));
         glfw.window_hint(WindowHint::Resizable(false));
         glfw.window_hint(WindowHint::TransparentFramebuffer(true));
         glfw.window_hint(WindowHint::Samples(Some(4))); // Set the number of samples for multi-sampling
@@ -115,7 +117,6 @@ impl Engine {
 
         window.make_current(); // Print information about the GPU device
         gl::load_with(|symbol| window.get_proc_address(symbol) as *const _);
-
         // Print information about the GPU device
         println!(
             "Renderer: {:?}",

@@ -1,4 +1,6 @@
-#version 460 core
+#version 310 es
+precision highp float;
+
 #define MAX_POINT_LIGHTS 5
 #define MAX_SPOT_LIGHTS 5
 

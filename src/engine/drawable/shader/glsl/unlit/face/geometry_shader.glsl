@@ -1,4 +1,7 @@
-#version 450 core
+#version 310 es
+#extension GL_EXT_geometry_shader : enable
+#extension GL_OES_geometry_shader : enable
+precision highp float;
 
 layout (triangles) in;
 layout (triangle_strip, max_vertices = 3) out;
