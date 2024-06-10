@@ -3,7 +3,7 @@ use std::sync::{Arc, RwLock, Weak};
 use glengine::engine::drawable::base::BaseDrawable;
 use glengine::engine::drawable::importer::assimp;
 use glengine::engine::drawable::material::{Material, MaterialData};
-use glengine::engine::drawable::shader::color::new_lit_color_shader;
+use glengine::engine::drawable::shader::lit::LIT_COLOR_SHADER;
 use glengine::engine::Engine;
 use glengine::engine::GameData;
 use glengine::engine::scene::camera::CameraControlled;
@@ -68,8 +68,7 @@ impl Scene for BaseScene {
         let floor = BaseGameObject::new(Some(empty.clone()));
         {
             let mut drawable = BaseDrawable::default();
-            drawable.draw_data[0].shader =
-                Arc::new(new_lit_color_shader().expect("Failed to create color shader"));
+            drawable.draw_data[0].shader = LIT_COLOR_SHADER.clone();
             drawable.draw_data[0].material = Some(Arc::new(Material {
                 data: MaterialData {
                     ambient: Some(vec3(0.3, 0.1, 0.1)),

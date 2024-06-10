@@ -9,6 +9,7 @@ use crate::engine::config::CONFIG;
 use crate::engine::drawable::mesh::unbind;
 use crate::engine::scene::lights::Lights;
 use crate::engine::drawable::material::{Material,MaterialData,Texture};
+use crate::engine::drawable::shader::unlit::QUAD_SHADER;
 
 pub mod base;
 pub mod importer;
@@ -59,7 +60,7 @@ impl Drawable for DrawData {
 
 pub fn screenquad(texture:GLuint) ->DrawData{
     let mesh = mesh::screenquad::new();
-    let shader = Arc::new(shader::new_quad_shader().expect("Could not create quad shader"));
+    let shader = QUAD_SHADER.clone();
     let material = Material{
         data: MaterialData::default(),
         diffuse_texture:Some(Texture{id:texture}),

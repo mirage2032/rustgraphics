@@ -8,7 +8,7 @@ use crate::engine::drawable::DrawData;
 use crate::engine::drawable::material::Material;
 use crate::engine::drawable::mesh::{BaseMesh, MeshData};
 use crate::engine::drawable::shader::Shader;
-use crate::engine::drawable::shader::color::new_lit_color_shader;
+use crate::engine::drawable::shader::lit::LIT_COLOR_SHADER;
 
 pub fn import(path: &str) -> BaseDrawable {
     let scene = Scene::from_file(
@@ -78,7 +78,7 @@ pub fn import(path: &str) -> BaseDrawable {
             );
         }
         let shader = match material.data.ambient{
-            Some(_) => Arc::new(new_lit_color_shader().expect("Failed to create color shader")),
+            Some(_) => LIT_COLOR_SHADER.clone(),
             None => Arc::new(Shader::default()),
         };
         

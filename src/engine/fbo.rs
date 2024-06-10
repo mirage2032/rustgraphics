@@ -22,12 +22,12 @@ impl Fbo{
             gl::TexImage2D(
                 gl::TEXTURE_2D,
                 0,
-                gl::RGBA as i32,
+                gl::RGBA16F as i32,
                 width as i32,
                 height as i32,
                 0,
                 gl::RGBA,
-                gl::UNSIGNED_BYTE,
+                gl::FLOAT,
                 std::ptr::null(),
             );
             gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::LINEAR as i32);

@@ -1,10 +1,14 @@
+use std::sync::Arc;
 use gl;
 use gl::types::GLenum;
 use glam::Mat4;
+use lazy_static::lazy_static;
+use crate::engine::drawable::shader::unlit::new_face_shader;
 
 use crate::result::{EngineRenderResult, ShaderError};
 
-pub mod color;
+pub mod lit;
+pub mod unlit;
 
 pub struct Shader {
     id: u32,
@@ -159,26 +163,6 @@ impl Drop for Shader {
 
 impl Default for Shader {
     fn default() -> Self {
-        new_unlit_color_shader().unwrap()
+        new_face_shader().unwrap()
     }
-}
-
-pub fn new_face_shader() -> EngineRenderResult<Shader> {
-    Shader::new(
-        Some(include_str!("glsl/unlit/face/vertex_shader.glsl")),
-        Some(include_str!("glsl/unlit/face/fragment_shader.glsl")),
-        Some(include_str!("glsl/unlit/face/geometry_shader.glsl")),
-    )
-}
-
-pub fn new_quad_shader() -> EngineRenderResult<Shader> {
-    Shader::new(
-        Some(include_str!("glsl/quad/vertex_shader.glsl")),
-        Some(include_str!("glsl/quad/fragment_shader.glsl")),
-        None,
-    )
-}
-
-pub fn new_unlit_color_shader() -> EngineRenderResult<Shader> {
-    new_face_shader()
 }
