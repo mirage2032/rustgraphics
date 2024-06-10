@@ -1,8 +1,10 @@
+use std::sync::{Arc, RwLock};
 use glam::Vec3;
 use glsl_layout::{float, Uniform, vec3};
 
 use crate::engine::scene::gameobject::{GameObject, GameObjectData, GameObjectTrait};
 use crate::engine::scene::gameobject::components::ComponentMap;
+use crate::engine::transform::Transform;
 
 #[derive(Debug, Copy, Default, Clone, Uniform)]
 pub struct SpotLightData {
@@ -47,7 +49,7 @@ pub struct SpotLight {
 
 impl SpotLight {
     pub fn new(
-        parent: GameObject,
+        parent: Option<GameObject>,
         intensity: f32,
         color: Vec3,
         constant: f32,
@@ -55,10 +57,9 @@ impl SpotLight {
         quadratic: f32,
         cut_off: f32,
         outer_cut_off: f32,
-    ) -> Self {
-        let data = GameObjectData::new(Some(parent));
-        Self {
-            data,
+    ) -> Arc<RwLock<Self>> {
+        let light = Arc::new(RwLock::new(Self {
+            data: GameObjectData::new(parent),
             components: ComponentMap::new(),
             intensity,
             color,
@@ -67,12 +68,23 @@ impl SpotLight {
             quadratic,
             cut_off,
             outer_cut_off,
+        }));
+        if let Some(parent) = &light.write().unwrap().data.parent {
+            parent
+                .write()
+                .unwrap()
+                .data_mut()
+                .children
+                .push(light.clone());
         }
+        light
     }
 
     pub fn light_data(&self) -> SpotLightData {
-        let position = self.data.transform.position;
-        let direction = self.data.transform.forward();
+        let mat:Transform = self.global_mat().into();
+        let position = mat.position;
+        let direction = mat.forward();
+        
         SpotLightData {
             intensity: self.intensity,
             color: vec3::from([self.color.x, self.color.y, self.color.z]),

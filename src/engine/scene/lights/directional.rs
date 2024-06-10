@@ -1,9 +1,12 @@
+use std::sync::{Arc, RwLock};
+
 use glam::Vec3;
 use glsl_layout::{float, Uniform, vec3};
+
 use crate::engine::scene::gameobject::{GameObject, GameObjectData, GameObjectTrait};
 use crate::engine::scene::gameobject::components::ComponentMap;
 
-#[derive(Debug, Copy,Default, Clone,Uniform)]
+#[derive(Debug, Copy, Default, Clone, Uniform)]
 pub struct DirectionalLightData {
     pub intensity: float,
     pub color: vec3,
@@ -15,7 +18,7 @@ impl DirectionalLightData {
         Self {
             intensity: 0.0,
             color: vec3::from([0.0, 0.0, 0.0]),
-            direction: vec3::from([0.0, 0.0, 0.0])
+            direction: vec3::from([0.0, 0.0, 0.0]),
         }
     }
 }
@@ -27,14 +30,22 @@ pub struct DirectionalLight {
     pub color: Vec3,
 }
 impl DirectionalLight {
-    pub fn new(parent: Option<GameObject>, intensity: f32, color: Vec3) -> Self {
-        let data = GameObjectData::new(parent);
-        Self {
-            data,
+    pub fn new(parent: Option<GameObject>, intensity: f32, color: Vec3) -> Arc<RwLock<Self>> {
+        let light = Arc::new(RwLock::new(Self {
+            data: GameObjectData::new(parent),
             components: ComponentMap::new(),
             intensity,
             color,
+        }));
+        if let Some(parent) = &light.write().unwrap().data.parent {
+            parent
+                .write()
+                .unwrap()
+                .data_mut()
+                .children
+                .push(light.clone());
         }
+        light
     }
 
     pub fn light_data(&self) -> DirectionalLightData {
@@ -42,7 +53,7 @@ impl DirectionalLight {
         DirectionalLightData {
             intensity: self.intensity,
             color: vec3::from([self.color.x, self.color.y, self.color.z]),
-            direction: vec3::from([direction.x, direction.y, direction.z])
+            direction: vec3::from([direction.x, direction.y, direction.z]),
         }
     }
 }
@@ -55,18 +66,17 @@ impl GameObjectTrait for DirectionalLight {
     fn data_mut(&mut self) -> &mut GameObjectData {
         &mut self.data
     }
-    
+
     fn components(&self) -> Option<&ComponentMap> {
         Some(&self.components)
     }
-    
+
     fn components_mut(&mut self) -> Option<&mut ComponentMap> {
         Some(&mut self.components)
     }
-    
+
     fn step(&mut self, state: &crate::engine::GameState) -> crate::result::EngineStepResult<()> {
         self.components.step(&mut self.data, state)?;
         Ok(())
     }
-    
 }

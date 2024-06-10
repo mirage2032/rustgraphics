@@ -5,6 +5,7 @@ use glsl_layout::{float, Uniform, vec3};
 
 use crate::engine::scene::gameobject::{GameObject, GameObjectData, GameObjectTrait};
 use crate::engine::scene::gameobject::components::ComponentMap;
+use crate::engine::transform::Transform;
 
 #[derive(Debug, Copy, Default, Clone, Uniform)]
 pub struct PointLightData {
@@ -68,7 +69,8 @@ impl PointLight {
     }
 
     pub fn light_data(&self) -> PointLightData {
-        let position = self.glob_pos();
+        let transform:Transform = self.global_mat().into();
+        let position = transform.position;
         PointLightData {
             intensity: self.intensity,
             color: vec3::from([self.color.x, self.color.y, self.color.z]),

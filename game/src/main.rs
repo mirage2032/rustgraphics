@@ -1,21 +1,23 @@
-use glengine::engine::drawable::shader::color::new_lit_color_shader;
 use std::sync::{Arc, RwLock, Weak};
 
 use glengine::engine::drawable::base::BaseDrawable;
 use glengine::engine::drawable::importer::assimp;
 use glengine::engine::drawable::material::{Material, MaterialData};
+use glengine::engine::drawable::shader::color::new_lit_color_shader;
 use glengine::engine::Engine;
 use glengine::engine::GameData;
 use glengine::engine::scene::camera::CameraControlled;
 use glengine::engine::scene::gameobject::{base::BaseGameObject, GameObjectTrait};
 use glengine::engine::scene::gameobject::components::drawable::DrawableComponent;
 use glengine::engine::scene::gameobject::components::rotating::RotatingComponent;
+use glengine::engine::scene::lights::directional::DirectionalLight;
 use glengine::engine::scene::lights::Lights;
 use glengine::engine::scene::lights::point::PointLight;
+use glengine::engine::scene::lights::spot::SpotLight;
 use glengine::engine::scene::Scene;
 use glengine::engine::scene::SceneData;
 use glengine::gl;
-use glengine::glam::vec3;
+use glengine::glam::{Mat4, vec3,Quat};
 use glengine::result::EngineRenderResult;
 
 struct BaseScene {
@@ -70,10 +72,10 @@ impl Scene for BaseScene {
                 Arc::new(new_lit_color_shader().expect("Failed to create color shader"));
             drawable.draw_data[0].material = Some(Arc::new(Material {
                 data: MaterialData {
-                    ambient: Some(vec3(0.1, 0.1, 0.1)),
-                    diffuse: Some(vec3(0.4, 1.0, 1.0)),
-                    specular: Some(vec3(0.1, 0.1, 0.1)),
-                    shininess: Some(0.4),
+                    ambient: Some(vec3(0.3, 0.1, 0.1)),
+                    diffuse: Some(vec3(1.0, 0.4, 0.6)),
+                    specular: Some(vec3(1.0, 0.5, 0.7)),
+                    shininess: Some(0.02),
                 },
                 diffuse_texture: None,
             }));
@@ -105,55 +107,51 @@ impl Scene for BaseScene {
             vec3(0.0, 1.0, 0.0),
         )));
 
-        let point_light = PointLight::new(
+        let spot_light = SpotLight::new(
             Some(camera.clone()),
             1.0,
             vec3(1.0, 1.0, 1.0),
             1.0,
-            0.05,
-            0.025,
+            0.09,
+            0.032,
+            27.0,
+            50.0,
         );
+        self.data_mut()
+            .lights
+            .spot
+            .push(Arc::downgrade(&spot_light));
+
+        let point_light = PointLight::new(
+            Some(empty.clone()),
+            1.0,
+            vec3(1.0, 1.0, 1.0),
+            1.0,
+            0.09,
+            0.032,
+        );
+        point_light.write().unwrap().data_mut().transform.position = vec3(5.0, 5.0, -20.0);
         self.data_mut()
             .lights
             .point
             .push(Arc::downgrade(&point_light));
 
-        // for i in 0..20 {
-        //     let new_monkey = BaseGameObject::new(Some(monkey.clone()));
-        //     {
-        //         let drawable = Drawable::default();
-        //         let mut data = monkey.lock().expect("Could not lock gameobject for init");
-        //         data.data_mut().drawable = Some(Box::new(drawable));
-        //         data.data_mut().transform.scale *= 1.05;
-        //         data.data_mut().transform.position = vec3(0.0, 0.0, -1.0);
-        //         data.data_mut().transform.rotation *= Quat::from_rotation_y(0.03 * i as f32);
-        //         data.data_mut().transform.rotation *= Quat::from_rotation_x(0.01 * i as f32);
-        //         data.data_mut().transform.rotation *= Quat::from_rotation_z(-0.024 * i as f32);
-        //     }
-        //     monkey = new_monkey;
-        // }
-        // let small_cube = BaseGameObject::new(Some(camera.clone()));
-        // {
-        //     let drawable = Drawable::default();
-        //     let mut data = small_cube.lock().expect("Could not lock gameobject for init");
-        //     data.data_mut().drawable = Some(Box::new(drawable));
-        //     data.data_mut().transform.scale *= 3.0;
-        //     data.data_mut().transform.position = vec3(0.0, 0.0, -10.0);
-        // }
+        let directional_light =
+            DirectionalLight::new(Some(empty.clone()), 0.04, vec3(1.0, 1.0, 1.0));
+        {
+            //mat4 pointing down
+            let mat = Mat4::from_quat(Quat::from_axis_angle(vec3(1.0, 0.0, 0.0), -std::f32::consts::FRAC_PI_2));
+            directional_light
+                .write()
+                .unwrap()
+                .data_mut()
+                .transform = mat.into();
+        }
 
-        let point_light2 = PointLight::new(
-            Some(empty.clone()),
-            0.3,
-            vec3(0.5, 0.0, 0.0),
-            1.0,
-            0.05,
-            0.025,
-        );
-        point_light2.write().unwrap().data_mut().transform.position = vec3(7.0, 2.0, -4.0);
         self.data_mut()
             .lights
-            .point
-            .push(Arc::downgrade(&point_light2));
+            .directional
+            = Arc::downgrade(&directional_light);
 
         self.data.objects.push(camera.clone());
         self.data.main_camera = Arc::downgrade(&camera);
