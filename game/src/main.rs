@@ -56,7 +56,7 @@ impl Scene for BaseScene {
         let monkey = BaseGameObject::new(Some(empty.clone()));
         {
             let monkey_draw =
-                assimp::import("C:\\Users\\alx\\RustroverProjects\\rustgraphics\\untitled.obj");
+                assimp::import("models/untitled.obj");
             let mut data = monkey.write().expect("Could not lock gameobject for init");
             data.components_mut()
                 .unwrap()
@@ -92,7 +92,7 @@ impl Scene for BaseScene {
             let mut data = rotator.write().expect("Could not lock gameobject for init");
             let components = data.components_mut().unwrap();
             let drawable =
-                assimp::import("C:\\Users\\alx\\RustroverProjects\\rustgraphics\\bugatticlean.obj");
+                assimp::import("models/bugatticlean.obj");
             components.add_component(DrawableComponent::new(Box::new(drawable)));
             components.add_component(RotatingComponent::new(vec3(0.0, 0.04, 0.0)));
             data.data_mut().transform.scale *= 0.3;
