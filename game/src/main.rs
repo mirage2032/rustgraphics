@@ -56,7 +56,7 @@ impl Scene for BaseScene {
         let monkey = BaseGameObject::new(Some(empty.clone()));
         {
             let monkey_draw =
-                assimp::import("C:\\Users\\alx\\RustroverProjects\\rustgraphics\\monkeyhp.obj");
+                assimp::import("C:\\Users\\alx\\RustroverProjects\\rustgraphics\\untitled.obj");
             let mut data = monkey.write().expect("Could not lock gameobject for init");
             data.components_mut()
                 .unwrap()

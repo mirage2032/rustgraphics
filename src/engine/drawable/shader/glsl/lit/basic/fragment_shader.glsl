@@ -55,6 +55,8 @@ uniform struct Material {
 
 out vec4 FragColor;
 
+const float MIN_SHININESS = 1.0;
+
 // Function to calculate point light contribution
 vec3 CalculatePointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir) {
     vec3 lightDir = normalize(light.position - fragPos); // Direction from fragment to light
@@ -65,7 +67,8 @@ vec3 CalculatePointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewD
     // Specular shading
     vec3 reflectDir = reflect(-lightDir, normal);
     vec3 halfwayDir = normalize(lightDir + viewDir);
-    float spec = pow(max(dot(normal, halfwayDir), 0.0), material.shininess);
+    float shininess = max(material.shininess, MIN_SHININESS); // Ensure shininess is at least 1
+    float spec = pow(max(dot(normal, halfwayDir), 0.0), shininess);
 
     // Attenuation
     float distance = length(light.position - fragPos);
@@ -79,25 +82,7 @@ vec3 CalculatePointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewD
     return ambient + diffuse + specular;
 }
 
-// Function to calculate directional light contribution
-vec3 CalculateDirectionalLight(DirectionalLight light, vec3 normal, vec3 viewDir) {
-    vec3 lightDir = normalize(-light.direction); // Direction from light source
-
-    // Diffuse shading
-    float diff = max(dot(normal, lightDir), 0.0);
-
-    // Specular shading
-    vec3 reflectDir = reflect(-lightDir, normal);
-    float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
-
-    // Final light intensity
-    vec3 ambient = light.color * light.intensity * material.ambient;
-    vec3 diffuse = light.color * diff * material.diffuse * light.intensity;
-    vec3 specular = light.color * spec * material.specular * light.intensity;
-
-    return ambient + diffuse + specular;
-}
-
+// Function to calculate spot light contribution
 vec3 CalculateSpotLight(SpotLight light, vec3 normal, vec3 fragPos, vec3 viewDir) {
     // Calculate light direction
     vec3 lightDir = normalize(light.position - fragPos);
@@ -118,10 +103,15 @@ vec3 CalculateSpotLight(SpotLight light, vec3 normal, vec3 fragPos, vec3 viewDir
     // Calculate diffuse shading
     float diff = max(dot(normal, lightDir), 0.0);
 
-    // Calculate specular shading
-    vec3 reflectDir = reflect(-lightDir, normal);
-    vec3 halfwayDir = normalize(lightDir + viewDir); // Calculate halfway direction
-    float spec = pow(max(dot(normal, halfwayDir), 0.0), material.shininess);
+    // Calculate specular shading using the halfway vector
+    vec3 halfwayDir = normalize(lightDir + viewDir); // Correct normalization
+
+    // Calculate the specular strength
+    float specularStrength = 0.0;
+    float shininess = max(material.shininess, MIN_SHININESS); // Ensure shininess is at least 1
+    if (diff > 0.0) {
+        specularStrength = pow(max(dot(normal, halfwayDir), 0.0), shininess);
+    }
 
     // Calculate attenuation
     float distance = length(light.position - fragPos);
@@ -130,7 +120,28 @@ vec3 CalculateSpotLight(SpotLight light, vec3 normal, vec3 fragPos, vec3 viewDir
     // Calculate final light intensity
     vec3 ambient = light.color * material.ambient * light.intensity * attenuation * intensity;
     vec3 diffuse = light.color * material.diffuse * diff * light.intensity * attenuation * intensity;
-    vec3 specular = light.color * material.specular * spec * light.intensity * attenuation * intensity;
+    vec3 specular = light.color * material.specular * specularStrength * light.intensity * attenuation * intensity;
+
+    return ambient + diffuse + specular;
+}
+
+
+// Function to calculate directional light contribution
+vec3 CalculateDirectionalLight(DirectionalLight light, vec3 normal, vec3 viewDir) {
+    vec3 lightDir = normalize(-light.direction); // Direction from light source
+
+    // Diffuse shading
+    float diff = max(dot(normal, lightDir), 0.0);
+
+    // Specular shading
+    vec3 reflectDir = reflect(-lightDir, normal);
+    float shininess = max(material.shininess, MIN_SHININESS); // Ensure shininess is at least 0.01
+    float spec = pow(max(dot(viewDir, reflectDir), 0.0), shininess);
+
+    // Final light intensity
+    vec3 ambient = light.color * light.intensity * material.ambient;
+    vec3 diffuse = light.color * diff * material.diffuse * light.intensity;
+    vec3 specular = light.color * spec * material.specular * light.intensity;
 
     return ambient + diffuse + specular;
 }
@@ -159,7 +170,7 @@ vec3 CalculateLights(vec3 normal, vec3 fragPos, vec3 viewDir){
 
 void main() {
     vec3 normal = normalize(Normal);
-    vec3 viewDir = normalize(-FragPos); // Assuming the camera is at the origin in view space
+    vec3 viewDir = normalize(ViewPos-FragPos); // Assuming the camera is at the origin in view space
     vec3 result = CalculateLights(normal, FragPos, viewDir);
 
     // Output final color

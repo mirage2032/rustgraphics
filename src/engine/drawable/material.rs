@@ -42,6 +42,9 @@ impl From<russimp::material::Material> for Material {
             .properties
             .iter()
             .for_each(|prop| match (&*prop.key, &prop.data) {
+                // ("?mat.name", &PropertyTypeInfo::String(ref name)) => {
+                //     println!("Material name: {}", name);
+                // }
                 ("$clr.ambient", &PropertyTypeInfo::FloatArray(ref color)) => {
                     data.ambient = Some(vec3(color[0], color[1], color[2]));
                 }
@@ -52,7 +55,9 @@ impl From<russimp::material::Material> for Material {
                     data.specular = Some(vec3(color[0], color[1], color[2]));
                 }
                 ("$mat.shininess", &PropertyTypeInfo::FloatArray(ref val)) => {
-                    data.shininess = Some(val[0] / 250.0);
+                    let val = val[0];
+                    data.shininess = Some((val / 1000.0)*128.0);
+                    // println!("Shininess: {:?}", data.shininess);
                 }
                 // (a,b) => {
                 //     println!("Unknown property: {:?} {:?}", a,b);
@@ -70,10 +75,7 @@ impl From<russimp::material::Material> for Material {
             textures.insert("diffuse_texture", image.into());
         };
 
-        Self {
-            data,
-            textures,
-        }
+        Self { data, textures }
     }
 }
 impl Material {
@@ -90,8 +92,8 @@ impl Material {
         if let Some(shininess) = self.data.shininess {
             shader.set_float("material.shininess", shininess);
         }
-        
-        for (idx,(name, texture)) in self.textures.iter().enumerate() {
+
+        for (idx, (name, texture)) in self.textures.iter().enumerate() {
             shader.set_texture(name, texture.id(), idx as u32);
         }
     }
