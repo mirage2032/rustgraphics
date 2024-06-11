@@ -1,4 +1,5 @@
 # OpenGL graphics engine in Rust
+![build status](https://github.com/mirage2032/rustgraphics/actions/workflows/build.yml/badge.svg)
 
 This is a simple graphics engine written in Rust using OpenGL.  
 It is a work in progress project and there's still a lot of work to be done.
