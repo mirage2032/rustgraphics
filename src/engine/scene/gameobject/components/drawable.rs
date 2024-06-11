@@ -1,4 +1,3 @@
-use std::any::Any;
 use glam::Mat4;
 
 use crate::engine::drawable::Drawable;

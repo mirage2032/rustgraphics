@@ -1,6 +1,6 @@
 use std::sync::{Arc, RwLock};
 
-use glam::{Mat4, Vec3};
+use glam::Mat4;
 
 use crate::engine::drawable::Drawable;
 use crate::engine::GameState;

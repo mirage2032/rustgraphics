@@ -1,5 +1,5 @@
 use std::mem;
-use std::sync::{Mutex, RwLock, Weak};
+use std::sync::{RwLock, Weak};
 
 use gl::types::{GLsizeiptr, GLuint};
 use glsl_layout::{boolean, int, Std140, Uniform};
@@ -24,16 +24,6 @@ pub struct LightsData {
     pub spot: [SpotLightData; MAX_SPOT_LIGHTS],
 }
 
-impl LightsData {
-    fn as_bytes(&self) -> &[u8] {
-        unsafe {
-            std::slice::from_raw_parts(
-                (self as *const LightsData) as *const u8,
-                mem::size_of::<LightsData>(),
-            )
-        }
-    }
-}
 pub struct Lights {
     pub directional: Weak<RwLock<DirectionalLight>>,
     pub point: Vec<Weak<RwLock<PointLight>>>,

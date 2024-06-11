@@ -12,8 +12,7 @@ impl Fbo{
     pub fn new(width: u32, height: u32) -> Self {
         let mut fbo = 0;
         let mut texture = 0;
-        let mut depth_texture = 0;
-        let mut stencil_buffer = 0;
+        let mut depth_stencil_texture = 0;
         unsafe {
             gl::GenFramebuffers(1, &mut fbo);
             gl::BindFramebuffer(gl::FRAMEBUFFER, fbo);
@@ -43,8 +42,8 @@ impl Fbo{
             );
             
             // Depth and Stencil texture
-            gl::GenTextures(1, &mut depth_texture);
-            gl::BindTexture(gl::TEXTURE_2D, depth_texture);
+            gl::GenTextures(1, &mut depth_stencil_texture);
+            gl::BindTexture(gl::TEXTURE_2D, depth_stencil_texture);
             gl::TexImage2D(
                 gl::TEXTURE_2D,
                 0,
@@ -64,7 +63,7 @@ impl Fbo{
                 gl::FRAMEBUFFER,
                 gl::DEPTH_STENCIL_ATTACHMENT,
                 gl::TEXTURE_2D,
-                depth_texture,
+                depth_stencil_texture,
                 0,
             );
 
@@ -76,7 +75,7 @@ impl Fbo{
         Self {
             fbo,
             texture,
-            depth_texture,
+            depth_texture: depth_stencil_texture,
             width,
             height,
         }

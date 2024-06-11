@@ -12,7 +12,7 @@ pub struct ColliderSphere {
 }
 
 impl ColliderArea for ColliderSphere {
-    fn in_frustum(&self, transform: &Transform, frustum: &[Vec4; 6]) -> bool {
+    fn in_frustum(&self, _transform: &Transform, frustum: &[Vec4; 6]) -> bool {
         let distances: Vec<_> = frustum
             .iter()
             .map(|plane| plane.dot(self.center.extend(1.0)))
@@ -38,7 +38,7 @@ struct ColliderRectBox {
 }
 
 impl ColliderArea for ColliderRectBox {
-    fn in_frustum(&self, transform: &Transform,frustum: &[Vec4; 6]) -> bool {
+    fn in_frustum(&self, _transform: &Transform,frustum: &[Vec4; 6]) -> bool {
         let half_diagonal_vec = Vec4::new(self.half_width, self.half_height, self.half_depth, 1.0);
         let half_diagonal = half_diagonal_vec.length();
         let distances: Vec<_> = frustum
@@ -64,7 +64,7 @@ struct ColliderCylinder {
 }
 
 impl ColliderArea for ColliderCylinder {
-    fn in_frustum(&self, transform: &Transform, frustum: &[Vec4; 6]) -> bool {
+    fn in_frustum(&self, _transform: &Transform, frustum: &[Vec4; 6]) -> bool {
         // Calculate the top and bottom center points of the cylinder
         let top_center = self.center + Vec3::new(0.0, self.half_height, 0.0);
         let bottom_center = self.center - Vec3::new(0.0, self.half_height, 0.0);
@@ -89,7 +89,7 @@ struct BoundingCollider {
 }
 
 impl ColliderArea for BoundingCollider {
-    fn in_frustum(&self, transform: &Transform, frustum: &[Vec4; 6]) -> bool {
+    fn in_frustum(&self, _transform: &Transform, frustum: &[Vec4; 6]) -> bool {
         for plane in frustum {
             let mut all_outside = true;
             for vertex in &self.vertices {

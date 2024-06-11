@@ -1,4 +1,4 @@
-use std::sync::{Arc, Mutex, RwLock};
+use std::sync::{Arc, RwLock};
 
 use glam::Vec3;
 use glsl_layout::{float, Uniform, vec3};

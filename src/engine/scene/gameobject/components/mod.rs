@@ -15,9 +15,9 @@ pub mod rotating;
 pub trait Component: Send + Sync + 'static{
     fn step(
         &mut self,
-        object: &mut GameObjectData,
-        components: &ComponentMap,
-        state: &GameState,
+        _object: &mut GameObjectData,
+        _components: &ComponentMap,
+        _state: &GameState,
     ) -> EngineStepResult<()> {
         Ok(())}
 }

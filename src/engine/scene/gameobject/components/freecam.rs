@@ -1,4 +1,3 @@
-use glam::Mat4;
 use glfw::Key;
 
 use crate::engine::scene::gameobject::components::{Component, ComponentMap};
@@ -6,18 +5,18 @@ use crate::engine::scene::gameobject::GameObjectData;
 use crate::engine::GameState;
 use crate::result::EngineStepResult;
 
-fn to_mat4(mat: [[f32; 4]; 4]) -> Mat4 {
-    Mat4::from_cols_array_2d(&mat)
-}
-
-fn to_mat4_3x4(mat: &[[f32; 4]; 3]) -> Mat4 {
-    Mat4::from_cols_array_2d(&[
-        [mat[0][0], mat[0][1], mat[0][2], 0.0],
-        [mat[1][0], mat[1][1], mat[1][2], 0.0],
-        [mat[2][0], mat[2][1], mat[2][2], 0.0],
-        [0.0, 0.0, 0.0, 1.0],
-    ])
-}
+// fn to_mat4(mat: [[f32; 4]; 4]) -> Mat4 {
+//     Mat4::from_cols_array_2d(&mat)
+// }
+//
+// fn to_mat4_3x4(mat: &[[f32; 4]; 3]) -> Mat4 {
+//     Mat4::from_cols_array_2d(&[
+//         [mat[0][0], mat[0][1], mat[0][2], 0.0],
+//         [mat[1][0], mat[1][1], mat[1][2], 0.0],
+//         [mat[2][0], mat[2][1], mat[2][2], 0.0],
+//         [0.0, 0.0, 0.0, 1.0],
+//     ])
+// }
 
 pub struct FreeCamController {}
 
@@ -31,7 +30,7 @@ impl Component for FreeCamController {
     fn step(
         &mut self,
         object: &mut GameObjectData,
-        components: &ComponentMap,
+        _components: &ComponentMap,
         state: &GameState,
     ) -> EngineStepResult<()> {
         // let poses = vr_system

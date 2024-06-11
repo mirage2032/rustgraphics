@@ -1,4 +1,4 @@
-pub mod GPU {
+pub mod gpu {
     #[no_mangle]
     pub static NvOptimusEnablement: i32 = 1;
     #[no_mangle]

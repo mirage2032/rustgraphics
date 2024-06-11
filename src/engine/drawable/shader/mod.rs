@@ -1,8 +1,6 @@
-use std::sync::Arc;
 use gl;
 use gl::types::GLenum;
 use glam::Mat4;
-use lazy_static::lazy_static;
 use crate::engine::drawable::shader::unlit::new_face_shader;
 
 use crate::result::{EngineRenderResult, ShaderError};
