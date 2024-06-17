@@ -82,9 +82,30 @@ impl Scene for BaseScene {
             data.components_mut()
                 .unwrap()
                 .add_component(DrawableComponent::new(Box::new(drawable)));
-            data.data_mut().transform.scale.x *= 200.0;
-            data.data_mut().transform.scale.z *= 200.0;
+            data.data_mut().transform.scale *= 200.0;
+            data.data_mut().transform.scale.y *= 0.001;
             data.data_mut().transform.position = vec3(0.0, -4.0, 0.0);
+        }
+
+        let cube = BaseGameObject::new(Some(empty.clone()));
+        {
+            let mut drawable = BaseDrawable::default();
+            drawable.draw_data[0].shader = LIT_COLOR_SHADER.clone();
+            drawable.draw_data[0].material = Some(Arc::new(Material {
+                data: MaterialData {
+                    ambient: Some(vec3(0.9, 0.1, 0.1)),
+                    diffuse: Some(vec3(1.0, 0.4, 0.6)),
+                    specular: Some(vec3(1.0, 0.5, 0.7)),
+                    shininess: Some(0.02),
+                },
+                textures: Default::default(),
+            }));
+            let mut data = cube.write().expect("Could not lock gameobject for init");
+            data.components_mut()
+                .unwrap()
+                .add_component(DrawableComponent::new(Box::new(drawable)));
+            data.data_mut().transform.scale *= 4.0;
+            data.data_mut().transform.position = vec3(0.0, -1.0, 8.0);
         }
 
         let rotator = BaseGameObject::new(Some(empty.clone()));
@@ -123,13 +144,13 @@ impl Scene for BaseScene {
 
         let point_light = PointLight::new(
             Some(empty.clone()),
-            1.0,
+            1.8,
             vec3(1.0, 1.0, 1.0),
             1.0,
             0.09,
             0.032,
         );
-        point_light.write().unwrap().data_mut().transform.position = vec3(5.0, 5.0, -20.0);
+        point_light.write().unwrap().data_mut().transform.position = vec3(5.0, 13.0, -20.0);
         self.data_mut()
             .lights
             .point
@@ -139,7 +160,7 @@ impl Scene for BaseScene {
             DirectionalLight::new(Some(empty.clone()), 0.04, vec3(1.0, 1.0, 1.0));
         {
             //mat4 pointing down
-            let mat = Mat4::from_quat(Quat::from_axis_angle(vec3(1.0, 0.0, 0.0), -std::f32::consts::FRAC_PI_2));
+            let mat = Mat4::from_quat(Quat::from_axis_angle(vec3(1.0, 0.6, 0.8), -std::f32::consts::FRAC_PI_2));
             directional_light
                 .write()
                 .unwrap()
