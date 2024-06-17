@@ -9,6 +9,7 @@ use gl;
 use glfw::{
     Action, Context, Glfw, GlfwReceiver, Key, PRenderContext, PWindow, WindowEvent, WindowHint,
 };
+use glfw::ffi::{glfwMakeContextCurrent, glfwSwapInterval};
 
 
 use crate::engine::config::CONFIG;
@@ -91,7 +92,11 @@ pub struct Engine {
 impl Engine {
     pub fn new() -> Self {
         let mut glfw = glfw::init(glfw::fail_on_errors).unwrap();
-        glfw.window_hint(WindowHint::ContextVersion(3, 1));
+        glfw.window_hint(WindowHint::ContextVersion(3, 2));
+        //unlimited fps
+        glfw.window_hint(WindowHint::RefreshRate(Some(0)));
+
+
         glfw.window_hint(WindowHint::CocoaGraphicsSwitching(false));
         glfw.window_hint(WindowHint::OpenGlForwardCompat(true));
         glfw.window_hint(WindowHint::OpenGlDebugContext(true));
@@ -99,7 +104,7 @@ impl Engine {
         glfw.window_hint(WindowHint::ClientApi(glfw::ClientApiHint::OpenGlEs));
         glfw.window_hint(WindowHint::Resizable(false));
         glfw.window_hint(WindowHint::TransparentFramebuffer(true));
-        glfw.window_hint(WindowHint::Samples(Some(4))); // Set the number of samples for multi-sampling
+        // glfw.window_hint(WindowHint::Samples(Some(16))); // Set the number of samples for multi-sampling
 
         let resolution = CONFIG
             .read()
@@ -144,6 +149,14 @@ impl Engine {
             .to_str()
             .unwrap()
         );
+        let mut maxsamples = 0;
+        unsafe {
+            gl::GetIntegerv(gl::MAX_SAMPLES, &mut maxsamples);
+        }
+        println!(
+            "Max samples: {:?}",
+            maxsamples
+        );
 
         window.set_key_polling(true);
         window.set_cursor_pos_polling(true);
@@ -151,13 +164,15 @@ impl Engine {
         window.set_cursor_mode(glfw::CursorMode::Disabled);
 
         window.glfw.set_swap_interval(glfw::SwapInterval::Sync(1));
+        // unsafe {
+        //     glfwSwapInterval(0);
+        // }
         glfw.make_context_current(None);
 
         let game = Arc::new(Mutex::new(GameData {
             scene: None,
             ..Default::default()
         }));
-
         Self {
             window,
             game,
@@ -271,6 +286,9 @@ impl Engine {
             fbo.bind();
             gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
             scene.render();
+            gl::BindFramebuffer(gl::READ_FRAMEBUFFER, fbo.fbo);
+            gl::BindFramebuffer(gl::DRAW_FRAMEBUFFER, 0);
+            fbo.blit();
             Fbo::unbind();
         }
     }
@@ -293,11 +311,11 @@ impl Engine {
             .expect("Failed to read config")
             .config()
             .get_resolution();
-        let fbo = Fbo::new(resolution.0, resolution.1);
+        let fbo = Fbo::new(resolution.0, resolution.1,8);
         let screen_drawable = drawable::screenquad(&fbo);
             
         unsafe {
-            gl::Enable(gl::MULTISAMPLE); // Enable multi-sampling
+            // gl::Enable(gl::MULTISAMPLE); // Enable multi-sampling
             gl::Enable(gl::BLEND); // Enable blending for better anti-aliasing
             gl::BlendFunc(gl::SRC_ALPHA, gl::ONE_MINUS_SRC_ALPHA); // Set blending function
             gl::Enable(gl::DEPTH_TEST);

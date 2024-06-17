@@ -1,0 +1,17 @@
+[package]
+name = "glengine-mdl"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+serde = { version = "1.0.203", features = ["derive"] }
+russimp = { version = "3.2.0", features = ["prebuilt"] }
+bincode = "2.0.0-rc.3"
+#rand = "0.9.0-alpha.1"
+#glengine = { path = "../"}
+
+[build-dependencies]
+#glengine = { path = "../"}
+
+[lib]
+crate-type = ["lib"]
