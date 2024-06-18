@@ -1,7 +1,8 @@
 use std::collections::HashMap;
+use std::sync::Arc;
 
 use gl;
-use gl::types::GLuint;
+use gl::types::{GLenum, GLuint};
 use glam::{vec3, Vec3};
 use russimp::material::{PropertyTypeInfo, TextureType};
 
@@ -79,7 +80,7 @@ impl From<russimp::material::Material> for Material {
     }
 }
 impl Material {
-    pub fn set_uniforms(&self, shader: &Shader) {
+    pub fn set_uniforms(&self, shader: &mut Shader) {
         if let Some(ambient) = self.data.ambient {
             shader.set_vec3("material.ambient", &ambient);
         }
@@ -93,17 +94,24 @@ impl Material {
             shader.set_float("material.shininess", shininess);
         }
 
-        for (idx, (name, texture)) in self.textures.iter().enumerate() {
-            shader.set_texture(name, texture.id(), idx as u32);
+        for (name, texture) in self.textures.iter() {
+            shader.add_texture(name, texture.id(), texture.texture_type());
         }
     }
 }
 
 pub struct Texture {
     pub id: GLuint,
+    pub texture_type: GLenum,
 }
 
 impl Texture {
+    pub fn new(id: GLuint, texture_type: GLenum) -> Self {
+        Self { id, texture_type }
+    }
+    pub fn texture_type(&self) -> GLenum {
+        self.texture_type
+    }
     pub fn id(&self) -> GLuint {
         self.id
     }
@@ -141,6 +149,6 @@ impl From<Image> for Texture {
             gl::GenerateMipmap(gl::TEXTURE_2D);
             gl::BindTexture(gl::TEXTURE_2D, 0);
         }
-        Self { id: texture }
+        Self { id: texture, texture_type: gl::TEXTURE_2D}
     }
 }

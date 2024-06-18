@@ -15,7 +15,7 @@ impl DrawableComponent {
 }
 
 impl Drawable for DrawableComponent {
-    fn draw(&self,modelmat: &Mat4, viewmat: &Mat4, lights: Option<&Lights>) {
+    fn draw(&mut self,modelmat: &Mat4, viewmat: &Mat4, lights: Option<&Lights>) {
         self.drawable.draw(modelmat, viewmat, lights);
     }
 }

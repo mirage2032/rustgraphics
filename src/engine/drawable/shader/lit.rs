@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use lazy_static::lazy_static;
 use crate::engine::drawable::shader::Shader;
 use crate::result::EngineRenderResult;
@@ -12,5 +12,5 @@ pub fn new_basic_shader() -> EngineRenderResult<Shader> {
 }
 
 lazy_static! {
-    pub static ref LIT_COLOR_SHADER: Arc<Shader> = Arc::new(new_basic_shader().unwrap());
+    pub static ref LIT_COLOR_SHADER: Arc<Mutex<Shader>> = Arc::new(Mutex::new(new_basic_shader().unwrap()));
 }

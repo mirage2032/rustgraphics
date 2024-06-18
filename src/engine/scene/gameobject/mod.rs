@@ -46,13 +46,13 @@ pub trait GameObjectTrait: Drawable + Send + Sync {
 pub type GameObject = Arc<RwLock<dyn GameObjectTrait>>;
 
 impl<T: GameObjectTrait> Drawable for T {
-    fn draw(&self, modelmat: &Mat4, viewmat: &Mat4, lights: Option<&Lights>) {
+    fn draw(&mut self, modelmat: &Mat4, viewmat: &Mat4, lights: Option<&Lights>) {
         let data = self.data();
         let newmodelmat = *modelmat * Mat4::from(data.transform);
         if let Some(components) = self.components() {
             if let Some(drawable) = components.get_component::<DrawableComponent>() {
                 drawable
-                    .read()
+                    .write()
                     .expect("Could not lock drawable component for draw")
                     .draw(&newmodelmat, viewmat, lights);
             }
@@ -60,7 +60,7 @@ impl<T: GameObjectTrait> Drawable for T {
 
         for child in &data.children {
             child
-                .read()
+                .write()
                 .expect("Could not lock child gameobject for draw")
                 .draw(&newmodelmat, viewmat, lights);
         }

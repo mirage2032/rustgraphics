@@ -32,7 +32,7 @@ pub trait Scene: Send {
             self.data_mut().lights.update_ssbo();
             for object in &self.data().objects {
                 object
-                    .read()
+                    .write()
                     .expect("Could not lock gameobject for draw")
                     .draw(
                         &Mat4::from_translation(vec3(0.0, 0.0, 0.0)),

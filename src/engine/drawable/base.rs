@@ -13,7 +13,7 @@ pub struct BaseDrawable {
 }
 
 impl BaseDrawable {
-    pub fn new(mesh: Arc<Mutex<dyn mesh::Mesh>>, shader: Arc<Shader>) -> Self {
+    pub fn new(mesh: Arc<Mutex<dyn mesh::Mesh>>, shader: Arc<Mutex<Shader>>) -> Self {
         let draw_object = DrawData {
             mesh,
             shader,
@@ -26,8 +26,8 @@ impl BaseDrawable {
 }
 
 impl Drawable for BaseDrawable {
-    fn draw(&self, modelmat: &Mat4, viewmat: &Mat4,lights:Option<&Lights>) {
-        for drawable in self.draw_data.iter() {
+    fn draw(&mut self, modelmat: &Mat4, viewmat: &Mat4,lights:Option<&Lights>) {
+        for drawable in self.draw_data.iter_mut() {
             drawable.draw(modelmat, viewmat,lights);
         }
     }
@@ -37,7 +37,7 @@ impl Default for BaseDrawable {
     fn default() -> Self {
         let draw_object = DrawData {
             mesh: mesh::cube::new(),
-            shader: Arc::new(Shader::default()),
+            shader: Arc::new(Mutex::new(Shader::default())),
             material: None,
         };
         Self {

@@ -309,7 +309,7 @@ impl Engine {
             .config()
             .get_resolution();
         let fbo = Fbo::new(resolution.0, resolution.1,8); // Limit multi-sampling to supported max samples
-        let screen_drawable = drawable::screenquad(&fbo);
+        let mut screen_drawable = drawable::screenquad(&fbo);
             
         unsafe {
             // gl::Enable(gl::MULTISAMPLE); // Enable multi-sampling

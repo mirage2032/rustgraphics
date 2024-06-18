@@ -79,7 +79,7 @@ pub fn import(path: &str) -> BaseDrawable {
         }
         let shader = match material.data.ambient{
             Some(_) => LIT_COLOR_SHADER.clone(),
-            None => Arc::new(Shader::default()),
+            None => Arc::new(Mutex::new(Shader::default())),
         };
         
         let draw = DrawData {
