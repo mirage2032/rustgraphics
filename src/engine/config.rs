@@ -77,7 +77,7 @@ impl Default for Config {
             resolution: (1600, 900),
             fov: 70.0,
             near_clip: 0.1,
-            far_clip: 1000.0,
+            far_clip: 300.0,
         };
         default
     }

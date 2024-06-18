@@ -155,21 +155,21 @@ vec3 CalculateLights(vec3 normal, vec3 fragPos, vec3 viewDir){
     // Calculate directional light
     if (light.is_directional) {
         float angle = dot(normal, -light.directional_light.direction);
-        float smooth_angle = smoothstep(0.0, 0.2, angle);
+        float smooth_angle = smoothstep(0.0, 0.3, angle);
         result += CalculateDirectionalLight(light.directional_light, normal, viewDir) * smooth_angle;
     }
 
     // Calculate point lights
     for (int i = 0; i < light.point_count; ++i) {
         float angle = dot(normal, normalize(light.point_lights[i].position - fragPos));
-        float smooth_angle = smoothstep(0.0, 0.2, angle);
+        float smooth_angle = smoothstep(0.0, 0.1, angle);
         result += CalculatePointLight(light.point_lights[i], normal, fragPos, viewDir) * smooth_angle;
     }
 
     // Calculate spot lights
     for (int i = 0; i < light.spot_count; ++i) {
         float angle = dot(normal, normalize(light.spot_lights[i].position - fragPos));
-        float smooth_angle = smoothstep(0.0, 0.2, angle);
+        float smooth_angle = smoothstep(-0.1, 0.1, angle);
         result += CalculateSpotLight(light.spot_lights[i], normal, fragPos, viewDir) * smooth_angle;
     }
 

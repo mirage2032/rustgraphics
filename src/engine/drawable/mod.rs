@@ -60,11 +60,11 @@ pub fn screenquad(fbo: &Fbo) -> DrawData {
     let mesh = mesh::screenquad::new();
     let shader = QUAD_SHADER.clone();
     let mut textures = HashMap::new();
-    textures.insert("diffuse_texture", Texture { id: fbo.color_texture });
+    textures.insert("color_tex", Texture { id: fbo.color_texture });
     textures.insert(
-        "depth_texture",
+        "depth_stencil_tex",
         Texture {
-            id: fbo.depth_texture,
+            id: fbo.depth_stencil_texture,
         },
     );
 

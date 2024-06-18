@@ -9,7 +9,7 @@ use gl;
 use glfw::{
     Action, Context, Glfw, GlfwReceiver, Key, PRenderContext, PWindow, WindowEvent, WindowHint,
 };
-use glfw::ffi::{glfwMakeContextCurrent, glfwSwapInterval};
+use glfw::ffi::{glfwSwapInterval};
 
 
 use crate::engine::config::CONFIG;
@@ -92,11 +92,8 @@ pub struct Engine {
 impl Engine {
     pub fn new() -> Self {
         let mut glfw = glfw::init(glfw::fail_on_errors).unwrap();
-        glfw.window_hint(WindowHint::ContextVersion(3, 2));
-        //unlimited fps
-        glfw.window_hint(WindowHint::RefreshRate(Some(0)));
-
-
+        glfw.window_hint(WindowHint::ContextVersion(3, 0));
+        // glfw.window_hint(WindowHint::RefreshRate(Some(0)));
         glfw.window_hint(WindowHint::CocoaGraphicsSwitching(false));
         glfw.window_hint(WindowHint::OpenGlForwardCompat(true));
         glfw.window_hint(WindowHint::OpenGlDebugContext(true));
@@ -163,7 +160,7 @@ impl Engine {
         window.set_mouse_button_polling(true);
         window.set_cursor_mode(glfw::CursorMode::Disabled);
 
-        window.glfw.set_swap_interval(glfw::SwapInterval::Sync(1));
+        window.glfw.set_swap_interval(glfw::SwapInterval::Adaptive);
         // unsafe {
         //     glfwSwapInterval(0);
         // }
@@ -311,7 +308,7 @@ impl Engine {
             .expect("Failed to read config")
             .config()
             .get_resolution();
-        let fbo = Fbo::new(resolution.0, resolution.1,8);
+        let fbo = Fbo::new(resolution.0, resolution.1,8); // Limit multi-sampling to supported max samples
         let screen_drawable = drawable::screenquad(&fbo);
             
         unsafe {
