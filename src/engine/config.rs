@@ -1,9 +1,8 @@
-use std::fs::File;
-use std::io::{Read, Write};
-use std::sync::RwLock;
-use std::time::Duration;
 use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
+use std::fs::File;
+use std::io::{Read, Write};
+use std::time::Duration;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Config {

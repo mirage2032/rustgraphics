@@ -1,9 +1,10 @@
-use std::sync::{Arc, Mutex};
+use std::cell::RefCell;
+use std::rc::Rc;
 
 use glam::Mat4;
 
-use crate::engine::drawable::{Drawable, DrawData};
 use crate::engine::drawable::mesh;
+use crate::engine::drawable::{DrawData, Drawable};
 use crate::engine::scene::lights::Lights;
 
 use super::shader::Shader;
@@ -13,7 +14,7 @@ pub struct BaseDrawable {
 }
 
 impl BaseDrawable {
-    pub fn new(mesh: Arc<Mutex<dyn mesh::Mesh>>, shader: Arc<Mutex<Shader>>) -> Self {
+    pub fn new(mesh: Rc<RefCell<dyn mesh::Mesh>>, shader: Rc<RefCell<Shader>>) -> Self {
         let draw_object = DrawData {
             mesh,
             shader,
@@ -37,7 +38,7 @@ impl Default for BaseDrawable {
     fn default() -> Self {
         let draw_object = DrawData {
             mesh: mesh::cube::new(),
-            shader: Arc::new(Mutex::new(Shader::default())),
+            shader: Rc::new(RefCell::new(Shader::default())),
             material: None,
         };
         Self {

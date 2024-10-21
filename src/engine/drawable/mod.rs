@@ -1,5 +1,6 @@
+use std::cell::RefCell;
 use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
+use std::rc::Rc;
 
 use glam::Mat4;
 
@@ -18,23 +19,23 @@ pub mod material;
 pub mod mesh;
 pub mod shader;
 
-pub trait Drawable: Send + Sync {
+pub trait Drawable{
     fn draw(&mut self, modelmat: &Mat4, viewmat: &Mat4, lights: Option<&Lights>);
 }
 
 pub struct DrawData {
-    pub mesh: Arc<Mutex<dyn mesh::Mesh>>,
-    pub shader: Arc<Mutex<Shader>>,
-    pub material: Option<Arc<material::Material>>,
+    pub mesh: Rc<RefCell<dyn mesh::Mesh>>,
+    pub shader: Rc<RefCell<Shader>>,
+    pub material: Option<Rc<material::Material>>,
 }
 
 impl Drawable for DrawData {
     fn draw(&mut self, modelmat: &Mat4, viewmat: &Mat4, lights: Option<&Lights>) {
-        let mut shader = self.shader.lock().expect("Failed to lock shader");
+        let mut shader = self.shader.borrow_mut();
         shader.use_program();
         shader.reset_texture_count();
 
-        self.mesh.lock().expect("Failed to lock mesh").get().bind();
+        self.mesh.borrow().get().bind();
         shader.set_mat4("view_mat", viewmat);
         shader.set_mat4("model_mat", modelmat);
         let projection = {
@@ -48,7 +49,7 @@ impl Drawable for DrawData {
         if let Some(lights) = lights {
             lights.bind(5);
         }
-        self.mesh.lock().expect("Failed to lock mesh").draw();
+        self.mesh.borrow().draw();
         Lights::unbind(5);
         unbind();
 
@@ -75,6 +76,6 @@ pub fn screenquad(fbo: &Fbo) -> DrawData {
     DrawData {
         mesh,
         shader,
-        material: Some(Arc::new(material)),
+        material: Some(Rc::new(material)),
     }
 }

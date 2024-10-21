@@ -1,19 +1,20 @@
-use std::sync::{Arc, RwLock};
+use std::cell::RefCell;
+use std::rc::Rc;
 
 use glam::Mat4;
 
 use crate::engine::drawable::Drawable;
-use crate::engine::GameState;
-use crate::engine::scene::gameobject::components::ComponentMap;
 use crate::engine::scene::gameobject::components::drawable::DrawableComponent;
+use crate::engine::scene::gameobject::components::ComponentMap;
 use crate::engine::scene::lights::Lights;
 use crate::engine::transform::Transform;
+use crate::engine::GameState;
 use crate::result::EngineStepResult;
 
 pub mod base;
 pub mod components;
 
-pub trait GameObjectTrait: Drawable + Send + Sync {
+pub trait GameObjectTrait: Drawable {
     fn data(&self) -> &GameObjectData;
     fn data_mut(&mut self) -> &mut GameObjectData;
     fn components(&self) -> Option<&ComponentMap>;
@@ -23,8 +24,7 @@ pub trait GameObjectTrait: Drawable + Send + Sync {
         self.step(game)?;
         for child in &mut self.data_mut().children {
             child
-                .write()
-                .expect("Could not lock child gameobject for step")
+                .borrow_mut()
                 .step(game)?;
         }
         Ok(())
@@ -34,8 +34,7 @@ pub trait GameObjectTrait: Drawable + Send + Sync {
         self.fixed_step(game)?;
         for child in &mut self.data_mut().children {
             child
-                .write()
-                .expect("Could not lock child gameobject for fixed step")
+                .borrow_mut()
                 .fixed_step(game)?;
         }
         Ok(())
@@ -45,8 +44,7 @@ pub trait GameObjectTrait: Drawable + Send + Sync {
         let mut parent = self.data().parent.clone();
         while let Some(parent_object) = parent {
             let parent_data = parent_object
-                .read()
-                .expect("Could not lock parent gameobject for global transform");
+                .borrow();
             transform = Mat4::from(parent_data.data().transform) * transform;
             parent = parent_data.data().parent.clone();
         }
@@ -54,7 +52,7 @@ pub trait GameObjectTrait: Drawable + Send + Sync {
     }
 }
 
-pub type GameObject = Arc<RwLock<dyn GameObjectTrait>>;
+pub type GameObject = Rc<RefCell<dyn GameObjectTrait>>;
 
 impl<T: GameObjectTrait> Drawable for T {
     fn draw(&mut self, modelmat: &Mat4, viewmat: &Mat4, lights: Option<&Lights>) {
@@ -71,8 +69,7 @@ impl<T: GameObjectTrait> Drawable for T {
 
         for child in &data.children {
             child
-                .write()
-                .expect("Could not lock child gameobject for draw")
+                .borrow_mut()
                 .draw(&newmodelmat, viewmat, lights);
         }
     }

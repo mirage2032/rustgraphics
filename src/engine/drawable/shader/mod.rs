@@ -1,8 +1,7 @@
-use std::ops::AddAssign;
-use std::sync::Mutex;
 use gl;
 use gl::types::GLenum;
 use glam::Mat4;
+use std::ops::AddAssign;
 
 use crate::engine::drawable::shader::unlit::new_face_shader;
 use crate::result::{EngineRenderResult, ShaderError};
@@ -12,7 +11,7 @@ pub mod unlit;
 
 pub struct Shader {
     id: u32,
-    texture_count: Mutex<u32>,
+    texture_count: u32,
 }
 
 impl Shader {
@@ -24,7 +23,7 @@ impl Shader {
         // Link shaders
         let shader = Shader {
             id: unsafe { gl::CreateProgram() },
-            texture_count: Mutex::new(0),
+            texture_count: 0,
         };
         unsafe {
             if let Some(vertex_shader_path) = vertex_shader {
@@ -122,13 +121,12 @@ impl Shader {
     }
 
     pub fn add_texture(&mut self, name: &str, texture: u32, texture_type: GLenum) {
-        let texture_count = self.texture_count.lock().expect("Failed to lock texture count").clone();
-        self.set_texture(name, texture, texture_count, texture_type);
-        self.texture_count.lock().as_mut().expect("Failed to lock texture count").add_assign(1)
+        self.set_texture(name, texture, self.texture_count, texture_type);
+        self.texture_count.add_assign(1)
     }
     
     pub fn reset_texture_count(&mut self) {
-        *self.texture_count.lock().expect("Failed to lock texture count") = 0;
+        self.texture_count = 0;
     }
 
     pub fn set_float(&self, name: &str, value: f32) {

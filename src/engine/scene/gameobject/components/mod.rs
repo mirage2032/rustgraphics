@@ -1,10 +1,10 @@
-use std::any::{TypeId};
+use std::any::TypeId;
 use std::sync::RwLock;
 
 use indexmap::IndexMap;
 
-use crate::engine::GameState;
 use crate::engine::scene::gameobject::GameObjectData;
+use crate::engine::GameState;
 use crate::result::EngineStepResult;
 
 pub mod freecam;
@@ -12,7 +12,7 @@ pub mod drawable;
 pub mod rotating;
 
 
-pub trait Component: Send + Sync + 'static{
+pub trait Component: 'static{
     fn step(
         &mut self,
         _object: &mut GameObjectData,

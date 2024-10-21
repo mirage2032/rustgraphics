@@ -1,9 +1,10 @@
-use std::sync::{Arc, RwLock};
 use glam::Vec3;
-use glsl_layout::{float, Uniform, vec3};
+use glsl_layout::{float, vec3, Uniform};
+use std::cell::RefCell;
+use std::rc::Rc;
 
-use crate::engine::scene::gameobject::{GameObject, GameObjectData, GameObjectTrait};
 use crate::engine::scene::gameobject::components::ComponentMap;
+use crate::engine::scene::gameobject::{GameObject, GameObjectData, GameObjectTrait};
 use crate::engine::transform::Transform;
 
 #[derive(Debug, Copy, Default, Clone, Uniform)]
@@ -57,8 +58,8 @@ impl SpotLight {
         quadratic: f32,
         cut_off: f32,
         outer_cut_off: f32,
-    ) -> Arc<RwLock<Self>> {
-        let light = Arc::new(RwLock::new(Self {
+    ) -> Rc<RefCell<Self>> {
+        let light = Rc::new(RefCell::new(Self {
             data: GameObjectData::new(parent),
             components: ComponentMap::new(),
             intensity,
@@ -69,10 +70,9 @@ impl SpotLight {
             cut_off,
             outer_cut_off,
         }));
-        if let Some(parent) = &light.write().unwrap().data.parent {
+        if let Some(parent) = &light.borrow_mut().data.parent {
             parent
-                .write()
-                .unwrap()
+                .borrow_mut()
                 .data_mut()
                 .children
                 .push(light.clone());

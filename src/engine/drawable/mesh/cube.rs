@@ -1,8 +1,9 @@
-use std::sync::{Arc, Mutex};
+use std::cell::RefCell;
+use std::rc::Rc;
 
 use crate::engine::drawable::mesh::*;
 
-pub fn new() -> Arc<Mutex<dyn Mesh>> {
+pub fn new() -> Rc<RefCell<dyn Mesh>> {
     let vertices: [f32; 72] = [
         // Front face
         -0.5, -0.5, 0.5, // Bottom-left   - 0
@@ -81,5 +82,5 @@ pub fn new() -> Arc<Mutex<dyn Mesh>> {
     let mesh_data = MeshData::new(&vertices)
         .with_normals(&normals)
         .with_indices(&indices);
-    Arc::new(Mutex::new(BaseMesh { mesh_data }))
+    Rc::new(RefCell::new(BaseMesh { mesh_data }))
 }

@@ -1,14 +1,15 @@
-use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
 use russimp::scene::PostProcess;
 use russimp::scene::Scene;
+use std::cell::RefCell;
+use std::collections::HashMap;
+use std::rc::Rc;
 
 use crate::engine::drawable::base::BaseDrawable;
-use crate::engine::drawable::DrawData;
 use crate::engine::drawable::material::Material;
 use crate::engine::drawable::mesh::{BaseMesh, MeshData};
-use crate::engine::drawable::shader::Shader;
 use crate::engine::drawable::shader::lit::LIT_COLOR_SHADER;
+use crate::engine::drawable::shader::Shader;
+use crate::engine::drawable::DrawData;
 
 pub fn import(path: &str) -> BaseDrawable {
     let scene = Scene::from_file(
@@ -26,14 +27,14 @@ pub fn import(path: &str) -> BaseDrawable {
     )
     .expect("Failed to load obj file");
 
-    let mut materials: HashMap<u32,Arc<Material>> = HashMap::new();
+    let mut materials: HashMap<u32,Rc<Material>> = HashMap::new();
     let mut draw_data: Vec<DrawData> = vec![];
     scene.meshes.iter().for_each(|mesh| {
         let material = match materials.get(&mesh.material_index){
             Some(mat) => mat.clone(),
             None => {
                 let mat:Material = scene.materials[mesh.material_index as usize].clone().into();
-                let mat_arc = Arc::new(mat);
+                let mat_arc = Rc::new(mat);
                 materials.insert(mesh.material_index, mat_arc.clone());
                 mat_arc
             }
@@ -79,11 +80,11 @@ pub fn import(path: &str) -> BaseDrawable {
         }
         let shader = match material.data.ambient{
             Some(_) => LIT_COLOR_SHADER.clone(),
-            None => Arc::new(Mutex::new(Shader::default())),
+            None => Rc::new(RefCell::new(Shader::default())),
         };
         
         let draw = DrawData {
-            mesh: Arc::new(Mutex::new(BaseMesh { mesh_data })),
+            mesh: Rc::new(RefCell::new(BaseMesh { mesh_data })),
             shader,
             material: Some(material),
         };

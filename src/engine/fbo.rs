@@ -1,7 +1,7 @@
-use gl::types::GLuint;
 use crate::engine::drawable;
 use crate::engine::drawable::DrawData;
 use crate::engine::scene::Scene;
+use gl::types::GLuint;
 
 pub struct Fbo {
     pub fbo: GLuint,

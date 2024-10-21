@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::sync::Arc;
 
 use gl;
 use gl::types::{GLenum, GLuint};

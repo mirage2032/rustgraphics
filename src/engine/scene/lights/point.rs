@@ -1,10 +1,11 @@
-use std::sync::{Arc, RwLock};
+use std::cell::RefCell;
+use std::rc::Rc;
 
 use glam::Vec3;
-use glsl_layout::{float, Uniform, vec3};
+use glsl_layout::{float, vec3, Uniform};
 
-use crate::engine::scene::gameobject::{GameObject, GameObjectData, GameObjectTrait};
 use crate::engine::scene::gameobject::components::ComponentMap;
+use crate::engine::scene::gameobject::{GameObject, GameObjectData, GameObjectTrait};
 use crate::engine::transform::Transform;
 
 #[derive(Debug, Copy, Default, Clone, Uniform)]
@@ -47,8 +48,8 @@ impl PointLight {
         constant: f32,
         linear: f32,
         quadratic: f32,
-    ) -> Arc<RwLock<Self>> {
-        let light = Arc::new(RwLock::new(Self {
+    ) -> Rc<RefCell<Self>> {
+        let light = Rc::new(RefCell::new(Self {
             data: GameObjectData::new(parent),
             components: ComponentMap::new(),
             intensity,
@@ -57,10 +58,9 @@ impl PointLight {
             linear,
             quadratic,
         }));
-        if let Some(parent) = &light.write().unwrap().data.parent {
+        if let Some(parent) = &light.borrow_mut().data.parent {
             parent
-                .write()
-                .unwrap()
+                .borrow_mut()
                 .data_mut()
                 .children
                 .push(light.clone());

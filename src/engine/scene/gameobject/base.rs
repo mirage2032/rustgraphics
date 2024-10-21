@@ -1,8 +1,9 @@
-use std::sync::{Arc, RwLock};
+use std::cell::RefCell;
+use std::rc::Rc;
 
-use crate::engine::GameState;
-use crate::engine::scene::gameobject::{GameObject, GameObjectData, GameObjectTrait};
 use crate::engine::scene::gameobject::components::ComponentMap;
+use crate::engine::scene::gameobject::{GameObject, GameObjectData, GameObjectTrait};
+use crate::engine::GameState;
 use crate::result::EngineStepResult;
 
 pub struct BaseGameObject {
@@ -12,14 +13,13 @@ pub struct BaseGameObject {
 
 impl BaseGameObject {
     pub fn new(parent: Option<GameObject>) -> GameObject {
-        let newgameobject = Arc::new(RwLock::new(Self {
+        let newgameobject = Rc::new(RefCell::new(Self {
             data: GameObjectData::new(parent.clone()),
             components: ComponentMap::new(),
         }));
         if let Some(parent) = parent {
             parent
-                .write()
-                .expect("Could not lock parent gameobject for init")
+                .borrow_mut()
                 .data_mut()
                 .children
                 .push(newgameobject.clone());

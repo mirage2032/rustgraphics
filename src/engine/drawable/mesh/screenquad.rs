@@ -1,9 +1,10 @@
-use std::sync::{Arc, Mutex};
+use std::cell::RefCell;
+use std::rc::Rc;
 
 use crate::engine::drawable::mesh::*;
 
 //for the quad that will be used to render the screen
-pub fn new() -> Arc<Mutex<dyn Mesh>> {
+pub fn new() -> Rc<RefCell<dyn Mesh>> {
     let vertices = vec![
         -1.0, -1.0, 0.0, // bottom left
         1.0, -1.0, 0.0, // bottom right
@@ -25,5 +26,5 @@ pub fn new() -> Arc<Mutex<dyn Mesh>> {
     let mesh_data = MeshData::new(&vertices)
         .with_indices(&indices)
         .with_texcoords(&tex_coords);
-    Arc::new(Mutex::new(BaseMesh { mesh_data }))
+    Rc::new(RefCell::new(BaseMesh { mesh_data }))
 }

@@ -1,9 +1,9 @@
 use glam::{Mat4, Vec3, Vec4};
 
 use crate::engine::config::CONFIG;
-use crate::engine::GameState;
+use crate::engine::scene::gameobject::components::{freecam, ComponentMap};
 use crate::engine::scene::gameobject::{GameObject, GameObjectData, GameObjectTrait};
-use crate::engine::scene::gameobject::components::{ComponentMap, freecam};
+use crate::engine::GameState;
 use crate::result::EngineStepResult;
 
 pub struct CameraControlled {

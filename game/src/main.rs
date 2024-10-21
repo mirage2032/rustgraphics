@@ -1,4 +1,6 @@
-use std::sync::{Arc, RwLock, Weak};
+use std::sync::Arc;
+use std::cell::RefCell;
+use std::rc::{Rc,Weak};
 
 use glengine::engine::drawable::base::BaseDrawable;
 use glengine::engine::drawable::importer::assimp;
@@ -57,7 +59,7 @@ impl Scene for BaseScene {
         {
             let monkey_draw =
                 assimp::import("models/untitled.obj");
-            let mut data = monkey.write().expect("Could not lock gameobject for init");
+            let mut data = monkey.borrow_mut();
             data.components_mut()
                 .unwrap()
                 .add_component(DrawableComponent::new(Box::new(monkey_draw)));
@@ -69,7 +71,7 @@ impl Scene for BaseScene {
         {
             let mut drawable = BaseDrawable::default();
             drawable.draw_data[0].shader = LIT_COLOR_SHADER.clone();
-            drawable.draw_data[0].material = Some(Arc::new(Material {
+            drawable.draw_data[0].material = Some(Rc::new(Material {
                 data: MaterialData {
                     ambient: Some(vec3(0.3, 0.1, 0.1)),
                     diffuse: Some(vec3(1.0, 0.4, 0.6)),
@@ -78,7 +80,7 @@ impl Scene for BaseScene {
                 },
                 textures: Default::default(),
             }));
-            let mut data = floor.write().expect("Could not lock gameobject for init");
+            let mut data = floor.borrow_mut();
             data.components_mut()
                 .unwrap()
                 .add_component(DrawableComponent::new(Box::new(drawable)));
@@ -91,7 +93,7 @@ impl Scene for BaseScene {
         {
             let mut drawable = BaseDrawable::default();
             drawable.draw_data[0].shader = LIT_COLOR_SHADER.clone();
-            drawable.draw_data[0].material = Some(Arc::new(Material {
+            drawable.draw_data[0].material = Some(Rc::new(Material {
                 data: MaterialData {
                     ambient: Some(vec3(0.9, 0.1, 0.1)),
                     diffuse: Some(vec3(1.0, 0.4, 0.6)),
@@ -100,7 +102,7 @@ impl Scene for BaseScene {
                 },
                 textures: Default::default(),
             }));
-            let mut data = cube.write().expect("Could not lock gameobject for init");
+            let mut data = cube.borrow_mut();
             data.components_mut()
                 .unwrap()
                 .add_component(DrawableComponent::new(Box::new(drawable)));
@@ -120,7 +122,7 @@ impl Scene for BaseScene {
         //     data.data_mut().transform.position = vec3(0.0, 0.0, 0.0);
         // }
 
-        let camera = Arc::new(RwLock::new(CameraControlled::new(
+        let camera = Rc::new(RefCell::new(CameraControlled::new(
             None,
             vec3(20.0, 20.0, 20.0),
             vec3(0.0, 0.0, 0.0),
@@ -140,7 +142,7 @@ impl Scene for BaseScene {
         self.data_mut()
             .lights
             .spot
-            .push(Arc::downgrade(&spot_light));
+            .push(Rc::downgrade(&spot_light));
 
         let point_light = PointLight::new(
             Some(empty.clone()),
@@ -150,11 +152,11 @@ impl Scene for BaseScene {
             0.09,
             0.032,
         );
-        point_light.write().unwrap().data_mut().transform.position = vec3(5.0, 13.0, -20.0);
+        point_light.borrow_mut().data_mut().transform.position = vec3(5.0, 13.0, -20.0);
         self.data_mut()
             .lights
             .point
-            .push(Arc::downgrade(&point_light));
+            .push(Rc::downgrade(&point_light));
 
         let directional_light =
             DirectionalLight::new(Some(empty.clone()), 0.04, vec3(1.0, 1.0, 1.0));
@@ -162,8 +164,7 @@ impl Scene for BaseScene {
             //mat4 pointing down
             let mat = Mat4::from_quat(Quat::from_axis_angle(vec3(1.0, 0.6, 0.8), -std::f32::consts::FRAC_PI_2));
             directional_light
-                .write()
-                .unwrap()
+                .borrow_mut()
                 .data_mut()
                 .transform = mat.into();
         }
@@ -171,10 +172,10 @@ impl Scene for BaseScene {
         self.data_mut()
             .lights
             .directional
-            = Arc::downgrade(&directional_light);
+            = Rc::downgrade(&directional_light);
 
         self.data.objects.push(camera.clone());
-        self.data.main_camera = Arc::downgrade(&camera);
+        self.data.main_camera = Rc::downgrade(&camera);
         Ok(())
     }
 }

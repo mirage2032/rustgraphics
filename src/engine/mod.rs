@@ -1,7 +1,7 @@
+use gl;
+use glam::Mat4;
 use std::ffi::CString;
 use std::time::{Duration, Instant};
-use glam::Mat4;
-use gl;
 
 use glfw::{
     Action, Context, Glfw, GlfwReceiver, Key, PRenderContext, PWindow, WindowEvent, WindowHint,
@@ -9,10 +9,10 @@ use glfw::{
 
 
 use crate::engine::config::CONFIG;
-use crate::engine::drawable::{Drawable};
+use crate::engine::drawable::Drawable;
 use crate::engine::events::EngineInputsState;
 use crate::engine::events::EngineWindowEvent;
-use crate::engine::fbo::{ScreenFbo};
+use crate::engine::fbo::ScreenFbo;
 use crate::engine::scene::Scene;
 use crate::engine::timedelta::ToFps;
 use crate::result::{EngineRenderResult, EngineRunError, EngineRunResult, EngineStepResult};

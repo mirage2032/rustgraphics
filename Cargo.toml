@@ -9,6 +9,7 @@ glsl-layout = "0.5.0"
 glfw = "0.56.0"
 glam = "0.27.0"
 lazy_static = "1.4.0"
+once_cell = "1.20.2"
 serde = { version = "1.0.202", features = ["derive"] }
 serde_json = "1.0.117"
 tobj = { git = "https://github.com/Twinklebear/tobj", branch = "master" }
