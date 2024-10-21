@@ -14,6 +14,7 @@ use crate::engine::events::EngineInputsState;
 use crate::engine::events::EngineWindowEvent;
 use crate::engine::fbo::{ScreenFbo};
 use crate::engine::scene::Scene;
+use crate::engine::timedelta::ToFps;
 use crate::result::{EngineRenderResult, EngineRunError, EngineRunResult, EngineStepResult};
 
 pub mod config;
@@ -24,6 +25,7 @@ pub mod fbo;
 pub mod timedelta;
 pub mod scene;
 pub mod transform;
+mod fps;
 // lazy_static! {
 //     pub static ref vr_context: Mutex<openvr::Context> =
 //         unsafe { Mutex::new(openvr::init(openvr::ApplicationType::Scene).unwrap()) };
@@ -40,6 +42,7 @@ pub struct GameState {
 pub struct GameData {
     pub scene: Option<Box<dyn Scene>>,
     pub state: GameState,
+    should_close: bool,
 }
 
 impl GameData {
@@ -75,6 +78,7 @@ impl Default for GameData {
                 input_state: EngineInputsState::new(),
                 delta: Duration::new(0, 0),
             },
+            should_close: false,
         }
     }
 }
@@ -185,13 +189,20 @@ impl Engine {
         let fixed_step_interval = CONFIG.config().get_fixed_step();
         let mut fixed_step_elapsed = Instant::now();
         let mut step_delta = timedelta::TimeDelta::new();
+        let mut fps = fps::SmoothFps::new(100);
         loop {
             self.handle_events();
-            self.step(step_delta.delta())
+            let delta = step_delta.delta();
+            self.step(delta)
                 .map_err(|err|EngineRunError::StepError(err))?;
+            fps.push(delta.to_fps());
+            self.window.set_title(&format!("FPS: {:.2}", fps.average()));
             self.fixed_step(fixed_step_interval,&mut fixed_step_elapsed)
                 .map_err(|err|EngineRunError::FixedStepError(err))?;
             self.render(&mut mainfbo, &mut render_ctx);
+            if self.game.should_close {
+                break;
+            }
         }
         Ok(())
     }
@@ -235,7 +246,7 @@ impl Engine {
         for event in engine_events {
             match event {
                 EngineWindowEvent::Close => {
-                    self.window.set_should_close(true);
+                    self.game.should_close = true;
                 }
                 _ => {}
             }
