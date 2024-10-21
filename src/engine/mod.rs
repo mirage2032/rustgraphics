@@ -1,7 +1,4 @@
 use std::ffi::CString;
-use std::sync::{Arc, Mutex};
-use std::sync::mpsc::{Receiver, sync_channel, SyncSender};
-use std::thread::Builder;
 use std::time::Duration;
 use glam::Mat4;
 use gl;
@@ -9,21 +6,15 @@ use gl;
 use glfw::{
     Action, Context, Glfw, GlfwReceiver, Key, PRenderContext, PWindow, WindowEvent, WindowHint,
 };
-use glfw::ffi::{glfwSwapInterval};
 
 
 use crate::engine::config::CONFIG;
-use crate::engine::drawable::Drawable;
+use crate::engine::drawable::{Drawable};
 use crate::engine::events::EngineInputsState;
 use crate::engine::events::EngineWindowEvent;
-use crate::engine::fbo::Fbo;
-use crate::engine::fpscounter::TimeDelta;
+use crate::engine::fbo::{ScreenFbo};
 use crate::engine::scene::Scene;
-use crate::result::{
-    EngineRenderError, EngineRenderResult, EngineRunError, EngineRunOut, EngineRunResult,
-    EngineStepResult,
-};
-use crate::result::EngineRunError::ThreadError;
+use crate::result::{EngineRenderResult, EngineRunError, EngineRunResult, EngineStepResult};
 
 pub mod config;
 pub mod drawable;
@@ -33,7 +24,6 @@ pub mod fbo;
 pub mod fpscounter;
 pub mod scene;
 pub mod transform;
-
 // lazy_static! {
 //     pub static ref vr_context: Mutex<openvr::Context> =
 //         unsafe { Mutex::new(openvr::init(openvr::ApplicationType::Scene).unwrap()) };
@@ -60,8 +50,7 @@ impl GameData {
         }
     }
 
-    fn step(&mut self, duration: Duration, input: EngineInputsState) -> EngineStepResult<()> {
-        self.state.input_state.merge(input);
+    fn step(&mut self, duration: Duration) -> EngineStepResult<()> {
         self.state.delta = duration;
         if let Some(scene) = &mut self.scene {
             scene.step(&self.state)?;
@@ -81,10 +70,9 @@ impl Default for GameData {
         }
     }
 }
-
 pub struct Engine {
     window: PWindow,
-    game: Arc<Mutex<GameData>>,
+    game: GameData,
     events: GlfwReceiver<(f64, WindowEvent)>,
     glfw: Glfw,
 }
@@ -143,8 +131,8 @@ impl Engine {
             unsafe {
                 std::ffi::CStr::from_ptr(gl::GetString(gl::SHADING_LANGUAGE_VERSION) as *const _)
             }
-            .to_str()
-            .unwrap()
+                .to_str()
+                .unwrap()
         );
         let mut maxsamples = 0;
         unsafe {
@@ -166,10 +154,10 @@ impl Engine {
         // }
         glfw.make_context_current(None);
 
-        let game = Arc::new(Mutex::new(GameData {
+        let game = GameData {
             scene: None,
             ..Default::default()
-        }));
+        };
         Self {
             window,
             game,
@@ -180,137 +168,34 @@ impl Engine {
 
     pub fn from_game(game: GameData) -> Self {
         let mut engine = Self::new();
-        engine.game = Arc::new(Mutex::new(game));
+        engine.game = game;
         engine
     }
 
-    pub fn run(&mut self) -> EngineRunResult {
-        let game = self.game.clone();
-        let ctx = self.window.render_context();
-
-        let render_task = Builder::new().name("render task".to_string());
-        let (send_rend, recv_rend) = sync_channel(0);
-        let render_task_done = render_task.spawn(move || Self::render_task(ctx, game, send_rend));
-
-        let game = self.game.clone();
-        let step_task = Builder::new().name("update task".to_string());
-        let (send_step, recv_step) = sync_channel(0);
-        let step_task_done = step_task.spawn(move || Self::step_task(game, recv_step));
-        let exit_error: Option<EngineRunError> = {
-            loop {
-                if self.window.should_close() {
-                    break None;
-                }
-                //check if render_rask still running and get result else
-                match &render_task_done {
-                    Ok(handle) => {
-                        if handle.is_finished() {
-                            break Some(ThreadError("Render task exited".to_string()));
-                        }
-                    }
-                    Err(_) => break Some(ThreadError("No render task handle".to_string())),
-                }
-
-                match &step_task_done {
-                    Ok(handle) => {
-                        if handle.is_finished() {
-                            break Some(ThreadError("Step task exited".to_string()));
-                        }
-                    }
-                    Err(_) => break Some(ThreadError("No step task handle".to_string())),
-                }
-
-                if let Ok(delta) = recv_rend.try_recv() {
-                    let seconds_per_frame = delta.as_secs_f64(); // Convert duration to seconds
-                    let fps = {
-                        if seconds_per_frame > 0.0 {
-                            1.0 / seconds_per_frame // Calculate frames per second
-                        } else {
-                            0.0 // If duration is zero or negative, return 0 FPS to avoid division by zero
-                        }
-                    };
-                    self.window.set_title(&format!("FPS: {:.2}", fps));
-                    self.glfw.poll_events();
-                    let (engine_events, mut input_changes) = self.gather_window_events();
-                    input_changes.mouse_pos = self.window.get_cursor_pos();
-                    let mut exit_event = None;
-                    for event in engine_events {
-                        match event {
-                            EngineWindowEvent::Close => {
-                                exit_event = Some(None);
-                                break;
-                            }
-                            _ => {}
-                        }
-                    }
-                    if let Some(reason) = exit_event {
-                        break reason;
-                    }
-                    if let Err(_) = send_step.send((delta, input_changes)) {
-                        break Some(ThreadError("Could not send step".to_string()));
-                    }
-                }
-            }
-        };
-        self.window.set_should_close(true);
-        drop(recv_rend);
-        drop(send_step);
-
-        let mut exit_status = EngineRunOut::new();
-        exit_status.render_result = match render_task_done {
-            Ok(result) => match result.join() {
-                Ok(result) => result,
-                Err(_) => Err(EngineRenderError::JoinThreadError),
-            },
-            Err(_) => Ok(()),
-        };
-        exit_status.step_result = match step_task_done {
-            Ok(result) => match result.join() {
-                Ok(result) => result,
-                Err(_) => Err("Could not join step thread".to_string()),
-            },
-            Err(_) => Ok(()),
-        };
-        if let Some(e) = exit_error {
-            exit_status.main_result = Err(e);
-            return Err(exit_status);
-        }
-        Ok(())
-    }
-    
-    fn render_fbo(fbo: &Fbo, scene:&mut Box<dyn Scene>) {
-        unsafe {
-            fbo.bind();
-            gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
-            scene.render();
-            gl::BindFramebuffer(gl::READ_FRAMEBUFFER, fbo.fbo);
-            gl::BindFramebuffer(gl::DRAW_FRAMEBUFFER, 0);
-            fbo.blit();
-            Fbo::unbind();
-        }
-    }
-
-    fn render_task(
-        mut ctx: PRenderContext,
-        game: Arc<Mutex<GameData>>,
-        sender: SyncSender<Duration>,
-    ) -> EngineRenderResult<()> {
-        ctx.make_current();
-        game.lock()
-            .expect("Could not lock game data in render thread")
-            .scene
-            .as_mut()
-            .unwrap()
-            .init_gl()?;
-        let mut fps_counter = TimeDelta::new();
-
+    pub fn run(&mut self) ->EngineRunResult{
+        self.window.make_current();
+        let mut render_ctx=self.window.render_context();
+        self.gl_init().expect("Could not init gl");
         let resolution = CONFIG.read()
             .expect("Failed to read config")
             .config()
             .get_resolution();
-        let fbo = Fbo::new(resolution.0, resolution.1,8); // Limit multi-sampling to supported max samples
-        let mut screen_drawable = drawable::screenquad(&fbo);
-            
+        let mut mainfbo = ScreenFbo::new(resolution.0, resolution.1,8);
+        loop {
+            self.render(&mut mainfbo, &mut render_ctx);
+            self.handle_events();
+            self.step(Duration::from_secs_f64(1.0/60.0))
+                .map_err(|err|EngineRunError::StepError(err))?;
+        }
+        Ok(())
+    }
+    fn gl_init(
+        &mut self,
+    ) -> EngineRenderResult<()> {
+        self.window.make_current();
+        if let Some(scene) = &mut self.game.scene{
+            scene.init_gl()?;
+        }
         unsafe {
             // gl::Enable(gl::MULTISAMPLE); // Enable multi-sampling
             gl::Enable(gl::BLEND); // Enable blending for better anti-aliasing
@@ -321,37 +206,41 @@ impl Engine {
             gl::Enable(gl::DEBUG_OUTPUT);
             gl::DebugMessageCallback(Some(debug_callback), std::ptr::null());
         }
-
-        loop {
-            unsafe {
-                let mut game = game
-                    .lock()
-                    .expect("Could not lock game data in render thread");
-                if let Some(scene) = &mut game.scene {
-                    Self::render_fbo(&fbo, scene);
-                    gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
-                    screen_drawable.draw(&Mat4::ZERO, &Mat4::ZERO, None);
-                }
-            }
-            ctx.swap_buffers();
-            if let Err(_) = sender.send(fps_counter.delta()) {
-                break;
-            }
-        }
         Ok(())
     }
 
-    fn step_task(
-        game: Arc<Mutex<GameData>>,
-        sender: Receiver<(Duration, EngineInputsState)>,
-    ) -> EngineStepResult<()> {
-        while let Ok((delta, changes)) = sender.recv() {
-            let game_clone = game.clone();
-            let mut game_locked = game_clone
-                .lock()
-                .map_err(|_| "Could not lock game data in step thread")?;
-            game_locked.step(delta, changes)?;
+    fn render(
+        &mut self,
+        screen_fbo: &mut ScreenFbo,
+        ctx: &mut PRenderContext,
+    ){
+        if let Some(ref mut scene) = &mut self.game.scene {
+            screen_fbo.render(scene);
+            unsafe {
+                gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
+            }
+            screen_fbo.draw_data.draw(&Mat4::ZERO, &Mat4::ZERO, None);
         }
+        ctx.swap_buffers();
+    }
+    fn handle_events(&mut self){
+        self.glfw.poll_events();
+        let (engine_events, input_changes) = self.gather_window_events();
+        for event in engine_events {
+            match event {
+                EngineWindowEvent::Close => {
+                    self.window.set_should_close(true);
+                }
+                _ => {}
+            }
+        }
+        self.game.state.input_state.merge(input_changes);
+    }
+    fn step(
+        &mut self,
+        delta: Duration,
+    ) -> EngineStepResult<()> {
+        self.game.step(delta)?;
         Ok(())
     }
 
@@ -372,6 +261,7 @@ impl Engine {
                 _ => {}
             }
         }
+        input_changes.mouse_pos = self.window.get_cursor_pos();
         (engine_events, input_changes)
     }
 }

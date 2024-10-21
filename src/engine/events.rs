@@ -61,9 +61,6 @@ impl<T: MouseOrKeyboardKey> KeyState<T> {
         for key in self.pressed_keys.iter() {
             self.held_keys.insert(*key);
         }
-        for key in self.pressed_keys.iter() {
-            self.held_keys.insert(*key);
-        }
         for key in self.released_keys.iter() {
             self.held_keys.remove(key);
         }

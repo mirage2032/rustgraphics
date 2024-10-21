@@ -1,4 +1,7 @@
 use gl::types::GLuint;
+use crate::engine::drawable;
+use crate::engine::drawable::DrawData;
+use crate::engine::scene::Scene;
 
 pub struct Fbo {
     pub fbo: GLuint,
@@ -151,6 +154,32 @@ impl Drop for Fbo {
             gl::DeleteRenderbuffers(1, &self.depth_stencil_rbo);
             gl::DeleteTextures(1, &self.color_texture);
             gl::DeleteTextures(1, &self.depth_stencil_texture);
+        }
+    }
+}
+
+pub struct ScreenFbo {
+    pub fbo:Fbo,
+    pub draw_data:DrawData
+}
+impl ScreenFbo{
+    pub fn new(width:u32,height:u32,samples:i32)->ScreenFbo{
+        let fbo = Fbo::new(width, height,samples); // Limit multi-sampling to supported max samples
+        let draw_data = drawable::screenquad(&fbo);
+        ScreenFbo{
+            fbo,
+            draw_data
+        }
+    }
+    pub fn render(&self, scene:&mut Box<dyn Scene>) {
+        unsafe {
+            self.fbo.bind();
+            gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
+            scene.render();
+            gl::BindFramebuffer(gl::READ_FRAMEBUFFER, self.fbo.fbo);
+            gl::BindFramebuffer(gl::DRAW_FRAMEBUFFER, 0);
+            self.fbo.blit();
+            Fbo::unbind();
         }
     }
 }

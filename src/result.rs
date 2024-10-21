@@ -1,25 +1,8 @@
 use thiserror::Error;
 
-pub type EngineRunResult = Result<(), EngineRunOut>;
+pub type EngineRunResult = Result<(), EngineRunError>;
 pub type EngineRenderResult<T> = Result<T, EngineRenderError>;
 pub type EngineStepResult<T> = Result<T, String>;
-
-#[derive(Debug, Clone)]
-pub struct EngineRunOut {
-    pub main_result: Result<(), EngineRunError>,
-    pub step_result: EngineStepResult<()>,
-    pub render_result: EngineRenderResult<()>,
-}
-
-impl EngineRunOut {
-    pub fn new() -> Self {
-        Self {
-            main_result: Ok(()),
-            step_result: Ok(()),
-            render_result: Ok(()),
-        }
-    }
-}
 
 #[derive(Error, Debug, Clone)]
 pub enum ShaderError {
