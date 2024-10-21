@@ -24,7 +24,7 @@ impl CameraControlled {
     }
 
     pub fn frustum(&self) -> Mat4 {
-        let perspective = *CONFIG.read().expect("Failed to read config").projection();
+        let perspective = *CONFIG.projection();
         perspective * self.global_mat().inverse()
     }
 

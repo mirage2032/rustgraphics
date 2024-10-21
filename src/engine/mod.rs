@@ -1,5 +1,5 @@
 use std::ffi::CString;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 use glam::Mat4;
 use gl;
 
@@ -21,7 +21,7 @@ pub mod drawable;
 pub mod events;
 
 pub mod fbo;
-pub mod fpscounter;
+pub mod timedelta;
 pub mod scene;
 pub mod transform;
 // lazy_static! {
@@ -34,7 +34,7 @@ pub mod transform;
 
 pub struct GameState {
     pub input_state: EngineInputsState,
-    pub delta: Duration,
+    delta: Duration,
 }
 
 pub struct GameData {
@@ -53,7 +53,15 @@ impl GameData {
     fn step(&mut self, duration: Duration) -> EngineStepResult<()> {
         self.state.delta = duration;
         if let Some(scene) = &mut self.scene {
-            scene.step(&self.state)?;
+            scene.step_recursive(&self.state)?;
+        }
+        Ok(())
+    }
+
+    fn fixed_step(&mut self, duration: Duration) -> EngineStepResult<()> {
+        self.state.delta = duration;
+        if let Some(scene) = &mut self.scene {
+            scene.fixed_step(&self.state)?;
         }
         Ok(())
     }
@@ -91,11 +99,7 @@ impl Engine {
         glfw.window_hint(WindowHint::TransparentFramebuffer(true));
         // glfw.window_hint(WindowHint::Samples(Some(16))); // Set the number of samples for multi-sampling
 
-        let resolution = CONFIG
-            .read()
-            .expect("Failed to read config")
-            .config()
-            .get_resolution();
+        let resolution = CONFIG.config().get_resolution();
         let (mut window, events) = glfw
             .create_window(
                 resolution.0,
@@ -176,16 +180,18 @@ impl Engine {
         self.window.make_current();
         let mut render_ctx=self.window.render_context();
         self.gl_init().expect("Could not init gl");
-        let resolution = CONFIG.read()
-            .expect("Failed to read config")
-            .config()
-            .get_resolution();
+        let resolution = CONFIG.config().get_resolution();
         let mut mainfbo = ScreenFbo::new(resolution.0, resolution.1,8);
+        let fixed_step_interval = CONFIG.config().get_fixed_step();
+        let mut fixed_step_elapsed = Instant::now();
+        let mut step_delta = timedelta::TimeDelta::new();
         loop {
-            self.render(&mut mainfbo, &mut render_ctx);
             self.handle_events();
-            self.step(Duration::from_secs_f64(1.0/60.0))
+            self.step(step_delta.delta())
                 .map_err(|err|EngineRunError::StepError(err))?;
+            self.fixed_step(fixed_step_interval,&mut fixed_step_elapsed)
+                .map_err(|err|EngineRunError::FixedStepError(err))?;
+            self.render(&mut mainfbo, &mut render_ctx);
         }
         Ok(())
     }
@@ -241,6 +247,18 @@ impl Engine {
         delta: Duration,
     ) -> EngineStepResult<()> {
         self.game.step(delta)?;
+        Ok(())
+    }
+
+    fn fixed_step(
+        &mut self,
+        fixed_step_interval: Duration,
+        fixed_step_elapsed: &mut Instant,
+    ) -> EngineStepResult<()> {
+        while fixed_step_elapsed.elapsed() > fixed_step_interval {
+            self.game.fixed_step(fixed_step_interval)?;
+            *fixed_step_elapsed += fixed_step_interval;
+        }
         Ok(())
     }
 

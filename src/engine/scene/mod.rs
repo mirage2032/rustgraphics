@@ -42,12 +42,27 @@ pub trait Scene: Send {
             }
         }
     }
-    fn step(&mut self, state: &GameState) -> EngineStepResult<()> {
+    
+    fn step(&mut self,state: &GameState) -> EngineStepResult<()> {Ok(())}
+    fn step_recursive(&mut self, state: &GameState) -> EngineStepResult<()> {
+        self.step(state)?;
         for object in &self.data_mut().objects {
             object
                 .write()
                 .expect("Could not lock gameobject for step")
                 .step_recursive(state)?;
+        }
+        Ok(())
+    }
+    
+    fn fixed_step(&mut self,state: &GameState) -> EngineStepResult<()> {Ok(())}
+    fn fixed_step_recursive(&mut self, state: &GameState) -> EngineStepResult<()> {
+        self.fixed_step(state)?;
+        for object in &self.data_mut().objects {
+            object
+                .write()
+                .expect("Could not lock gameobject for fixed step")
+                .fixed_step_recursive(state)?;
         }
         Ok(())
     }

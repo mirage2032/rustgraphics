@@ -18,7 +18,7 @@ pub trait GameObjectTrait: Drawable + Send + Sync {
     fn data_mut(&mut self) -> &mut GameObjectData;
     fn components(&self) -> Option<&ComponentMap>;
     fn components_mut(&mut self) -> Option<&mut ComponentMap>;
-    fn step(&mut self, state: &GameState) -> EngineStepResult<()>;
+    fn step(&mut self, state: &GameState) -> EngineStepResult<()> { Ok(()) }
     fn step_recursive(&mut self, game: &GameState) -> EngineStepResult<()> {
         self.step(game)?;
         for child in &mut self.data_mut().children {
@@ -26,6 +26,17 @@ pub trait GameObjectTrait: Drawable + Send + Sync {
                 .write()
                 .expect("Could not lock child gameobject for step")
                 .step(game)?;
+        }
+        Ok(())
+    }
+    fn fixed_step(&mut self, state: &GameState) -> EngineStepResult<()> { Ok(()) }
+    fn fixed_step_recursive(&mut self, game: &GameState) -> EngineStepResult<()> {
+        self.fixed_step(game)?;
+        for child in &mut self.data_mut().children {
+            child
+                .write()
+                .expect("Could not lock child gameobject for fixed step")
+                .fixed_step(game)?;
         }
         Ok(())
     }

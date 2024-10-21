@@ -15,6 +15,6 @@ impl TimeDelta {
         let now = Instant::now();
         let delta = now - self.start_time;
         self.start_time = now;
-        return delta;
+        delta
     }
 }

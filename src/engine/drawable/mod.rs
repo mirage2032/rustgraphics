@@ -38,7 +38,7 @@ impl Drawable for DrawData {
         shader.set_mat4("view_mat", viewmat);
         shader.set_mat4("model_mat", modelmat);
         let projection = {
-            let data = *CONFIG.read().expect("Failed to read config").projection();
+            let data = *CONFIG.projection();
             data
         };
         shader.set_mat4("projection_mat", &projection);

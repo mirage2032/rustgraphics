@@ -3,6 +3,7 @@ use thiserror::Error;
 pub type EngineRunResult = Result<(), EngineRunError>;
 pub type EngineRenderResult<T> = Result<T, EngineRenderError>;
 pub type EngineStepResult<T> = Result<T, String>;
+pub type EngineFixedStepResult<T> = Result<T, String>;
 
 #[derive(Error, Debug, Clone)]
 pub enum ShaderError {
@@ -36,6 +37,8 @@ pub enum EngineRunError {
     RenderError(#[from] EngineRenderError),
     #[error("Engine stepping error:{0}")]
     StepError(String),
+    #[error("Engine fixed stepping error:{0}")]
+    FixedStepError(String),
     #[error("Engine import error:{0}")]
     ImportError(String),
     #[error("Engine thread error:{0}")]

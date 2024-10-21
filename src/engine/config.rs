@@ -1,7 +1,7 @@
 use std::fs::File;
 use std::io::{Read, Write};
 use std::sync::RwLock;
-
+use std::time::Duration;
 use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
 
@@ -11,6 +11,7 @@ pub struct Config {
     fov: f32,
     near_clip: f32,
     far_clip: f32,
+    fixed_step: Duration,
 }
 
 impl Config {
@@ -49,6 +50,11 @@ impl Config {
         self.far_clip = far_clip;
         self
     }
+    
+    pub fn with_fixed_step(mut self, fixed_step: Duration) -> Self {
+        self.fixed_step = fixed_step;
+        self
+    }
 
     pub fn get_resolution(&self) -> (u32, u32) {
         self.resolution
@@ -69,6 +75,10 @@ impl Config {
     pub fn get_clip(&self) -> (f32, f32) {
         (self.near_clip, self.far_clip)
     }
+    
+    pub fn get_fixed_step(&self) -> Duration {
+        self.fixed_step
+    }
 }
 
 impl Default for Config {
@@ -78,6 +88,7 @@ impl Default for Config {
             fov: 70.0,
             near_clip: 0.1,
             far_clip: 300.0,
+            fixed_step: Duration::from_millis(20),
         };
         default
     }
@@ -135,5 +146,5 @@ impl Default for StaticData {
 }
 
 lazy_static! {
-    pub static ref CONFIG: RwLock<StaticData> = RwLock::new(StaticData::default());
+    pub static ref CONFIG: StaticData = StaticData::default();
 }

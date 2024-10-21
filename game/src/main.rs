@@ -108,17 +108,17 @@ impl Scene for BaseScene {
             data.data_mut().transform.position = vec3(0.0, -1.0, 8.0);
         }
 
-        let rotator = BaseGameObject::new(Some(empty.clone()));
-        {
-            let mut data = rotator.write().expect("Could not lock gameobject for init");
-            let components = data.components_mut().unwrap();
-            let drawable =
-                assimp::import("models/bugatticlean.obj");
-            components.add_component(DrawableComponent::new(Box::new(drawable)));
-            components.add_component(RotatingComponent::new(vec3(0.0, 0.04, 0.0)));
-            data.data_mut().transform.scale *= 0.3;
-            data.data_mut().transform.position = vec3(0.0, 0.0, 0.0);
-        }
+        // let rotator = BaseGameObject::new(Some(empty.clone()));
+        // {
+        //     let mut data = rotator.write().expect("Could not lock gameobject for init");
+        //     let components = data.components_mut().unwrap();
+        //     let drawable =
+        //         assimp::import("models/bugatticlean.obj");
+        //     components.add_component(DrawableComponent::new(Box::new(drawable)));
+        //     components.add_component(RotatingComponent::new(vec3(0.0, 0.04, 0.0)));
+        //     data.data_mut().transform.scale *= 0.3;
+        //     data.data_mut().transform.position = vec3(0.0, 0.0, 0.0);
+        // }
 
         let camera = Arc::new(RwLock::new(CameraControlled::new(
             None,
