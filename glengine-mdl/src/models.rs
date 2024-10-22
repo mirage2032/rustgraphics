@@ -36,10 +36,10 @@ impl Header {
 pub struct MeshStruct {
     pub name: String,
     pub material_index: u32,
-    pub vertices: Vec<(f32, f32, f32)>,
-    pub normals: Vec<(f32, f32, f32)>,
+    pub vertices: Vec<f32>,
+    pub normals: Vec<f32>,
     pub indices: Vec<u32>,
-    pub texture_coords: Option<Vec<(f32, f32)>>,
+    pub texture_coords: Option<Vec<f32>>,
 }
 
 impl MeshStruct{
@@ -49,7 +49,7 @@ impl MeshStruct{
                 None
             }
             else if let Some(vec_vec32d) = &mesh.texture_coords[0]{
-                Some(vec_vec32d.iter().map(|v| (v.x,v.y)).collect())
+                Some(vec_vec32d.iter().flat_map(|v| vec!(v.x,v.y)).collect())
             }
             else{
                 None
@@ -58,8 +58,8 @@ impl MeshStruct{
         MeshStruct{
             name: mesh.name.clone(),
             material_index: mesh.material_index,
-            vertices: mesh.vertices.iter().map(|v| (v.x,v.y,v.z)).collect(),
-            normals: mesh.normals.iter().map(|v| (v.x,v.y,v.z)).collect(),
+            vertices: mesh.vertices.iter().flat_map(|v| vec!(v.x,v.y,v.z)).collect(),
+            normals: mesh.normals.iter().flat_map(|v| vec!(v.x,v.y,v.z)).collect(),
             indices: mesh.faces.iter().flat_map(|f| f.0.clone()).collect(),
             texture_coords
         }
@@ -199,39 +199,33 @@ pub struct FileStruct {
 
 impl FileStruct{
     pub fn import(path:&str)->FileStruct{
-        println!("Importing file: {}",path);
         let scene = Scene::from_file(
             path,
             vec![
                 PostProcess::CalculateTangentSpace,
+                // PostProcess::PreTransformVertices,
                 PostProcess::OptimizeMeshes,
                 PostProcess::OptimizeGraph,
                 PostProcess::Triangulate,
                 PostProcess::JoinIdenticalVertices,
-                PostProcess::PreTransformVertices,
                 PostProcess::GenerateNormals,
                 PostProcess::SortByPrimitiveType,
             ],
         )
             .expect("Failed to load obj file");
-        let meshes = vec![];
-        let materials = MaterialsStruct{
-            materials: vec![],
+        let meshes = scene.meshes.iter().map(|mesh| MeshStruct::from_assimp_mesh(mesh)).collect();
+        let mut materials: MaterialsStruct = MaterialsStruct{
+            materials: Vec::new(),
             textures: HashMap::new(),
         };
-        // let meshes = scene.meshes.iter().map(|mesh| MeshStruct::from_assimp_mesh(mesh)).collect();
-        // let mut materials: MaterialsStruct = MaterialsStruct{
-        //     materials: Vec::new(),
-        //     textures: HashMap::new(),
-        // };
-        // scene.materials.iter().for_each(|material| {
-        //     let (material_struct, texture) = MaterialStruct::from_assimp_material(material);
-        //     materials.materials.push(material_struct);
-        //     for texture in texture{
-        //         let tex_struct = TextureStruct::from_assimp_texture(&*texture.borrow());
-        //         materials.textures.insert(texture.borrow().filename.clone(), tex_struct);
-        //     }
-        // });
+        scene.materials.iter().for_each(|material| {
+            let (material_struct, texture) = MaterialStruct::from_assimp_material(material);
+            materials.materials.push(material_struct);
+            for texture in texture{
+                let tex_struct = TextureStruct::from_assimp_texture(&*texture.borrow());
+                materials.textures.insert(texture.borrow().filename.clone(), tex_struct);
+            }
+        });
         FileStruct{
             magic: Header::new(),
             meshes,
@@ -240,17 +234,16 @@ impl FileStruct{
     }
     pub fn save(&self,path:&str) ->Result<(),Box<dyn Error>>{
         let path = Path::new(path).with_extension(EXTENSION);
-        let mut file = File::create(path)?;
-        let res = bincode::encode_into_std_write(&self,&mut file, bincode::config::standard())?;
+        let file = File::create(path)?;
+        let mut buf_writer = std::io::BufWriter::new(file);
+        let _ = bincode::encode_into_std_write(&self,&mut buf_writer, bincode::config::standard())?;
         Ok(())
     }
 
     pub fn load(path:&str) ->Result<Self,Box<dyn Error>>{
-        let mut file = File::open(path)?;
-        let data = bincode::decode_from_std_read(&mut file, bincode::config::standard())?;
+        let file = File::open(path)?;
+        let mut buf_reader = std::io::BufReader::new(file);
+        let data = bincode::decode_from_std_read(&mut buf_reader, bincode::config::standard())?;
         Ok(data)
     }
 }
-
-
-fn main() {}

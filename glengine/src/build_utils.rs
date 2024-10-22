@@ -28,8 +28,11 @@ pub mod models{
         file.save(destination.to_str().unwrap())
     }
 
-    pub fn convert_name(file:&str,source: &str,destination:&str) -> PathBuf {
-        Path::new(&file.replace(source, destination)).with_extension(EXTENSION)
+    pub fn convert_name(file:&Path,source: &Path,destination:&Path) -> PathBuf {
+        // add EXTENSION to end of filename, keeping old extension before new one
+        let mut dest = destination.join(file.strip_prefix(source).unwrap());
+        //add ".nmdl" to end of filename but not replace old extension
+        dest.with_extension(dest.extension().unwrap().to_str().unwrap().to_string() + "." + EXTENSION)
     }
     pub fn convert_dir(source: &Path,destination:&Path) -> Result<Vec<PathBuf>,Box<dyn Error>> {
         let mut converted = Vec::new();
@@ -39,9 +42,29 @@ pub mod models{
                     if !CONVERTIBLE_EXTENSIONS.iter().any(|ext| path.to_str().unwrap().ends_with(ext)){
                         continue;
                     }
-                    let destination = convert_name(path.to_str().unwrap(),source.to_str().unwrap(),destination.to_str().unwrap());
+                    let destination = convert_name(&path,&source,&destination);
                     convert_file(&path,&destination)?;
-                    converted.push(destination);
+                    converted.push(path);
+                }
+                Err(e) => println!("{:?}", e),
+            }
+        }
+        Ok(converted)
+    }
+    pub fn with_convert_dir<C: FnMut(&Path)->bool>(source: &Path, destination:&Path,mut should_convert:C) -> Result<Vec<PathBuf>,Box<dyn Error>> {
+        let mut converted = Vec::new();
+        for entry in glob::glob(&format!("{}/**/*", source.to_str().unwrap()))? {
+            match entry {
+                Ok(path) => {
+                    if !should_convert(&path){
+                        continue;
+                    }
+                    if !CONVERTIBLE_EXTENSIONS.iter().any(|ext| path.to_str().unwrap().ends_with(ext)) {
+                        continue;
+                    }
+                    let destination = convert_name(&path,&source,&destination);
+                    convert_file(&path,&destination)?;
+                    converted.push(path);
                 }
                 Err(e) => println!("{:?}", e),
             }

@@ -3,7 +3,6 @@ use std::cell::RefCell;
 use std::rc::{Rc,Weak};
 
 use glengine::engine::drawable::base::BaseDrawable;
-use glengine::engine::drawable::importer::assimp;
 use glengine::engine::drawable::material::{Material, MaterialData};
 use glengine::engine::drawable::shader::lit::LIT_COLOR_SHADER;
 use glengine::engine::Engine;
@@ -17,7 +16,7 @@ use glengine::engine::scene::lights::point::PointLight;
 use glengine::engine::scene::lights::spot::SpotLight;
 use glengine::engine::scene::Scene;
 use glengine::engine::scene::SceneData;
-use glengine::gl;
+use glengine::{gl, nmdl_import};
 use glengine::glam::{Mat4, vec3,Quat};
 use glengine::result::EngineRenderResult;
 
@@ -47,6 +46,7 @@ impl Scene for BaseScene {
     }
 
     fn init_gl(&mut self) -> EngineRenderResult<()> {
+        let models_dir = std::env::current_exe().unwrap().parent().unwrap().join("models");
         self.data_mut().lights.init_ssbo();
         unsafe {
             gl::ClearColor(0.2, 0.3, 0.3, 1.0);
@@ -56,8 +56,7 @@ impl Scene for BaseScene {
 
         let monkey = BaseGameObject::new(Some(empty.clone()));
         {
-            let monkey_draw =
-                assimp::import("models/untitled.obj");
+            let monkey_draw = nmdl_import!("untitled.obj");
             let mut data = monkey.borrow_mut();
             data.components_mut()
                 .unwrap()
@@ -113,8 +112,7 @@ impl Scene for BaseScene {
         {
             let mut data = rotator.borrow_mut();
             let components = data.components_mut().unwrap();
-            let drawable =
-                assimp::import("models/bugatticlean.obj");
+            let drawable = nmdl_import!("bugatticlean.obj");
             components.add_component(DrawableComponent::new(Box::new(drawable)));
             components.add_component(RotatingComponent::new(vec3(0.0, 0.14, 0.0)));
             data.data_mut().transform.scale *= 0.3;

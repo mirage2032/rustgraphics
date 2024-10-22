@@ -26,7 +26,7 @@ pub trait Drawable{
 pub struct DrawData {
     pub mesh: Rc<RefCell<dyn mesh::Mesh>>,
     pub shader: Rc<RefCell<Shader>>,
-    pub material: Option<Rc<material::Material>>,
+    pub material: Option<Rc<Material>>,
 }
 
 impl Drawable for DrawData {
