@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use glengine::engine::scene::gameobject::components::rotating::RotatingComponent;
 use std::cell::RefCell;
 use std::rc::{Rc,Weak};
 
@@ -11,7 +11,6 @@ use glengine::engine::GameData;
 use glengine::engine::scene::camera::CameraControlled;
 use glengine::engine::scene::gameobject::{base::BaseGameObject, GameObjectTrait};
 use glengine::engine::scene::gameobject::components::drawable::DrawableComponent;
-use glengine::engine::scene::gameobject::components::rotating::RotatingComponent;
 use glengine::engine::scene::lights::directional::DirectionalLight;
 use glengine::engine::scene::lights::Lights;
 use glengine::engine::scene::lights::point::PointLight;
@@ -110,17 +109,17 @@ impl Scene for BaseScene {
             data.data_mut().transform.position = vec3(0.0, -1.0, 8.0);
         }
 
-        // let rotator = BaseGameObject::new(Some(empty.clone()));
-        // {
-        //     let mut data = rotator.write().expect("Could not lock gameobject for init");
-        //     let components = data.components_mut().unwrap();
-        //     let drawable =
-        //         assimp::import("models/bugatticlean.obj");
-        //     components.add_component(DrawableComponent::new(Box::new(drawable)));
-        //     components.add_component(RotatingComponent::new(vec3(0.0, 0.04, 0.0)));
-        //     data.data_mut().transform.scale *= 0.3;
-        //     data.data_mut().transform.position = vec3(0.0, 0.0, 0.0);
-        // }
+        let rotator = BaseGameObject::new(Some(empty.clone()));
+        {
+            let mut data = rotator.borrow_mut();
+            let components = data.components_mut().unwrap();
+            let drawable =
+                assimp::import("models/bugatticlean.obj");
+            components.add_component(DrawableComponent::new(Box::new(drawable)));
+            components.add_component(RotatingComponent::new(vec3(0.0, 0.14, 0.0)));
+            data.data_mut().transform.scale *= 0.3;
+            data.data_mut().transform.position = vec3(0.0, 0.0, 0.0);
+        }
 
         let camera = Rc::new(RefCell::new(CameraControlled::new(
             None,

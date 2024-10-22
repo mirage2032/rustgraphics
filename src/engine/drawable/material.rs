@@ -78,6 +78,39 @@ impl From<russimp::material::Material> for Material {
         Self { data, textures }
     }
 }
+
+impl From<glengine_mdl::models::MaterialStruct> for Material {
+    fn from(material: glengine_mdl::models::MaterialStruct) -> Self {
+        let mut data = MaterialData::default();
+        let mut textures = HashMap::new();
+
+        if let Some(ambient) = material.ambient {
+            data.ambient = Some(vec3(ambient.0, ambient.1, ambient.2));
+        }
+        if let Some(diffuse) = material.diffuse {
+            data.diffuse = Some(vec3(diffuse.0, diffuse.1, diffuse.2));
+        }
+        if let Some(specular) = material.specular {
+            data.specular = Some(vec3(specular.0, specular.1, specular.2));
+        }
+        if let Some(shininess) = material.shininess {
+            data.shininess = Some(shininess);
+        }
+
+        if let Some(diffuse_texture) = material.texture.diffuse {
+            let image = Image::load(&diffuse_texture).expect(
+                format!(
+                    "Failed to load texture: {}",
+                    &diffuse_texture
+                )
+                .as_str(),
+            );
+            textures.insert("diffuse_texture", image.into());
+        };
+
+        Self { data, textures }
+    }
+}
 impl Material {
     pub fn set_uniforms(&self, shader: &mut Shader) {
         if let Some(ambient) = self.data.ambient {

@@ -61,8 +61,7 @@ impl<T: GameObjectTrait> Drawable for T {
         if let Some(components) = self.components() {
             if let Some(drawable) = components.get_component::<DrawableComponent>() {
                 drawable
-                    .write()
-                    .expect("Could not lock drawable component for draw")
+                    .borrow_mut()
                     .draw(&newmodelmat, viewmat, lights);
             }
         }

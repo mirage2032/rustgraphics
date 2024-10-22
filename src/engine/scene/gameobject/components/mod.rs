@@ -1,5 +1,5 @@
 use std::any::TypeId;
-use std::sync::RwLock;
+use std::cell::RefCell;
 
 use indexmap::IndexMap;
 
@@ -23,7 +23,7 @@ pub trait Component: 'static{
 }
 
 pub struct ComponentMap {
-    elements: IndexMap<TypeId, RwLock<Box<dyn Component>>>,
+    elements: IndexMap<TypeId, RefCell<Box<dyn Component>>>,
 }
 
 impl ComponentMap {
@@ -36,20 +36,19 @@ impl ComponentMap {
     pub fn add_component<T: Component>(&mut self, component: T) {
         let type_id = TypeId::of::<T>();
         self.elements
-            .insert(type_id, RwLock::new(Box::new(component)));
+            .insert(type_id, RefCell::new(Box::new(component)));
     }
 
-    pub fn get_component<T: Component>(&self) -> Option<&RwLock<Box<T>>> {
+    pub fn get_component<T: Component>(&self) -> Option<&RefCell<Box<T>>> {
         let type_id = TypeId::of::<T>();
         self.elements.get(&type_id).and_then(|mutex| {
-            Some(unsafe { &*(mutex as *const RwLock<Box<dyn Component>> as *const RwLock<Box<T>>) })
+            Some(unsafe { &*(mutex as *const RefCell<Box<dyn Component>> as *const RefCell<Box<T>>) })
         })
     }
     pub fn step(&self, object: &mut GameObjectData, state: &GameState) -> EngineStepResult<()> {
         for (_, component) in self.elements.iter() {
             component
-                .write()
-                .expect("Could not lock component for step")
+                .borrow_mut()
                 .step(object, self, state)?
         }
         Ok(())
