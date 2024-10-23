@@ -34,7 +34,7 @@ pub mod models{
         //add ".nmdl" to end of filename but not replace old extension
         dest.with_extension(dest.extension().unwrap().to_str().unwrap().to_string() + "." + EXTENSION)
     }
-    pub fn convert_dir(source: &Path,destination:&Path) -> Result<Vec<PathBuf>,Box<dyn Error>> {
+    pub fn convert_dir(source: &Path,destination:&Path) -> Result<Vec<(PathBuf,PathBuf)>,Box<dyn Error>> {
         let mut converted = Vec::new();
         for entry in glob::glob(&format!("{}/**/*", source.to_str().unwrap()))? {
             match entry {
@@ -44,27 +44,27 @@ pub mod models{
                     }
                     let destination = convert_name(&path,&source,&destination);
                     convert_file(&path,&destination)?;
-                    converted.push(path);
+                    converted.push((path,destination));
                 }
                 Err(e) => println!("{:?}", e),
             }
         }
         Ok(converted)
     }
-    pub fn with_convert_dir<C: FnMut(&Path)->bool>(source: &Path, destination:&Path,mut should_convert:C) -> Result<Vec<PathBuf>,Box<dyn Error>> {
+    pub fn with_convert_dir<C: FnMut(&Path,&Path)->bool>(source: &Path, destination:&Path,mut should_convert:C) -> Result<Vec<(PathBuf,PathBuf)>,Box<dyn Error>> {
         let mut converted = Vec::new();
         for entry in glob::glob(&format!("{}/**/*", source.to_str().unwrap()))? {
             match entry {
                 Ok(path) => {
-                    if !should_convert(&path){
+                    let destination = convert_name(&path,&source,&destination);
+                    if !should_convert(&path,&destination){
                         continue;
                     }
                     if !CONVERTIBLE_EXTENSIONS.iter().any(|ext| path.to_str().unwrap().ends_with(ext)) {
                         continue;
                     }
-                    let destination = convert_name(&path,&source,&destination);
                     convert_file(&path,&destination)?;
-                    converted.push(path);
+                    converted.push((path,destination));
                 }
                 Err(e) => println!("{:?}", e),
             }

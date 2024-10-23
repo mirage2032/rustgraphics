@@ -50,26 +50,33 @@ fn main() {
         glengine::build_utils::gpu::use_discrete_gpu_win();
     }
     let crate_dir = env::var("CARGO_MANIFEST_DIR").unwrap();
+    println!("cargo:rerun-if-changed={} ", Path::new(&crate_dir).join("src").to_str().unwrap());
+
     let models_in = Path::new(&crate_dir).join("models");
     let out_dir = env::var("OUT_DIR").unwrap();
     let models_out = Path::new(&out_dir).parent().unwrap().parent().unwrap().parent().unwrap().join("models");
     let mut to_import = get_nmdl_imports();
-    match glengine::build_utils::models::with_convert_dir(&models_in, &models_out,|path|{
+    match glengine::build_utils::models::with_convert_dir(&models_in, &models_out,|path,destination|{
+        //check if path is newer than destination
         let relative = path.strip_prefix(&models_in).unwrap();
-        //check if relative is in imports and delete it then
-        let should_import = to_import.iter().any(|import| import == relative);
+        let mut should_import = to_import.iter().any(|import| import == relative);
         if should_import {
+            if let (Ok(path_meta),Ok(dest_meta)) = (fs::metadata(path),fs::metadata(destination)) {
+                if path_meta.modified().unwrap() < dest_meta.modified().unwrap() {
+                    should_import = false; 
+                }
+            }
             to_import.retain(|import| import != relative);
         }
         should_import
     }){
         Ok(files) =>{
-            for file in files{
-                println!("cargo:rerun-if-changed={} ", file.to_str().unwrap());
+            for (src,dest) in files{
+                println!("cargo:rerun-if-changed={} ", src.to_str().unwrap());
             }
         }
         Err(err) => {
-            panic!("Failed to convert models");
+            panic!("Failed to convert models. {}",err);
         }
     }
     if !to_import.is_empty(){

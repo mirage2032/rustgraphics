@@ -48,12 +48,12 @@ impl Scene for BaseScene {
     fn init_gl(&mut self) -> EngineRenderResult<()> {
         let models_dir = std::env::current_exe().unwrap().parent().unwrap().join("models");
         self.data_mut().lights.init_ssbo();
-        unsafe {
+        unsafe { 
             gl::ClearColor(0.2, 0.3, 0.3, 1.0);
         }
         let empty = BaseGameObject::new(None);
         self.data.objects.push(empty.clone());
-
+        // nmdl_import!("Bkaf.obj");  
         let monkey = BaseGameObject::new(Some(empty.clone()));
         {
             let monkey_draw = nmdl_import!("untitled.obj");
