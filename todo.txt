@@ -1,0 +1,4 @@
+Physics
+Shadows/ deferred shading??
+Texture mipmaps?
+Key remaping? EX: W or UP_ARROW -> UP ...etc

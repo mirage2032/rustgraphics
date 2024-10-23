@@ -8,7 +8,7 @@ use shader::Shader;
 
 use crate::engine::config::CONFIG;
 use crate::engine::drawable::material::{Material, MaterialData, Texture};
-use crate::engine::drawable::mesh::unbind;
+use crate::engine::drawable::mesh::MeshData;
 use crate::engine::drawable::shader::unlit::QUAD_SHADER;
 use crate::engine::fbo::Fbo;
 use crate::engine::scene::lights::Lights;
@@ -51,11 +51,8 @@ impl Drawable for DrawData {
         }
         self.mesh.borrow().draw();
         Lights::unbind(5);
-        unbind();
-
-        unsafe {
-            gl::UseProgram(0);
-        };
+        MeshData::unbind();
+        Shader::unbind();
     }
 }
 

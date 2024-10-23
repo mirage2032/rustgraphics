@@ -50,7 +50,7 @@ impl DirectionalLight {
         }
         light
     }
-    
+
     pub fn new_w_gameobject(game_object: GameObject, intensity: f32, color: Vec3) -> Self {
         let light = Self {
             game_object: Rc::downgrade(&game_object),

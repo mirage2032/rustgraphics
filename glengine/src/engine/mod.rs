@@ -93,7 +93,7 @@ impl Engine {
     pub fn new() -> Self {
         let mut glfw = glfw::init(glfw::fail_on_errors).unwrap();
         glfw.window_hint(WindowHint::ContextVersion(3, 0));
-        // glfw.window_hint(WindowHint::RefreshRate(Some(0)));
+        glfw.window_hint(WindowHint::RefreshRate(None));
         glfw.window_hint(WindowHint::CocoaGraphicsSwitching(false));
         glfw.window_hint(WindowHint::OpenGlForwardCompat(true));
         glfw.window_hint(WindowHint::OpenGlDebugContext(true));
@@ -156,7 +156,7 @@ impl Engine {
         window.set_mouse_button_polling(true);
         window.set_cursor_mode(glfw::CursorMode::Disabled);
 
-        window.glfw.set_swap_interval(glfw::SwapInterval::None);
+        window.glfw.set_swap_interval(glfw::SwapInterval::Adaptive);
         // unsafe {
         //     glfwSwapInterval(0);
         // }

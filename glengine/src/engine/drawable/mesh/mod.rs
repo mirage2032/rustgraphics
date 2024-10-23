@@ -92,7 +92,7 @@ impl MeshData {
             gl::EnableVertexAttribArray(1);
             Some(vbo)
         };
-        self.unbind();
+        Self::unbind();
         self
     }
 
@@ -112,7 +112,7 @@ impl MeshData {
             gl::EnableVertexAttribArray(2);
             Some(vbo)
         };
-        self.unbind();
+        Self::unbind();
         self
     }
 
@@ -131,7 +131,7 @@ impl MeshData {
             Some(ebo)
         };
         self.indices_count = indices.len() as u32;
-        self.unbind();
+        Self::unbind();
         self
     }
     pub fn bind(&self) {
@@ -142,8 +142,10 @@ impl MeshData {
     pub fn get_indices_count(&self) -> u32 {
         self.indices_count
     }
-    pub fn unbind(&self) {
-        unbind();
+    pub fn unbind() {
+        unsafe {
+            gl::BindVertexArray(0);
+        }
     }
 }
 
@@ -162,11 +164,5 @@ impl Drop for MeshData {
                 gl::DeleteBuffers(1, &ebo);
             };
         }
-    }
-}
-
-pub fn unbind() {
-    unsafe {
-        gl::BindVertexArray(0);
     }
 }

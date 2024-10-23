@@ -109,6 +109,12 @@ impl Shader {
             gl::UseProgram(self.id);
         }
     }
+    
+    pub fn unbind(){
+        unsafe {
+            gl::UseProgram(0);
+        }
+    }
 
     pub fn set_texture(&self, name: &str, texture: u32, index: u32, texture_type: GLenum) {
         unsafe {
