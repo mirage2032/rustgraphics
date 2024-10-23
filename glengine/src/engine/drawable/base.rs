@@ -3,8 +3,8 @@ use std::rc::Rc;
 
 use glam::Mat4;
 
-use crate::engine::drawable::mesh;
-use crate::engine::drawable::{DrawData, Drawable};
+use crate::engine::drawable::{mesh, Drawable};
+use crate::engine::drawable::DrawData;
 use crate::engine::scene::lights::Lights;
 
 use super::shader::Shader;

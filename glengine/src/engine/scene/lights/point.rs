@@ -1,11 +1,12 @@
 use std::cell::RefCell;
-use std::rc::Rc;
+use std::rc::{Rc, Weak};
 
 use glam::Vec3;
 use glsl_layout::{float, vec3, Uniform};
 
 use crate::engine::scene::gameobject::components::ComponentMap;
-use crate::engine::scene::gameobject::{GameObject, GameObjectData, GameObjectTrait};
+use crate::engine::scene::gameobject::{GameObject, GameObjectData};
+use crate::engine::scene::gameobject::base::BaseGameObject;
 use crate::engine::transform::Transform;
 
 #[derive(Debug, Copy, Default, Clone, Uniform)]
@@ -31,8 +32,7 @@ impl PointLightData {
     }
 }
 pub struct PointLight {
-    data: GameObjectData,
-    components: ComponentMap,
+    pub game_object: Weak<RefCell<BaseGameObject>>,
     pub intensity: f32,
     pub color: Vec3,
     pub constant: f32,
@@ -48,58 +48,51 @@ impl PointLight {
         constant: f32,
         linear: f32,
         quadratic: f32,
-    ) -> Rc<RefCell<Self>> {
-        let light = Rc::new(RefCell::new(Self {
-            data: GameObjectData::new(parent),
+    ) -> Self {
+        let game_object = Rc::new(RefCell::new(BaseGameObject {
+            data: GameObjectData::new(parent.clone()),
             components: ComponentMap::new(),
+        }));
+        let light = Self {
+            game_object: Rc::downgrade(&game_object),
             intensity,
             color,
             constant,
             linear,
             quadratic,
-        }));
-        if let Some(parent) = &light.borrow_mut().data.parent {
+        };
+        if let Some(parent) = parent {
             parent
                 .borrow_mut()
-                .data_mut()
+                .data
                 .children
-                .push(light.clone());
+                .push(game_object.clone());
         }
         light
     }
+    
+    pub fn new_w_gameobject(game_object: GameObject, intensity: f32, color: Vec3, constant: f32, linear: f32, quadratic: f32) -> Self {
+        let light = Self {
+            game_object: Rc::downgrade(&game_object),
+            intensity,
+            color,
+            constant,
+            linear,
+            quadratic,
+        };
+        light
+    }
 
-    pub fn light_data(&self) -> PointLightData {
-        let transform:Transform = self.global_mat().into();
+    pub fn light_data(&self) -> Option<PointLightData> {
+        let transform:Transform = self.game_object.upgrade()?.borrow().global_mat().into();
         let position = transform.position;
-        PointLightData {
+        Some(PointLightData {
             intensity: self.intensity,
             color: vec3::from([self.color.x, self.color.y, self.color.z]),
             position: vec3::from([position.x, position.y, position.z]),
             constant: self.constant,
             linear: self.linear,
             quadratic: self.quadratic,
-        }
-    }
-}
-
-impl GameObjectTrait for PointLight {
-    fn data(&self) -> &GameObjectData {
-        &self.data
-    }
-    fn data_mut(&mut self) -> &mut GameObjectData {
-        &mut self.data
-    }
-
-    fn components(&self) -> Option<&ComponentMap> {
-        Some(&self.components)
-    }
-
-    fn components_mut(&mut self) -> Option<&mut ComponentMap> {
-        Some(&mut self.components)
-    }
-    
-    fn step(&mut self, state: &crate::engine::GameState) -> crate::result::EngineStepResult<()> {
-        self.components.step(&mut self.data, state)?;
-        Ok(())
+        })
     }
 }

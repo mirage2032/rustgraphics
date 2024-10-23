@@ -1,31 +1,33 @@
+use std::cell::RefCell;
+use std::rc::Rc;
 use glam::{Mat4, Vec3, Vec4};
 
 use crate::engine::config::CONFIG;
 use crate::engine::scene::gameobject::components::{freecam, ComponentMap};
-use crate::engine::scene::gameobject::{GameObject, GameObjectData, GameObjectTrait};
-use crate::engine::GameState;
-use crate::result::EngineStepResult;
+use crate::engine::scene::gameobject::{GameObject, GameObjectData};
+use crate::engine::scene::gameobject::base::BaseGameObject;
 
-pub struct CameraControlled {
-    pub data: GameObjectData,
-    pub components: ComponentMap,
+pub struct Camera {
+    pub game_object: GameObject,
 }
 
-impl CameraControlled {
+impl Camera {
     pub fn new(parent: Option<GameObject>, position: Vec3, target: Vec3, up: Vec3) -> Self {
         let mut data = GameObjectData::new(parent);
         data.transform = Mat4::look_at_rh(position, target, up).inverse().into();
         let mut components = ComponentMap::new();
         components.add_component(freecam::FreeCamController::new());
         Self {
-            data,
-            components,
+            game_object: Rc::new(RefCell::new(BaseGameObject {
+                data,
+                components,
+            }))
         }
     }
 
     pub fn frustum(&self) -> Mat4 {
         let perspective = *CONFIG.projection();
-        perspective * self.global_mat().inverse()
+        perspective * self.game_object.borrow().global_mat().inverse()
     }
 
     pub fn frustum_planes(&self) -> [Vec4; 6] {
@@ -47,33 +49,13 @@ impl CameraControlled {
     }
 }
 
-impl Default for CameraControlled {
+impl Default for Camera {
     fn default() -> Self {
         Self {
-            data: GameObjectData::new(None),
-            components: ComponentMap::new(),
+            game_object: Rc::new(RefCell::new(BaseGameObject {
+                data: GameObjectData::new(None),
+                components: ComponentMap::new(),
+            }))
         }
-    }
-}
-
-impl GameObjectTrait for CameraControlled {
-    fn data(&self) -> &GameObjectData {
-        &self.data
-    }
-    fn data_mut(&mut self) -> &mut GameObjectData {
-        &mut self.data
-    }
-
-    fn components(&self) -> Option<&ComponentMap> {
-        Some(&self.components)
-    }
-
-    fn components_mut(&mut self) -> Option<&mut ComponentMap> {
-        Some(&mut self.components)
-    }
-
-    fn step(&mut self, state: &GameState) -> EngineStepResult<()> {
-        self.components.step(&mut self.data, state)?;
-        Ok(())
     }
 }

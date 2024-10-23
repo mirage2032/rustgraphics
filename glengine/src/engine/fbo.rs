@@ -174,7 +174,7 @@ impl ScreenFbo{
     pub fn render(&self, scene:&mut Box<dyn Scene>) {
         unsafe {
             self.fbo.bind();
-            gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
+            gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT | gl::STENCIL_BUFFER_BIT);
             scene.render();
             gl::BindFramebuffer(gl::READ_FRAMEBUFFER, self.fbo.fbo);
             gl::BindFramebuffer(gl::DRAW_FRAMEBUFFER, 0);

@@ -27,6 +27,18 @@ impl Transform {
     pub fn up(&self) -> Vec3 {
         self.rotation * Vec3::Y
     }
+    pub fn with_position(mut self, position: Vec3) -> Self {
+        self.position = position;
+        self
+    }
+    pub fn with_rotation(mut self, rotation:Quat) -> Self {
+        self.rotation = rotation;
+        self
+    }
+    pub fn with_scale(mut self, scale: Vec3) -> Self {
+        self.scale = scale;
+        self
+    }
 }
 
 impl From<Transform> for Mat4 {

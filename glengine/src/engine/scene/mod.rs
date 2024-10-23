@@ -2,9 +2,9 @@ use std::cell::RefCell;
 use std::rc::Weak;
 
 use glam::{vec3, Mat4};
-
-use crate::engine::scene::camera::CameraControlled;
-use crate::engine::scene::gameobject::{GameObject, GameObjectTrait};
+use crate::engine::drawable::Drawable;
+use crate::engine::scene::camera::Camera;
+use crate::engine::scene::gameobject::{GameObject};
 use crate::engine::GameState;
 use crate::result::{EngineRenderResult, EngineStepResult};
 
@@ -14,7 +14,7 @@ pub mod lights;
 
 pub struct SceneData {
     pub objects: Vec<GameObject>,
-    pub main_camera: Weak<RefCell<CameraControlled>>,
+    pub main_camera: Option<Camera>,
     pub lights: lights::Lights,
 }
 
@@ -23,8 +23,8 @@ pub trait Scene {
     fn data_mut(&mut self) -> &mut SceneData;
     fn init_gl(&mut self) -> EngineRenderResult<()>;
     fn render(&mut self) {
-        if let Some(camera) = &self.data().main_camera.upgrade() {
-            let camera_mat = camera
+        if let Some(camera) = &self.data().main_camera {
+            let camera_mat = camera.game_object
                 .borrow()
                 .global_mat();
             
@@ -41,25 +41,20 @@ pub trait Scene {
             }
         }
     }
-    
-    fn step(&mut self,state: &GameState) -> EngineStepResult<()> {Ok(())}
     fn step_recursive(&mut self, state: &GameState) -> EngineStepResult<()> {
-        self.step(state)?;
         for object in &self.data_mut().objects {
             object
                 .borrow_mut()
-                .step_recursive(state)?;
+                .step(state)?;
         }
         Ok(())
     }
     
-    fn fixed_step(&mut self,state: &GameState) -> EngineStepResult<()> {Ok(())}
-    fn fixed_step_recursive(&mut self, state: &GameState) -> EngineStepResult<()> {
-        self.fixed_step(state)?;
+    fn fixed_step(&mut self, state: &GameState) -> EngineStepResult<()> {
         for object in &self.data_mut().objects {
             object
                 .borrow_mut()
-                .fixed_step_recursive(state)?;
+                .fixed_step(state)?;
         }
         Ok(())
     }

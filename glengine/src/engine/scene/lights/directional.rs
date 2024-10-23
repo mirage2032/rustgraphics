@@ -1,11 +1,12 @@
 use std::cell::RefCell;
-use std::rc::Rc;
+use std::rc::{Rc, Weak};
 
 use glam::Vec3;
 use glsl_layout::{float, vec3, Uniform};
 
 use crate::engine::scene::gameobject::components::ComponentMap;
-use crate::engine::scene::gameobject::{GameObject, GameObjectData, GameObjectTrait};
+use crate::engine::scene::gameobject::{GameObject, GameObjectData};
+use crate::engine::scene::gameobject::base::BaseGameObject;
 
 #[derive(Debug, Copy, Default, Clone, Uniform)]
 pub struct DirectionalLightData {
@@ -25,58 +26,46 @@ impl DirectionalLightData {
 }
 
 pub struct DirectionalLight {
-    data: GameObjectData,
-    components: ComponentMap,
+    pub game_object: Weak<RefCell<BaseGameObject>>,
     pub intensity: f32,
     pub color: Vec3,
 }
 impl DirectionalLight {
-    pub fn new(parent: Option<GameObject>, intensity: f32, color: Vec3) -> Rc<RefCell<Self>> {
-        let light = Rc::new(RefCell::new(Self {
-            data: GameObjectData::new(parent),
+    pub fn new(parent: Option<GameObject>, intensity: f32, color: Vec3) -> Self {
+        let game_object = Rc::new(RefCell::new(BaseGameObject{
+            data: GameObjectData::new(parent.clone()),
             components: ComponentMap::new(),
+        }));
+        let light = Self {
+            game_object: Rc::downgrade(&game_object),
             intensity,
             color,
-        }));
-        if let Some(parent) = &light.borrow_mut().data.parent {
+        };
+        if let Some(parent) = parent {
             parent
                 .borrow_mut()
-                .data_mut()
+                .data
                 .children
-                .push(light.clone());
+                .push(game_object.clone());
         }
         light
     }
+    
+    pub fn new_w_gameobject(game_object: GameObject, intensity: f32, color: Vec3) -> Self {
+        let light = Self {
+            game_object: Rc::downgrade(&game_object),
+            intensity,
+            color,
+        };
+        light
+    }
 
-    pub fn light_data(&self) -> DirectionalLightData {
-        let direction = self.data.transform.forward();
-        DirectionalLightData {
+    pub fn light_data(&self) -> Option<DirectionalLightData> {
+        let direction = self.game_object.upgrade()?.borrow().data.transform.forward();
+        Some(DirectionalLightData {
             intensity: self.intensity,
             color: vec3::from([self.color.x, self.color.y, self.color.z]),
             direction: vec3::from([direction.x, direction.y, direction.z]),
-        }
-    }
-}
-
-impl GameObjectTrait for DirectionalLight {
-    fn data(&self) -> &GameObjectData {
-        &self.data
-    }
-
-    fn data_mut(&mut self) -> &mut GameObjectData {
-        &mut self.data
-    }
-
-    fn components(&self) -> Option<&ComponentMap> {
-        Some(&self.components)
-    }
-
-    fn components_mut(&mut self) -> Option<&mut ComponentMap> {
-        Some(&mut self.components)
-    }
-
-    fn step(&mut self, state: &crate::engine::GameState) -> crate::result::EngineStepResult<()> {
-        self.components.step(&mut self.data, state)?;
-        Ok(())
+        })
     }
 }

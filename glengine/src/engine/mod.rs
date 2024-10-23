@@ -156,7 +156,7 @@ impl Engine {
         window.set_mouse_button_polling(true);
         window.set_cursor_mode(glfw::CursorMode::Disabled);
 
-        window.glfw.set_swap_interval(glfw::SwapInterval::Adaptive);
+        window.glfw.set_swap_interval(glfw::SwapInterval::None);
         // unsafe {
         //     glfwSwapInterval(0);
         // }
@@ -189,7 +189,7 @@ impl Engine {
         let fixed_step_interval = CONFIG.config().get_fixed_step();
         let mut fixed_step_elapsed = Instant::now();
         let mut step_delta = timedelta::TimeDelta::new();
-        let mut fps = fps::SmoothFps::new(10);
+        let mut fps = fps::SmoothFps::new(30);
         loop {
             self.handle_events();
             let delta = step_delta.delta();

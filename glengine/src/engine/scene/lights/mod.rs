@@ -25,21 +25,22 @@ pub struct LightsData {
 }
 
 pub struct Lights {
-    pub directional: Weak<RefCell<DirectionalLight>>,
-    pub point: Vec<Weak<RefCell<PointLight>>>,
-    pub spot: Vec<Weak<RefCell<SpotLight>>>,
+    pub directional: Option<DirectionalLight>,
+    pub point: Vec<PointLight>,
+    pub spot: Vec<SpotLight>,
     pub ssbo: GLuint,
 }
 
 impl Lights {
     pub fn light_data(&mut self) -> LightsData {
-        let (directional, is_directional) = match &self.directional.upgrade() {
-            Some(light) => (
-                light
-                    .borrow()
-                    .light_data(),
-                true,
-            ),
+        let (directional, is_directional) = match &self.directional {
+            Some(light) => match light.light_data()
+            {
+                Some(light_data) => (light_data, true),
+                None => {
+                    self.directional = None;
+                    (DirectionalLightData::empty(), false) },
+            }
             None => (DirectionalLightData::empty(), false),
         };
 
@@ -47,8 +48,8 @@ impl Lights {
         let mut point_count = 0;
         self.point.retain(|light|
             {
-                if let Some(light) = light.upgrade() {
-                    point[point_count] = light.borrow().light_data();
+                if let Some(light_data) = light.light_data() {
+                    point[point_count] = light_data;
                     point_count += 1;
                     true
                 } else {
@@ -61,8 +62,8 @@ impl Lights {
         let mut spot_count = 0;
         self.spot.retain(|light|
             {
-                if let Some(light) = light.upgrade() {
-                    spot[spot_count] = light.borrow().light_data();
+                if let Some(light_data) = light.light_data() {
+                    spot[spot_count] = light_data;
                     spot_count += 1;
                     true
                 } else {
@@ -136,7 +137,7 @@ impl Drop for Lights {
 impl Default for Lights {
     fn default() -> Self {
         Self {
-            directional: Weak::new(),
+            directional: None,
             point: Vec::new(),
             spot: Vec::new(),
             ssbo: 0,
