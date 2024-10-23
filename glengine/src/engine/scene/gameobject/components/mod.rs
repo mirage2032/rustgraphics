@@ -20,6 +20,13 @@ pub trait Component: 'static{
         _state: &GameState,
     ) -> EngineStepResult<()> {
         Ok(())}
+    fn fixed_step(
+        &mut self,
+        _object: &mut GameObjectData,
+        _components: &ComponentMap,
+        _state: &GameState,
+    ) -> EngineStepResult<()> {
+        Ok(())}
 }
 
 pub struct ComponentMap {
@@ -50,6 +57,14 @@ impl ComponentMap {
             component
                 .borrow_mut()
                 .step(object, self, state)?
+        }
+        Ok(())
+    }
+    pub fn fixed_step(&self, object: &mut GameObjectData, state: &GameState) -> EngineStepResult<()> {
+        for (_, component) in self.elements.iter() {
+            component
+                .borrow_mut()
+                .fixed_step(object, self, state)?
         }
         Ok(())
     }
