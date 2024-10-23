@@ -18,15 +18,15 @@ use crate::result::EngineStepResult;
 //     ])
 // }
 
-pub struct FreeCamController {}
+pub struct FreeCamComponent {}
 
-impl FreeCamController {
+impl FreeCamComponent {
     pub fn new() -> Self {
         Self {}
     }
 }
 
-impl Component for FreeCamController {
+impl Component for FreeCamComponent {
     fn step(
         &mut self,
         object: &mut GameObjectData,

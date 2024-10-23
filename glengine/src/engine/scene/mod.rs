@@ -1,11 +1,13 @@
 use std::cell::RefCell;
-use std::rc::Weak;
+use std::rc::{Rc, Weak};
 
 use glam::{vec3, Mat4};
 use crate::engine::drawable::Drawable;
 use crate::engine::scene::camera::Camera;
 use crate::engine::scene::gameobject::{GameObject};
 use crate::engine::GameState;
+use crate::engine::scene::gameobject::components::collider::ColliderComponent;
+use crate::engine::scene::gameobject::components::rigidbody::RigidBodyComponent;
 use crate::result::{EngineRenderResult, EngineStepResult};
 
 pub mod camera;
@@ -50,11 +52,11 @@ pub trait Scene {
         Ok(())
     }
     
-    fn fixed_step(&mut self, state: &GameState) -> EngineStepResult<()> {
+    fn fixed_step(&mut self, state: &GameState, physics_components: &mut Vec<(Rc<RefCell<Box<RigidBodyComponent>>>,Rc<RefCell<Box<ColliderComponent>>>)>) -> EngineStepResult<()> {
         for object in &self.data_mut().objects {
             object
                 .borrow_mut()
-                .fixed_step(state)?;
+                .fixed_step(state,physics_components)?;
         }
         Ok(())
     }

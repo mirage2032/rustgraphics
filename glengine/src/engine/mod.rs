@@ -1,6 +1,8 @@
+use std::cell::RefCell;
 use gl;
 use glam::Mat4;
 use std::ffi::CString;
+use std::rc::Rc;
 use std::time::{Duration, Instant};
 
 use glfw::{
@@ -13,6 +15,8 @@ use crate::engine::drawable::Drawable;
 use crate::engine::events::EngineInputsState;
 use crate::engine::events::EngineWindowEvent;
 use crate::engine::fbo::ScreenFbo;
+use crate::engine::scene::gameobject::components::collider::ColliderComponent;
+use crate::engine::scene::gameobject::components::rigidbody::RigidBodyComponent;
 use crate::engine::scene::Scene;
 use crate::engine::timedelta::ToFps;
 use crate::result::{EngineRenderResult, EngineRunError, EngineRunResult, EngineStepResult};
@@ -61,10 +65,10 @@ impl GameData {
         Ok(())
     }
 
-    fn fixed_step(&mut self, duration: Duration) -> EngineStepResult<()> {
+    fn fixed_step(&mut self, duration: Duration, physics_components: &mut Vec<(Rc<RefCell<Box<RigidBodyComponent>>>, Rc<RefCell<Box<ColliderComponent>>>)>) -> EngineStepResult<()> {
         self.state.delta = duration;
         if let Some(scene) = &mut self.scene {
-            scene.fixed_step(&self.state)?;
+            scene.fixed_step(&self.state,physics_components)?;
         }
         Ok(())
     }
@@ -267,7 +271,8 @@ impl Engine {
         fixed_step_elapsed: &mut Instant,
     ) -> EngineStepResult<()> {
         while fixed_step_elapsed.elapsed() > fixed_step_interval {
-            self.game.fixed_step(fixed_step_interval)?;
+            let mut rigid_bodies = vec![];
+            self.game.fixed_step(fixed_step_interval,&mut rigid_bodies)?;
             *fixed_step_elapsed += fixed_step_interval;
         }
         Ok(())

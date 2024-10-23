@@ -46,19 +46,17 @@ impl Scene for BaseScene {
     }
 
     fn init_gl(&mut self) -> EngineRenderResult<()> {
-        let models_dir = std::env::current_exe().unwrap().parent().unwrap().join("models");
         self.data_mut().lights.init_ssbo();
         unsafe { 
             gl::ClearColor(0.2, 0.3, 0.3, 1.0);
         }
         let empty = BaseGameObject::new(None);
         self.data.objects.push(empty.clone());
-        // nmdl_import!("Bkaf.obj");  
         let monkey = BaseGameObject::new(Some(empty.clone()));
         {
             let monkey_draw = nmdl_import!("untitled.obj");
             let mut data = monkey.borrow_mut();
-            data.components
+            data
                 .add_component(DrawableComponent::new(Box::new(monkey_draw)));
             data.data.transform.position = vec3(5.0, 2.0, -4.0);
             data.data.transform.scale *= 5.0;
@@ -78,7 +76,7 @@ impl Scene for BaseScene {
                 textures: Default::default(),
             }));
             let mut data = floor.borrow_mut();
-            data.components
+            data
                 .add_component(DrawableComponent::new(Box::new(drawable)));
             data.data.transform.scale *= 200.0;
             data.data.transform.scale.y *= 0.001;
@@ -99,8 +97,7 @@ impl Scene for BaseScene {
                 textures: Default::default(),
             }));
             let mut data = cube.borrow_mut();
-            data.components
-                .add_component(DrawableComponent::new(Box::new(drawable)));
+            data.add_component(DrawableComponent::new(Box::new(drawable)));
             data.data.transform.scale *= 4.0;
             data.data.transform.position = vec3(0.0, -1.0, 8.0);
         }
@@ -109,8 +106,8 @@ impl Scene for BaseScene {
         {
             let mut data = rotator.borrow_mut();
             let drawable = nmdl_import!("bugatticlean.obj");
-            data.components.add_component(DrawableComponent::new(Box::new(drawable)));
-            data.components.add_component(RotatingComponent::new(vec3(0.0, 0.14, 0.0)));
+            data.add_component(DrawableComponent::new(Box::new(drawable)));
+            data.add_component(RotatingComponent::new(vec3(0.0, 0.14, 0.0)));
             data.data.transform.scale *= 0.3;
             data.data.transform.position = vec3(0.0, 0.0, 0.0);
         }
@@ -137,7 +134,7 @@ impl Scene for BaseScene {
             .spot
             .push(spot_light);
         
-        let mut point_light_gameobject = BaseGameObject::new_w_transform(Some(empty.clone()),
+        let point_light_gameobject = BaseGameObject::new_w_transform(Some(empty.clone()),
         Transform::default().with_position(vec3(5.0, 13.0, -20.0)));
 
         let point_light = PointLight::new_w_gameobject(

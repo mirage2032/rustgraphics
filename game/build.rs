@@ -71,7 +71,7 @@ fn main() {
         should_import
     }){
         Ok(files) =>{
-            for (src,dest) in files{
+            for (src,_) in files{
                 println!("cargo:rerun-if-changed={} ", src.to_str().unwrap());
             }
         }

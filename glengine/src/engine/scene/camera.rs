@@ -16,7 +16,7 @@ impl Camera {
         let mut data = GameObjectData::new(parent);
         data.transform = Mat4::look_at_rh(position, target, up).inverse().into();
         let mut components = ComponentMap::new();
-        components.add_component(freecam::FreeCamController::new());
+        components.add_component(freecam::FreeCamComponent::new(),&mut data);
         Self {
             game_object: Rc::new(RefCell::new(BaseGameObject {
                 data,
