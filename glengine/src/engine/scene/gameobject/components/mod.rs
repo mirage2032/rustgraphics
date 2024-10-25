@@ -2,9 +2,8 @@ use std::any::TypeId;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
-use glam::vec3;
-use crate::engine::scene::gameobject::GameObjectData;
 use crate::engine::GameState;
+use crate::engine::scene::gameobject::base::GameObjectData;
 use crate::engine::scene::gameobject::components::rigidbody::RigidBodyComponent;
 use crate::result::EngineStepResult;
 
@@ -56,15 +55,7 @@ impl ComponentMap {
             Some(unsafe { (*(rc as *const Rc<RefCell<Box<dyn Component>>> as *const Rc<RefCell<Box<T>>>)).clone() })
         })
     }
-
-    fn post_physics(&self, object: &mut GameObjectData) {
-        if let Some(rigid_body) = self.get_component::<RigidBodyComponent>() {
-            let rigid_body = rigid_body.borrow();
-            object.transform.position = rigid_body.get_position();
-            object.transform.rotation = rigid_body.get_rotation();
-        }
-    }
-    fn pre_physics(&self, object: &mut GameObjectData) {
+    fn apply_transform_to_physics(&self, object: &mut GameObjectData) {
         if let Some(rigid_body) = self.get_component::<RigidBodyComponent>() {
             rigid_body.borrow_mut().set_transform(&object.transform);
         }
@@ -83,7 +74,7 @@ impl ComponentMap {
                 .borrow_mut()
                 .fixed_step(object, self, state)?
         }
-        self.pre_physics(object);
+        self.apply_transform_to_physics(object);
         Ok(())
     }
 }

@@ -1,8 +1,6 @@
-use std::cell::RefCell;
 use gl;
 use glam::Mat4;
 use std::ffi::CString;
-use std::rc::Rc;
 use std::time::{Duration, Instant};
 
 use glfw::{
@@ -15,8 +13,8 @@ use crate::engine::drawable::Drawable;
 use crate::engine::events::EngineInputsState;
 use crate::engine::events::EngineWindowEvent;
 use crate::engine::fbo::ScreenFbo;
-use crate::engine::scene::gameobject::components::collider::ColliderComponent;
-use crate::engine::scene::gameobject::components::rigidbody::RigidBodyComponent;
+use crate::engine::physics::PhysicsData;
+use crate::engine::scene::gameobject::GameObject;
 use crate::engine::scene::Scene;
 use crate::engine::timedelta::ToFps;
 use crate::result::{EngineRenderResult, EngineRunError, EngineRunResult, EngineStepResult};
@@ -30,6 +28,7 @@ pub mod timedelta;
 pub mod scene;
 pub mod transform;
 mod fps;
+mod physics;
 // lazy_static! {
 //     pub static ref vr_context: Mutex<openvr::Context> =
 //         unsafe { Mutex::new(openvr::init(openvr::ApplicationType::Scene).unwrap()) };
@@ -65,7 +64,7 @@ impl GameData {
         Ok(())
     }
 
-    fn fixed_step(&mut self, duration: Duration, physics_components: &mut Vec<(Rc<RefCell<Box<RigidBodyComponent>>>, Rc<RefCell<Box<ColliderComponent>>>)>) -> EngineStepResult<()> {
+    fn fixed_step(&mut self, duration: Duration, physics_components: &mut Vec<GameObject>) -> EngineStepResult<()> {
         self.state.delta = duration;
         if let Some(scene) = &mut self.scene {
             scene.fixed_step(&self.state,physics_components)?;
@@ -91,6 +90,7 @@ pub struct Engine {
     game: GameData,
     events: GlfwReceiver<(f64, WindowEvent)>,
     glfw: Glfw,
+    physics:PhysicsData,
 }
 
 impl Engine {
@@ -175,6 +175,7 @@ impl Engine {
             game,
             events,
             glfw,
+            physics:PhysicsData::default(),
         }
     }
 
@@ -274,6 +275,7 @@ impl Engine {
             let mut rigid_bodies = vec![];
             self.game.fixed_step(fixed_step_interval,&mut rigid_bodies)?;
             *fixed_step_elapsed += fixed_step_interval;
+            PhysicsData::default().step(&mut rigid_bodies);
         }
         Ok(())
     }

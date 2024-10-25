@@ -7,6 +7,8 @@ edition = "2021"
 rand = "0.9.0-alpha.1"
 glengine = { path = "../glengine"}
 glengine-mdl = { path = "../glengine-mdl"}
+rapier3d.workspace=true
+glam.workspace=true
 
 [build-dependencies]
 glengine = { path = "../glengine"}

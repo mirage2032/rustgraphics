@@ -1,6 +1,7 @@
 use std::path::{Path, PathBuf};
 use std::{env, fs};
 use syn::{visit::Visit, Macro};
+use syn::__private::ToTokens;
 
 static USE_DISCRETE_GPU: bool = true;
 
@@ -13,11 +14,16 @@ impl<'ast> Visit<'ast> for NmdlImportMacroFinder {
     // Visit all macro invocations
     fn visit_macro(&mut self, mac: &'ast Macro) {
         let macro_name = mac.path.segments.last().unwrap().ident.to_string();
+        let macro_names = ["nmdl_import", "nmdl_import_w_collider"];
 
-        if macro_name == "nmdl_import" {
-            if let Ok(lit_str) = syn::parse2::<syn::LitStr>(mac.tokens.clone()) {
-                // If it's a string literal, collect it
-                self.found_macros.push(lit_str.value().into());
+        if macro_names.contains(&macro_name.as_str()) {
+            // Attempt to extract the first argument
+            if let Some(first_arg) = mac.tokens.clone().into_iter().next() {
+                // Check if the first argument is a string literal
+                if let Ok(lit_str) = syn::parse2::<syn::LitStr>(first_arg.into_token_stream()) {
+                    // If it's a string literal, collect its value
+                    self.found_macros.push(lit_str.value().into());
+                }
             }
         }
         // Continue visiting the rest of the syntax tree
@@ -60,7 +66,7 @@ fn main() {
         //check if path is newer than destination
         let relative = path.strip_prefix(&models_in).unwrap();
         let mut should_import = to_import.iter().any(|import| import == relative);
-        if should_import {
+        if should_import { 
             if let (Ok(path_meta),Ok(dest_meta)) = (fs::metadata(path),fs::metadata(destination)) {
                 if path_meta.modified().unwrap() < dest_meta.modified().unwrap() {
                     should_import = false; 

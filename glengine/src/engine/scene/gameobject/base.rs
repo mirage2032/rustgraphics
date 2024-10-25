@@ -1,16 +1,36 @@
-use std::cell::RefCell;
-use std::rc::Rc;
 use glam::Mat4;
 use crate::engine::drawable::Drawable;
 use crate::engine::scene::gameobject::components::{Component, ComponentMap};
-use crate::engine::scene::gameobject::{GameObject, GameObjectData};
+use crate::engine::scene::gameobject::{GameObject};
 use crate::engine::GameState;
-use crate::engine::scene::gameobject::components::collider::ColliderComponent;
 use crate::engine::scene::gameobject::components::drawable::DrawableComponent;
-use crate::engine::scene::gameobject::components::rigidbody::RigidBodyComponent;
 use crate::engine::scene::lights::Lights;
 use crate::engine::transform::Transform;
 use crate::result::EngineStepResult;
+
+pub struct GameObjectData {
+    pub parent: Option<GameObject>,
+    pub children: Vec<GameObject>,
+    pub transform: Transform,
+}
+
+impl GameObjectData {
+    pub fn new(parent: Option<GameObject>) -> Self {
+        Self {
+            parent,
+            children: Vec::new(),
+            transform: Transform::default(),
+        }
+    }
+
+    pub fn new_w_transform(parent:Option<GameObject>,transform:Transform)->Self{
+        Self{
+            parent,
+            children:Vec::new(),
+            transform
+        }
+    }
+}
 
 pub struct BaseGameObject {
     pub data: GameObjectData,
@@ -18,54 +38,18 @@ pub struct BaseGameObject {
 }
 
 impl BaseGameObject {
-    pub fn new(parent: Option<GameObject>) -> GameObject {
-        let newgameobject = Rc::new(RefCell::new(Self {
-            data: GameObjectData::new(parent.clone()),
-            components: ComponentMap::new(),
-        }));
-        if let Some(parent) = parent {
-            parent
-                .borrow_mut()
-                .data
-                .children
-                .push(newgameobject.clone());
-        }
-        newgameobject
-    }
-
-    pub fn new_w_transform(parent: Option<GameObject>,trasform:Transform) -> GameObject {
-        let newgameobject = Rc::new(RefCell::new(Self {
-            data: GameObjectData::new_w_transform(parent.clone(),trasform),
-            components: ComponentMap::new(),
-        }));
-        if let Some(parent) = parent {
-            parent
-                .borrow_mut()
-                .data
-                .children
-                .push(newgameobject.clone());
-        }
-        newgameobject
-    }
 
     pub fn step(&mut self, state: &GameState) -> EngineStepResult<()> {
         self.components.step(&mut self.data, state)?;
         for child in &mut self.data.children {
-            child
-                .borrow_mut()
-                .step(state)?;
+            child.step(state)?;
         }
         Ok(())
     }
-    pub fn fixed_step(&mut self, state: &GameState, physics_components: &mut Vec<(Rc<RefCell<Box<RigidBodyComponent>>>,Rc<RefCell<Box<ColliderComponent>>>)>) -> EngineStepResult<()> {
+    pub fn fixed_step(&mut self, state: &GameState, physics_components: &mut Vec<GameObject>) -> EngineStepResult<()> {
         self.components.fixed_step(&mut self.data, state)?;
         for child in &mut self.data.children {
-            child
-                .borrow_mut()
-                .fixed_step(state,physics_components)?;
-        }
-        if let (Some(rigid_body),Some(collider)) = (self.components.get_component::<RigidBodyComponent>(),self.components.get_component::<ColliderComponent>()) {
-            physics_components.push((rigid_body, collider));
+            child.fixed_step(state,physics_components)?;
         }
         Ok(())
     }
@@ -77,7 +61,7 @@ impl BaseGameObject {
         let mut transform: Mat4 = self.data.transform.into();
         let mut parent = self.data.parent.clone();
         while let Some(parent_object) = parent {
-            let parent_data = parent_object
+            let parent_data = parent_object.base
                 .borrow();
             transform = Mat4::from(parent_data.data.transform) * transform;
             parent = parent_data.data.parent.clone();
@@ -96,7 +80,7 @@ impl Drawable for BaseGameObject {
         }
 
         for child in &self.data.children {
-            child
+            child.base
                 .borrow_mut()
                 .draw(&newmodelmat, viewmat, lights);
         }

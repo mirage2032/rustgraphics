@@ -1,8 +1,8 @@
 use glfw::Key;
 
 use crate::engine::scene::gameobject::components::{Component, ComponentMap};
-use crate::engine::scene::gameobject::GameObjectData;
 use crate::engine::GameState;
+use crate::engine::scene::gameobject::base::GameObjectData;
 use crate::result::EngineStepResult;
 
 // fn to_mat4(mat: [[f32; 4]; 4]) -> Mat4 {

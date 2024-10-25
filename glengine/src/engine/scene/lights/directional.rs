@@ -5,8 +5,8 @@ use glam::Vec3;
 use glsl_layout::{float, vec3, Uniform};
 
 use crate::engine::scene::gameobject::components::ComponentMap;
-use crate::engine::scene::gameobject::{GameObject, GameObjectData};
-use crate::engine::scene::gameobject::base::BaseGameObject;
+use crate::engine::scene::gameobject::{GameObject};
+use crate::engine::scene::gameobject::base::{BaseGameObject, GameObjectData};
 
 #[derive(Debug, Copy, Default, Clone, Uniform)]
 pub struct DirectionalLightData {
@@ -32,17 +32,17 @@ pub struct DirectionalLight {
 }
 impl DirectionalLight {
     pub fn new(parent: Option<GameObject>, intensity: f32, color: Vec3) -> Self {
-        let game_object = Rc::new(RefCell::new(BaseGameObject{
+        let game_object = GameObject{base:Rc::new(RefCell::new(BaseGameObject{
             data: GameObjectData::new(parent.clone()),
             components: ComponentMap::new(),
-        }));
+        }))};
         let light = Self {
-            game_object: Rc::downgrade(&game_object),
+            game_object: Rc::downgrade(&game_object.base),
             intensity,
             color,
         };
         if let Some(parent) = parent {
-            parent
+            parent.base
                 .borrow_mut()
                 .data
                 .children
@@ -53,7 +53,7 @@ impl DirectionalLight {
 
     pub fn new_w_gameobject(game_object: GameObject, intensity: f32, color: Vec3) -> Self {
         let light = Self {
-            game_object: Rc::downgrade(&game_object),
+            game_object: Rc::downgrade(&game_object.base),
             intensity,
             color,
         };

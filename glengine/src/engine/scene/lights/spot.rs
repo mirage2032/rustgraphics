@@ -4,8 +4,8 @@ use std::cell::RefCell;
 use std::rc::{Rc, Weak};
 
 use crate::engine::scene::gameobject::components::ComponentMap;
-use crate::engine::scene::gameobject::{GameObject, GameObjectData};
-use crate::engine::scene::gameobject::base::BaseGameObject;
+use crate::engine::scene::gameobject::{GameObject};
+use crate::engine::scene::gameobject::base::{BaseGameObject, GameObjectData};
 use crate::engine::transform::Transform;
 
 #[derive(Debug, Copy, Default, Clone, Uniform)]
@@ -59,12 +59,12 @@ impl SpotLight {
         cut_off: f32,
         outer_cut_off: f32,
     ) -> Self {
-        let game_object = Rc::new(RefCell::new(BaseGameObject {
+        let game_object = GameObject{base:Rc::new(RefCell::new(BaseGameObject {
             data: GameObjectData::new(parent.clone()),
             components: ComponentMap::new(),
-        }));
+        }))};
         let light = Self {
-            game_object: Rc::downgrade(&game_object),
+            game_object: Rc::downgrade(&game_object.base),
             intensity,
             color,
             constant,
@@ -74,7 +74,7 @@ impl SpotLight {
             outer_cut_off,
         };
         if let Some(parent) = parent {
-            parent
+            parent.base
                 .borrow_mut()
                 .data
                 .children
@@ -85,7 +85,7 @@ impl SpotLight {
     
     pub fn new_w_gameobject(game_object: GameObject, intensity: f32, color: Vec3, constant: f32, linear: f32, quadratic: f32, cut_off: f32, outer_cut_off: f32) -> Self {
         let light = Self {
-            game_object: Rc::downgrade(&game_object),
+            game_object: Rc::downgrade(&game_object.base),
             intensity,
             color,
             constant,

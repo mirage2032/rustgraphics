@@ -1,8 +1,8 @@
 use glam::Vec3;
 
 use crate::engine::scene::gameobject::components::{Component, ComponentMap};
-use crate::engine::scene::gameobject::GameObjectData;
 use crate::engine::GameState;
+use crate::engine::scene::gameobject::base::GameObjectData;
 
 pub struct RotatingComponent {
     pub direction: Vec3,
