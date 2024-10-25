@@ -146,11 +146,12 @@ impl Scene for BaseScene {
             let mut data = floor.base.borrow_mut();
             data.data.transform.scale *= 200.0;
             data.data.transform.scale.y *= 0.001;
+            let scale = data.data.transform.scale;
             data.data.transform.position = vec3(0.0, -4.0, 0.0);
             data.add_component(DrawableComponent::new(Box::new(drawable)));
             data.add_component(RigidBodyComponent::from(RigidBodyBuilder::fixed().build()));
             data.add_component(ColliderComponent::from(
-                ColliderBuilder::cuboid(100.0, 0.1, 100.0)
+                ColliderBuilder::cuboid(scale.x/2.0, scale.y/2.0, scale.z/2.0)
                     .restitution(0.2)
                     .build(),
             ));
@@ -159,32 +160,33 @@ impl Scene for BaseScene {
         cube_rain(
             Some(empty.clone()),
             vec3(0.0, 30.0, 0.0),
-            vec3(20.0, 2.0, 20.0),
-            20,
+            vec3(50.0, 2.0, 50.0),
+            2000,
             0.7
         );
 
-        // let cube = GameObject::new(Some(empty.clone()));
-        // {
-        //     let mut drawable = BaseDrawable::default();
-        //     drawable.draw_data[0].shader = LIT_COLOR_SHADER.clone();
-        //     drawable.draw_data[0].material = Some(Rc::new(Material {
-        //         data: MaterialData {
-        //             ambient: Some(vec3(0.9, 0.1, 0.1)),
-        //             diffuse: Some(vec3(1.0, 0.4, 0.6)),
-        //             specular: Some(vec3(1.0, 0.5, 0.7)),
-        //             shininess: Some(0.02),
-        //         },
-        //         textures: Default::default(),
-        //     }));
-        //     let mut data = cube.base.borrow_mut();
-        //     data.add_component(DrawableComponent::new(Box::new(drawable)));
-        //     data.data.transform.scale *= 4.0;
-        //     data.data.transform.position = vec3(0.0, -1.0, 8.0);
-        //     data.add_component(RigidBodyComponent::from(RigidBodyBuilder::fixed().build()));
-        //     data.add_component(ColliderComponent::from(ColliderBuilder::cuboid(4.0,4.0,4.0).restitution(0.1).build()));
-        //
-        // }
+        let cube = GameObject::new(Some(empty.clone()));
+        {
+            let mut drawable = BaseDrawable::default();
+            drawable.draw_data[0].shader = ShaderType::Included(IncludedShaderType::LitColor);
+            drawable.draw_data[0].material = Some(Rc::new(Material {
+                data: MaterialData {
+                    ambient: Some(vec3(0.9, 0.1, 0.1)),
+                    diffuse: Some(vec3(1.0, 0.4, 0.6)),
+                    specular: Some(vec3(1.0, 0.5, 0.7)),
+                    shininess: Some(0.02),
+                },
+                textures: Default::default(),
+            }));
+            let mut data = cube.base.borrow_mut();
+            data.add_component(DrawableComponent::new(Box::new(drawable)));
+            data.data.transform.scale *= 4.0;
+            let scale = data.data.transform.scale;
+            data.data.transform.position = vec3(0.0, -1.0, 8.0);
+            data.add_component(RigidBodyComponent::from(RigidBodyBuilder::dynamic().build()));
+            data.add_component(ColliderComponent::from(ColliderBuilder::cuboid(scale.x/2.0,scale.y/2.0,scale.z/2.0).restitution(0.1).build()));
+        
+        }
 
         let rotator = GameObject::new(Some(empty.clone()));
         {
@@ -202,6 +204,15 @@ impl Scene for BaseScene {
             vec3(0.0, 0.0, 0.0),
             vec3(0.0, 1.0, 0.0),
         );
+        {
+            let mut data = camera.game_object.base.borrow_mut();
+            data.add_component(RigidBodyComponent::from(RigidBodyBuilder::fixed().build()));
+            data.add_component(ColliderComponent::from(
+                ColliderBuilder::ball(1.0)
+                    .mass(20000000.0)
+                    .build(),
+            ));
+        }
 
         let spot_light = SpotLight::new(
             Some(camera.game_object.clone()),

@@ -10,8 +10,8 @@ pub struct RigidBodyComponent {
 
 impl RigidBodyComponent {
     pub fn set_transform(&mut self, transform:&Transform) {
-        self.rigid_body.set_translation(transform.position.into(),false);
-        self.rigid_body.set_rotation(transform.rotation.into(),false);
+        self.rigid_body.set_translation(transform.position.into(),true);
+        self.rigid_body.set_rotation(transform.rotation.into(),true);
     }
     
     pub fn get_rotation(&self)->Quat{

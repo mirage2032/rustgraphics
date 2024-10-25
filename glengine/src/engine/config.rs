@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use std::fs::File;
 use std::io::{Read, Write};
 use std::time::Duration;
-use lazy_static::lazy_static;
+use once_cell::sync::Lazy;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Config {
@@ -144,6 +144,5 @@ impl Default for StaticData {
     }
 }
 
-lazy_static! {
-    pub static ref CONFIG: StaticData = StaticData::default();
-}
+pub static CONFIG: Lazy<StaticData> = Lazy::new(|| StaticData::default());
+

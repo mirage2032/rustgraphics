@@ -208,11 +208,11 @@ pub struct ShaderMap{
 }
 
 impl ShaderMap{
-    
+
     pub fn get_included(&self, included: IncludedShaderType) -> &Shader{
         self.included.get(&included).unwrap()
     }
-    
+
     pub fn get_included_mut(&mut self, included: &IncludedShaderType) -> &mut Shader{
         self.included.get_mut(&included).unwrap()
     }
@@ -228,11 +228,11 @@ impl ShaderMap{
         self.custom_index += 1;
         index
     }
-    
+
     pub fn get_custom(&self, index: usize) -> Option<&Shader>{
         self.custom.get(&index)
     }
-    
+
     pub fn remove_custom(&mut self, index: usize){
         self.custom.remove(&index);
     }
@@ -253,4 +253,4 @@ impl Default for ShaderMap{
     }
 }
 
-pub static SHADER_MAP: Lazy<ShaderMap> = Lazy::new(|| ShaderMap::default());
+pub(crate) static SHADER_MAP: Lazy<ShaderMap> = Lazy::new(|| ShaderMap::default());

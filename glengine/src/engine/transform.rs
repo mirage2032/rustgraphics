@@ -1,6 +1,7 @@
+use std::hash::{Hash, Hasher};
 use glam::{Mat4, Quat, Vec3};
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy,PartialEq)]
 pub struct Transform {
     pub position: Vec3,
     pub rotation: Quat,
@@ -59,6 +60,23 @@ impl From<Mat4> for Transform {
             rotation,
             scale,
         }
+    }
+}
+
+impl Hash for Transform {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        state.write_u32(self.position.x.to_bits());
+        state.write_u32(self.position.y.to_bits());
+        state.write_u32(self.position.z.to_bits());
+
+        state.write_u32(self.rotation.x.to_bits());
+        state.write_u32(self.rotation.y.to_bits());
+        state.write_u32(self.rotation.z.to_bits());
+        state.write_u32(self.rotation.w.to_bits());
+
+        state.write_u32(self.scale.x.to_bits());
+        state.write_u32(self.scale.y.to_bits());
+        state.write_u32(self.scale.z.to_bits());
     }
 }
 

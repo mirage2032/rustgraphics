@@ -1,6 +1,7 @@
 use std::any::TypeId;
 use std::cell::RefCell;
 use std::collections::HashMap;
+use std::hash::{DefaultHasher, Hash, Hasher};
 use std::rc::Rc;
 use crate::engine::GameState;
 use crate::engine::scene::gameobject::base::GameObjectData;
@@ -33,12 +34,14 @@ pub trait Component{
 
 pub struct ComponentMap {
     elements: HashMap<TypeId, Rc<RefCell<Box<dyn Component>>>>,
+    transform_hash: u64,
 }
 
 impl ComponentMap {
     pub fn new() -> Self {
         Self {
             elements: HashMap::new(),
+            transform_hash: 0,
         }
     }
 
@@ -57,10 +60,19 @@ impl ComponentMap {
     }
     fn apply_transform_to_physics(&self, object: &mut GameObjectData) {
         if let Some(rigid_body) = self.get_component::<RigidBodyComponent>() {
-            rigid_body.borrow_mut().set_transform(&object.transform);
+            if self.transform_hash != Self::calculate_transform_hash(object) {
+                rigid_body.borrow_mut().set_transform(&object.transform);
+            }
         }
     }
-    pub fn step(&self, object: &mut GameObjectData, state: &GameState) -> EngineStepResult<()> {
+    
+    fn calculate_transform_hash(object:&mut GameObjectData) -> u64 {
+        let mut hasher = DefaultHasher::new();
+        object.transform.hash(&mut hasher);
+        hasher.finish()
+    }
+    pub fn step(&mut self, object: &mut GameObjectData, state: &GameState) -> EngineStepResult<()> {
+        self.transform_hash = Self::calculate_transform_hash(object);
         for (_, component) in self.elements.iter() {
             component
                 .borrow_mut()

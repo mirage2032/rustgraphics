@@ -66,8 +66,10 @@ impl PhysicsData {
 
 impl Default for PhysicsData{
     fn default()->Self{
+        let dt = CONFIG.config().get_fixed_step().as_millis() as f32/1000.0;
         let integration_parameters = IntegrationParameters{
-            dt: CONFIG.config().get_fixed_step().as_millis() as f32/1000.0,
+            dt,
+            min_ccd_dt:dt/100.0,
             ..IntegrationParameters::default()
         };
         Self{

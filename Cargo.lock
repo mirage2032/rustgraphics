@@ -692,7 +692,6 @@ dependencies = [
  "glob",
  "glsl-layout",
  "image",
- "lazy_static",
  "nalgebra",
  "once_cell",
  "rapier3d",
