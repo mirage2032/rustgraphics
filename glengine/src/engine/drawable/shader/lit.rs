@@ -11,7 +11,3 @@ pub fn new_basic_shader() -> EngineRenderResult<Shader> {
         None,
     )
 }
-
-pub const LIT_COLOR_SHADER: Lazy<Rc<RefCell<Shader>>> = Lazy::new(|| {
-    Rc::new(RefCell::new(new_basic_shader().unwrap()))
-});

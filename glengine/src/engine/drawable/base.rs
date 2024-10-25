@@ -7,14 +7,14 @@ use crate::engine::drawable::{mesh, Drawable};
 use crate::engine::drawable::DrawData;
 use crate::engine::scene::lights::Lights;
 
-use super::shader::Shader;
+use super::shader::{IncludedShaderType, Shader, ShaderType};
 
 pub struct BaseDrawable {
     pub draw_data: Vec<DrawData>,
 }
 
 impl BaseDrawable {
-    pub fn new(mesh: Rc<RefCell<dyn mesh::Mesh>>, shader: Rc<RefCell<Shader>>) -> Self {
+    pub fn new(mesh: Rc<RefCell<dyn mesh::Mesh>>, shader: ShaderType) -> Self {
         let draw_object = DrawData {
             mesh,
             shader,
@@ -38,7 +38,7 @@ impl Default for BaseDrawable {
     fn default() -> Self {
         let draw_object = DrawData {
             mesh: mesh::cube::new(),
-            shader: Rc::new(RefCell::new(Shader::default())),
+            shader: ShaderType::Included(IncludedShaderType::Basic),
             material: None,
         };
         Self {

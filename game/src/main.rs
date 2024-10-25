@@ -1,8 +1,9 @@
+use glengine::engine::drawable::shader::IncludedShaderType;
+use glengine::engine::drawable::shader::ShaderType;
 use glam::Vec3;
 use glengine::engine::drawable::base::BaseDrawable;
 use glengine::engine::drawable::importer::nmdl::import_w_collider;
 use glengine::engine::drawable::material::{Material, MaterialData};
-use glengine::engine::drawable::shader::lit::LIT_COLOR_SHADER;
 use glengine::engine::scene::camera::Camera;
 use glengine::engine::scene::gameobject::components::collider::ColliderComponent;
 use glengine::engine::scene::gameobject::components::drawable::DrawableComponent;
@@ -68,7 +69,7 @@ fn new_simulated_cube(
     let cube = GameObject::new(parent);
     {
         let mut drawable = BaseDrawable::default();
-        drawable.draw_data[0].shader = LIT_COLOR_SHADER.clone();
+        drawable.draw_data[0].shader = ShaderType::Included(IncludedShaderType::LitColor);
         drawable.draw_data[0].material = Some(Rc::new(Material {
             data: MaterialData {
                 ambient: Some(vec3(0.9, 0.1, 0.1)),
@@ -132,7 +133,7 @@ impl Scene for BaseScene {
         let floor = GameObject::new(Some(empty.clone()));
         {
             let mut drawable = BaseDrawable::default();
-            drawable.draw_data[0].shader = LIT_COLOR_SHADER.clone();
+            drawable.draw_data[0].shader = ShaderType::Included(IncludedShaderType::LitColor);
             drawable.draw_data[0].material = Some(Rc::new(Material {
                 data: MaterialData {
                     ambient: Some(vec3(0.3, 0.1, 0.1)),

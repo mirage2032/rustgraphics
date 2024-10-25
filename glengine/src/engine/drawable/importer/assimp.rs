@@ -7,8 +7,7 @@ use std::rc::Rc;
 use crate::engine::drawable::base::BaseDrawable;
 use crate::engine::drawable::material::Material;
 use crate::engine::drawable::mesh::{BaseMesh, MeshData};
-use crate::engine::drawable::shader::lit::LIT_COLOR_SHADER;
-use crate::engine::drawable::shader::Shader;
+use crate::engine::drawable::shader::{IncludedShaderType, Shader, ShaderType};
 use crate::engine::drawable::DrawData;
 
 pub fn import(path: &str) -> BaseDrawable {
@@ -78,8 +77,8 @@ pub fn import(path: &str) -> BaseDrawable {
             );
         }
         let shader = match material.data.ambient{
-            Some(_) => LIT_COLOR_SHADER.clone(),
-            None => Rc::new(RefCell::new(Shader::default())),
+            Some(_) => ShaderType::Included(IncludedShaderType::LitColor),
+            None => ShaderType::Included(IncludedShaderType::Basic),
         };
         
         let draw = DrawData {

@@ -19,9 +19,3 @@ pub fn new_quad_shader() -> EngineRenderResult<Shader> {
         None,
     )
 }
-pub const FACE_SHADER: Lazy<Rc<RefCell<Shader>>> = Lazy::new(|| {
-    Rc::new(RefCell::new(new_face_shader().unwrap()))
-});
-pub const QUAD_SHADER: Lazy<Rc<RefCell<Shader>>> = Lazy::new(|| {
-    Rc::new(RefCell::new(new_quad_shader().unwrap()))
-});

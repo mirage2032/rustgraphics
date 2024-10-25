@@ -275,7 +275,7 @@ impl Engine {
             let mut rigid_bodies = vec![];
             self.game.fixed_step(fixed_step_interval,&mut rigid_bodies)?;
             *fixed_step_elapsed += fixed_step_interval;
-            PhysicsData::default().step(&mut rigid_bodies);
+            self.physics.step(&mut rigid_bodies);
         }
         Ok(())
     }

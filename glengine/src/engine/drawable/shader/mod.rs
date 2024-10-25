@@ -1,9 +1,10 @@
+use std::collections::HashMap;
 use gl;
 use gl::types::GLenum;
 use glam::Mat4;
 use std::ops::AddAssign;
-
-use crate::engine::drawable::shader::unlit::new_face_shader;
+use std::sync::RwLock;
+use once_cell::sync::Lazy;
 use crate::result::{EngineRenderResult, ShaderError};
 
 pub mod lit;
@@ -11,7 +12,7 @@ pub mod unlit;
 
 pub struct Shader {
     id: u32,
-    texture_count: u32,
+    texture_count: RwLock<u32>,
 }
 
 impl Shader {
@@ -23,7 +24,7 @@ impl Shader {
         // Link shaders
         let shader = Shader {
             id: unsafe { gl::CreateProgram() },
-            texture_count: 0,
+            texture_count: RwLock::new(0),
         };
         unsafe {
             if let Some(vertex_shader_path) = vertex_shader {
@@ -126,13 +127,17 @@ impl Shader {
         }
     }
 
-    pub fn add_texture(&mut self, name: &str, texture: u32, texture_type: GLenum) {
-        self.set_texture(name, texture, self.texture_count, texture_type);
-        self.texture_count.add_assign(1)
+    pub fn add_texture(&self, name: &str, texture: u32, texture_type: GLenum) {
+        if let Ok(mut count) = self.texture_count.try_write(){
+            self.set_texture(name, texture, *count, texture_type);
+            count.add_assign(1);
+        }
     }
     
-    pub fn reset_texture_count(&mut self) {
-        self.texture_count = 0;
+    pub fn reset_texture_count(&self) {
+        if let Ok(mut count) = self.texture_count.try_write(){
+            *count = 0;
+        }
     }
 
     pub fn set_float(&self, name: &str, value: f32) {
@@ -178,6 +183,74 @@ impl Drop for Shader {
 
 impl Default for Shader {
     fn default() -> Self {
-        new_face_shader().unwrap()
+        unlit::new_face_shader().unwrap()
     }
 }
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum IncludedShaderType{
+    Basic,
+    LitColor,
+    UnlitFace,
+    UnlitQuad
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ShaderType{
+    Included(IncludedShaderType),
+    Custom(usize)
+}
+
+pub struct ShaderMap{
+    included: HashMap<IncludedShaderType, Shader>,
+    custom: HashMap<usize, Shader>,
+    custom_index: usize
+}
+
+impl ShaderMap{
+    
+    pub fn get_included(&self, included: IncludedShaderType) -> &Shader{
+        self.included.get(&included).unwrap()
+    }
+    
+    pub fn get_included_mut(&mut self, included: &IncludedShaderType) -> &mut Shader{
+        self.included.get_mut(&included).unwrap()
+    }
+    pub fn get(&self, shader_type: &ShaderType) -> Option<&Shader>{
+        match shader_type{
+            ShaderType::Included(included) => self.included.get(&included),
+            ShaderType::Custom(index) => self.custom.get(&index)
+        }
+    }
+    pub fn add_custom(&mut self, shader: Shader) -> usize{
+        let index = self.custom_index;
+        self.custom.insert(index, shader);
+        self.custom_index += 1;
+        index
+    }
+    
+    pub fn get_custom(&self, index: usize) -> Option<&Shader>{
+        self.custom.get(&index)
+    }
+    
+    pub fn remove_custom(&mut self, index: usize){
+        self.custom.remove(&index);
+    }
+}
+
+impl Default for ShaderMap{
+    fn default() -> Self{
+        let mut included = HashMap::new();
+        included.insert(IncludedShaderType::Basic, Shader::default());
+        included.insert(IncludedShaderType::LitColor, lit::new_basic_shader().unwrap());
+        included.insert(IncludedShaderType::UnlitFace, unlit::new_face_shader().unwrap());
+        included.insert(IncludedShaderType::UnlitQuad, unlit::new_quad_shader().unwrap());
+        Self{
+            included,
+            custom: HashMap::new(),
+            custom_index: 0
+        }
+    }
+}
+
+pub static SHADER_MAP: Lazy<ShaderMap> = Lazy::new(|| ShaderMap::default());

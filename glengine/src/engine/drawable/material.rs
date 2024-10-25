@@ -112,7 +112,7 @@ impl From<glengine_mdl::models::MaterialStruct> for Material {
     }
 }
 impl Material {
-    pub fn set_uniforms(&self, shader: &mut Shader) {
+    pub fn set_uniforms(&self, shader: &Shader) {
         if let Some(ambient) = self.data.ambient {
             shader.set_vec3("material.ambient", &ambient);
         }
