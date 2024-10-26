@@ -4,6 +4,7 @@ use crate::engine::scene::gameobject::base::GameObjectData;
 use crate::engine::scene::gameobject::components::{Component, ComponentMap};
 use crate::engine::transform::Transform;
 
+#[derive(Debug, Clone)]
 pub struct RigidBodyComponent {
     pub rigid_body: RigidBody
 }

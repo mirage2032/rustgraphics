@@ -5,8 +5,8 @@ use std::collections::HashMap;
 use std::rc::Rc;
 
 use crate::engine::drawable::base::BaseDrawable;
-use crate::engine::drawable::material::Material;
-use crate::engine::drawable::mesh::{BaseMesh, MeshData};
+use crate::engine::drawable::material::{Material, MATERIAL_MAP};
+use crate::engine::drawable::mesh::{BaseMesh, MeshData, MESH_MAP};
 use crate::engine::drawable::shader::{IncludedShaderType, Shader, ShaderType};
 use crate::engine::drawable::DrawData;
 
@@ -25,18 +25,21 @@ pub fn import(path: &str) -> BaseDrawable {
     )
     .expect("Failed to load obj file");
 
-    let mut materials: HashMap<u32,Rc<Material>> = HashMap::new();
+    let mut materials: HashMap<u32,usize> = HashMap::new();
     let mut draw_data: Vec<DrawData> = vec![];
+    let mut material_map = MATERIAL_MAP.lock().expect("Could not lock material map");
     scene.meshes.iter().for_each(|mesh| {
-        let material = match materials.get(&mesh.material_index){
+        let material_id = match materials.get(&mesh.material_index){
             Some(mat) => mat.clone(),
             None => {
                 let mat:Material = scene.materials[mesh.material_index as usize].clone().into();
-                let mat_arc = Rc::new(mat);
-                materials.insert(mesh.material_index, mat_arc.clone());
-                mat_arc
+                let material_id = material_map.add(mat);
+                materials.insert(mesh.material_index, material_id);
+                material_id
             }
         };
+        
+        let material = material_map.get(material_id).expect("Material not found").clone();
         
         let mut mesh_data = MeshData::new(
             &mesh
@@ -76,15 +79,16 @@ pub fn import(path: &str) -> BaseDrawable {
                     .collect::<Vec<f32>>(),
             );
         }
-        let shader = match material.data.ambient{
+        let shader_type = match material.data.ambient{
             Some(_) => ShaderType::Included(IncludedShaderType::LitColor),
             None => ShaderType::Included(IncludedShaderType::Basic),
         };
+        let mesh_id = MESH_MAP.lock().expect("Could not lock mesh map").add(Box::new(BaseMesh{mesh_data}));
         
         let draw = DrawData {
-            mesh: Rc::new(RefCell::new(BaseMesh { mesh_data })),
-            shader,
-            material: Some(material),
+            mesh_id,
+            shader_type,
+            material_id: Some(material_id),
         };
         draw_data.push(draw);
     });

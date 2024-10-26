@@ -3,7 +3,7 @@ use std::{env, fs};
 use syn::{visit::Visit, Macro};
 use syn::__private::ToTokens;
 
-static USE_DISCRETE_GPU: bool = true;
+static USE_DISCRETE_GPU: bool = false;
 
 struct NmdlImportMacroFinder {
     // Store all the found macro invocations

@@ -9,16 +9,17 @@ use crate::engine::scene::lights::Lights;
 
 use super::shader::{IncludedShaderType, Shader, ShaderType};
 
+#[derive(Clone,Debug)]
 pub struct BaseDrawable {
     pub draw_data: Vec<DrawData>,
 }
 
 impl BaseDrawable {
-    pub fn new(mesh: Rc<RefCell<dyn mesh::Mesh>>, shader: ShaderType) -> Self {
+    pub fn new(mesh_id: usize, shader_type: ShaderType) -> Self {
         let draw_object = DrawData {
-            mesh,
-            shader,
-            material: None,
+            mesh_id,
+            shader_type,
+            material_id: None,
         };
         Self {
             draw_data: vec![draw_object],
@@ -37,9 +38,9 @@ impl Drawable for BaseDrawable {
 impl Default for BaseDrawable {
     fn default() -> Self {
         let draw_object = DrawData {
-            mesh: mesh::cube::new(),
-            shader: ShaderType::Included(IncludedShaderType::Basic),
-            material: None,
+            mesh_id: mesh::cube::new(),
+            shader_type: ShaderType::Included(IncludedShaderType::Basic),
+            material_id: None,
         };
         Self {
             draw_data: vec![draw_object],

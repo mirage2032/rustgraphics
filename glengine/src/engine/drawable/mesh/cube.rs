@@ -3,7 +3,7 @@ use std::rc::Rc;
 
 use crate::engine::drawable::mesh::*;
 
-pub fn new() -> Rc<RefCell<dyn Mesh>> {
+pub fn new() -> usize {
     let vertices: [f32; 72] = [
         // Front face
         -0.5, -0.5, 0.5, // Bottom-left   - 0
@@ -82,5 +82,6 @@ pub fn new() -> Rc<RefCell<dyn Mesh>> {
     let mesh_data = MeshData::new(&vertices)
         .with_normals(&normals)
         .with_indices(&indices);
-    Rc::new(RefCell::new(BaseMesh { mesh_data }))
+    let mesh_id = MESH_MAP.lock().expect("Could not lock mesh map").add(Box::new(BaseMesh { mesh_data }));
+    mesh_id
 }

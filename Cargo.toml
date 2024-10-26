@@ -5,7 +5,7 @@ members = ["glengine-mdl","glengine",  "game"]
 [profile.release]
 codegen-units = 1
 lto = true
-#opt-level = 3
+opt-level = 3
 
 [workspace.dependencies]
 glam = "0.28.0"
@@ -13,3 +13,5 @@ nalgebra = { version = "0.33.1", features = ["convert-glam028"] }
 russimp = { version = "3.2.0", features = ["prebuilt"] }
 rapier3d = { version="0.22.0",features = ["serde-serialize","parallel","simd-nightly","f32"] }
 image = "0.25.4"
+[profile.dev.package.rapier3d]
+opt-level = 3

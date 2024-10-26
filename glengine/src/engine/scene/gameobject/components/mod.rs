@@ -58,14 +58,15 @@ impl ComponentMap {
             Some(unsafe { (*(rc as *const Rc<RefCell<Box<dyn Component>>> as *const Rc<RefCell<Box<T>>>)).clone() })
         })
     }
-    fn apply_transform_to_physics(&self, object: &mut GameObjectData) {
+    fn apply_transform_to_physics(&mut self, object: &mut GameObjectData) {
         if let Some(rigid_body) = self.get_component::<RigidBodyComponent>() {
             if self.transform_hash != Self::calculate_transform_hash(object) {
+                // println!("Applying transform to physics");
                 rigid_body.borrow_mut().set_transform(&object.transform);
             }
         }
     }
-    
+
     fn calculate_transform_hash(object:&mut GameObjectData) -> u64 {
         let mut hasher = DefaultHasher::new();
         object.transform.hash(&mut hasher);
@@ -80,7 +81,7 @@ impl ComponentMap {
         }
         Ok(())
     }
-    pub fn fixed_step(&self, object: &mut GameObjectData, state: &GameState) -> EngineStepResult<()> {
+    pub fn fixed_step(&mut self, object: &mut GameObjectData, state: &GameState) -> EngineStepResult<()> {
         for (_, component) in self.elements.iter() {
             component
                 .borrow_mut()

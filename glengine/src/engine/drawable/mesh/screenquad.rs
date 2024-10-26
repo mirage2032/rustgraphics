@@ -4,7 +4,7 @@ use std::rc::Rc;
 use crate::engine::drawable::mesh::*;
 
 //for the quad that will be used to render the screen
-pub fn new() -> Rc<RefCell<dyn Mesh>> {
+pub fn new() -> usize {
     let vertices = vec![
         -1.0, -1.0, 0.0, // bottom left
         1.0, -1.0, 0.0, // bottom right
@@ -26,5 +26,6 @@ pub fn new() -> Rc<RefCell<dyn Mesh>> {
     let mesh_data = MeshData::new(&vertices)
         .with_indices(&indices)
         .with_texcoords(&tex_coords);
-    Rc::new(RefCell::new(BaseMesh { mesh_data }))
+    MESH_MAP.lock().expect("Could not lock mesh map").add(Box::new(BaseMesh { mesh_data }))
+    
 }

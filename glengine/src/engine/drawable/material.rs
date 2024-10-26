@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-
+use std::sync::{LazyLock, Mutex};
 use gl;
 use gl::types::{GLenum, GLuint};
 use glam::{vec3, Vec3};
@@ -184,3 +184,41 @@ impl From<Image> for Texture {
         Self { id: texture, texture_type: gl::TEXTURE_2D}
     }
 }
+
+pub struct MaterialMap {
+    materials: HashMap<usize, Material>,
+    index: usize,
+}
+
+impl MaterialMap {
+    pub fn get(&self, id: usize) -> Option<&Material> {
+        self.materials.get(&id)
+    }
+    
+    pub fn get_mut(&mut self, id: usize) -> Option<&mut Material> {
+        self.materials.get_mut(&id)
+    }
+    pub fn add(&mut self, material: Material) -> usize {
+        let index = self.index;
+        self.materials.insert(index, material);
+        self.index += 1;
+        index
+    }
+    
+    pub fn remove(&mut self, id: usize) {
+        self.materials.remove(&id);
+    }
+    
+}
+
+impl Default for MaterialMap {
+    fn default() -> Self {
+        Self {
+            materials: HashMap::new(),
+            index: 0,
+        }
+    }
+}
+
+
+pub static MATERIAL_MAP: LazyLock<Mutex<MaterialMap>> = LazyLock::new(|| Mutex::new(MaterialMap::default()));

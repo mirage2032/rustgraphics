@@ -1,3 +1,4 @@
+use glengine::engine::drawable::material::MATERIAL_MAP;
 use glengine::engine::drawable::shader::IncludedShaderType;
 use glengine::engine::drawable::shader::ShaderType;
 use glam::Vec3;
@@ -43,19 +44,20 @@ impl BaseScene {
     }
 }
 
-fn cube_rain(parent: Option<GameObject>, center: Vec3, size: Vec3, count: usize,restitution:f32) {
+fn cube_rain(parent: Option<GameObject>, center: Vec3, size: Vec3, count: usize,restitution:f32,scale:f32) {
     let mut rng = rand::thread_rng();
+    let (mut drawable, collider) = nmdl_import_w_collider!("monkeylp.obj", scale);
+    drawable.draw_data[0].shader_type = ShaderType::Included(IncludedShaderType::LitColor);
     for _ in 0..count {
         let x = rng.gen_range(center.x - size.x..center.x + size.x);
         let y = rng.gen_range(center.y - size.y..center.y + size.y);
         let z = rng.gen_range(center.z - size.z..center.z + size.z);
-        let scale = rng.gen_range(1.0..5.0);
         let angvel = vec3(
             rng.gen_range(0.0..(4.0*std::f32::consts::PI)),
             rng.gen_range(0.0..(4.0*std::f32::consts::PI)),
             rng.gen_range(0.0..(4.0*std::f32::consts::PI)),
         );
-        new_simulated_cube(parent.clone(), vec3(x, y, z), angvel, scale,restitution);
+        new_simulated_cube(parent.clone(), vec3(x, y, z), angvel, scale,restitution,&drawable,&collider);
     }
 }
 
@@ -65,34 +67,39 @@ fn new_simulated_cube(
     angvel: Vec3,
     scale: f32,
     restitution: f32,
+    drawable: &BaseDrawable,
+    collider_component: &ColliderComponent,
 ) -> GameObject {
-    let cube = GameObject::new(parent);
+    let mut rng = rand::thread_rng();
+    let mut drawable = drawable.clone();
+    let mut collider = collider_component.clone();
+    let data = GameObject::new(parent);
+    let mut rand_vec3 = || vec3(rng.gen_range(0.0..1.0), rng.gen_range(0.0..1.0), rng.gen_range(0.0..1.0));
+    let material = Material {
+        data: MaterialData {
+            ambient: Some(rand_vec3()),
+            diffuse: Some(rand_vec3()),
+            specular: Some(rand_vec3()),
+            shininess: Some(0.02),
+        },
+        textures: Default::default(),
+    };
+    let material_id = MATERIAL_MAP.lock().unwrap().add(material);
+    drawable.draw_data[0].material_id = Some(material_id);
     {
-        let mut drawable = BaseDrawable::default();
-        drawable.draw_data[0].shader = ShaderType::Included(IncludedShaderType::LitColor);
-        drawable.draw_data[0].material = Some(Rc::new(Material {
-            data: MaterialData {
-                ambient: Some(vec3(0.9, 0.1, 0.1)),
-                diffuse: Some(vec3(1.0, 0.4, 0.6)),
-                specular: Some(vec3(1.0, 0.5, 0.7)),
-                shininess: Some(0.02),
-            },
-            textures: Default::default(),
-        }));
-        let mut data = cube.base.borrow_mut();
+        let mut data = data.base.borrow_mut();
         data.add_component(DrawableComponent::new(Box::new(drawable)));
         data.data.transform.position = position;
         data.data.transform.scale *= scale;
+        let scale = data.data.transform.scale;
         data.add_component(RigidBodyComponent::from(
-            RigidBodyBuilder::dynamic().angvel(angvel.into()).build(),
-        ));
-        data.add_component(ColliderComponent::from(
-            ColliderBuilder::cuboid(scale / 2.0, scale / 2.0, scale / 2.0)
-                .restitution(restitution)
+            RigidBodyBuilder::dynamic()
+                .angvel(angvel.into())
                 .build(),
         ));
+        data.add_component(collider);
     }
-    cube
+    data
 }
 
 impl Scene for BaseScene {
@@ -132,9 +139,7 @@ impl Scene for BaseScene {
 
         let floor = GameObject::new(Some(empty.clone()));
         {
-            let mut drawable = BaseDrawable::default();
-            drawable.draw_data[0].shader = ShaderType::Included(IncludedShaderType::LitColor);
-            drawable.draw_data[0].material = Some(Rc::new(Material {
+            let material = Material {
                 data: MaterialData {
                     ambient: Some(vec3(0.3, 0.1, 0.1)),
                     diffuse: Some(vec3(1.0, 0.4, 0.6)),
@@ -142,7 +147,11 @@ impl Scene for BaseScene {
                     shininess: Some(0.02),
                 },
                 textures: Default::default(),
-            }));
+            };
+            let material_id = MATERIAL_MAP.lock().unwrap().add(material);
+            let mut drawable = BaseDrawable::default();
+            drawable.draw_data[0].shader_type = ShaderType::Included(IncludedShaderType::LitColor);
+            drawable.draw_data[0].material_id = Some(material_id);
             let mut data = floor.base.borrow_mut();
             data.data.transform.scale *= 200.0;
             data.data.transform.scale.y *= 0.001;
@@ -159,25 +168,28 @@ impl Scene for BaseScene {
 
         cube_rain(
             Some(empty.clone()),
-            vec3(0.0, 30.0, 0.0),
-            vec3(50.0, 2.0, 50.0),
-            2000,
+            vec3(0.0, 150.0, 0.0),
+            vec3(50.0, 50.0, 50.0),
+            50,
             0.7
+            ,3.0
         );
 
         let cube = GameObject::new(Some(empty.clone()));
         {
-            let mut drawable = BaseDrawable::default();
-            drawable.draw_data[0].shader = ShaderType::Included(IncludedShaderType::LitColor);
-            drawable.draw_data[0].material = Some(Rc::new(Material {
+            let material = Material {
                 data: MaterialData {
-                    ambient: Some(vec3(0.9, 0.1, 0.1)),
+                    ambient: Some(vec3(0.3, 0.1, 0.1)),
                     diffuse: Some(vec3(1.0, 0.4, 0.6)),
                     specular: Some(vec3(1.0, 0.5, 0.7)),
                     shininess: Some(0.02),
                 },
                 textures: Default::default(),
-            }));
+            };
+            let material_id = MATERIAL_MAP.lock().unwrap().add(material);
+            let mut drawable = BaseDrawable::default();
+            drawable.draw_data[0].shader_type = ShaderType::Included(IncludedShaderType::LitColor);
+            drawable.draw_data[0].material_id = Some(material_id);
             let mut data = cube.base.borrow_mut();
             data.add_component(DrawableComponent::new(Box::new(drawable)));
             data.data.transform.scale *= 4.0;
@@ -185,7 +197,7 @@ impl Scene for BaseScene {
             data.data.transform.position = vec3(0.0, -1.0, 8.0);
             data.add_component(RigidBodyComponent::from(RigidBodyBuilder::dynamic().build()));
             data.add_component(ColliderComponent::from(ColliderBuilder::cuboid(scale.x/2.0,scale.y/2.0,scale.z/2.0).restitution(0.1).build()));
-        
+
         }
 
         let rotator = GameObject::new(Some(empty.clone()));

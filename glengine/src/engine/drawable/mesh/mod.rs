@@ -1,9 +1,13 @@
+use std::collections::HashMap;
+use std::sync::{LazyLock, Mutex};
+
 pub mod cube;
 pub mod screenquad;
 
 pub trait Mesh: Send + Sync {
     fn get(&self) -> &MeshData;
     fn get_mut(&mut self) -> &mut MeshData;
+    fn bind(&self);
     fn draw(&self);
 }
 
@@ -18,11 +22,14 @@ impl Mesh for BaseMesh {
     fn get_mut(&mut self) -> &mut MeshData {
         &mut self.mesh_data
     }
+    fn bind(&self) {
+        self.mesh_data.bind();
+    }
     fn draw(&self) {
         unsafe {
             gl::DrawElements(
                 gl::TRIANGLES,
-                self.get().indices_count as i32,
+                self.mesh_data.indices_count as i32,
                 gl::UNSIGNED_INT,
                 std::ptr::null(),
             );
@@ -72,6 +79,11 @@ impl MeshData {
             vbo_texcoords: None,
             ebo: None,
             indices_count: vertices.len() as u32 / 3,
+        }
+    }
+    fn bind(&self) {
+        unsafe {
+            gl::BindVertexArray(self.vao);
         }
     }
 
@@ -133,11 +145,6 @@ impl MeshData {
         Self::unbind();
         self
     }
-    pub fn bind(&self) {
-        unsafe {
-            gl::BindVertexArray(self.vao);
-        }
-    }
     pub fn get_indices_count(&self) -> u32 {
         self.indices_count
     }
@@ -165,3 +172,37 @@ impl Drop for MeshData {
         }
     }
 }
+
+pub struct MeshMap{
+    meshes: HashMap<usize, Box<dyn Mesh>>,
+    index: usize
+}
+
+impl MeshMap{
+    pub fn get(&self, index: usize) -> Option<&Box<dyn Mesh>>{
+        self.meshes.get(&index)
+    }
+    pub fn get_mut(&mut self, index: usize) -> Option<&mut Box<dyn Mesh>>{
+        self.meshes.get_mut(&index)
+    }
+    pub fn add(&mut self, mesh: Box<dyn Mesh>) -> usize{
+        let index = self.index;
+        self.meshes.insert(index, mesh);
+        self.index += 1;
+        index
+    }
+    pub fn remove(&mut self, index: usize){
+        self.meshes.remove(&index);
+    }
+}
+
+impl Default for MeshMap{
+    fn default() -> Self{
+        Self{
+            meshes: HashMap::new(),
+            index: 0
+        }
+    }
+}
+
+pub(crate) static MESH_MAP: LazyLock<Mutex<MeshMap>> = LazyLock::new(|| Mutex::new(MeshMap::default()));

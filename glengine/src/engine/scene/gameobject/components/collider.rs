@@ -14,6 +14,7 @@ fn get_mesh_indices(mesh:&MeshStruct) -> Vec<[u32;3]>{
     }).collect()
 }
 
+#[derive(Debug, Clone)]
 pub struct ColliderComponent {
     pub colliders: Vec<Collider>
 }
