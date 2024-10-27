@@ -4,7 +4,7 @@ use std::rc::Rc;
 use glam::Mat4;
 use shader::Shader;
 use crate::engine::config::CONFIG;
-use crate::engine::drawable::material::{Material, MaterialData, Texture, MATERIAL_MAP};
+use crate::engine::drawable::material::{Material, MaterialData, MaterialHandle, Texture, MATERIAL_MAP};
 use crate::engine::drawable::mesh::{MeshData, MeshHandle, MESH_MAP};
 use crate::engine::drawable::shader::{ShaderHandle, SHADER_MAP};
 use crate::engine::fbo::Fbo;
@@ -25,7 +25,7 @@ pub trait Drawable{
 pub struct DrawData {
     pub mesh_handle: MeshHandle,
     pub shader_handle: ShaderHandle,
-    pub material_id: Option<usize>,
+    pub material_handle: Option<MaterialHandle>,
 }
 
 impl Drawable for DrawData {
@@ -39,10 +39,10 @@ impl Drawable for DrawData {
                 shader.set_mat4("view_mat", viewmat);
                 shader.set_mat4("model_mat", modelmat);
                 shader.set_mat4("projection_mat", &projection);
-                if let Some(material_id) = self.material_id {
-                    let material_map = MATERIAL_MAP.lock().expect("Could not lock material map");
-                    let material = material_map.get(material_id).expect("Material not found");
-                    material.set_uniforms(&shader);
+                if let Some(material_id) = &self.material_handle {
+                    MATERIAL_MAP.with(|mm|{
+                       mm.borrow().get(&material_id).expect("Material not found").set_uniforms(&shader); 
+                    });
                 }
             }
         );
@@ -71,10 +71,10 @@ pub fn screenquad(fbo: &Fbo) -> DrawData {
         data: MaterialData::default(),
         textures,
     };
-    let material_id = MATERIAL_MAP.lock().expect("Could not lock material map").add(material);
+    let material_id = MATERIAL_MAP.with(|mut mm|mm.borrow_mut().add(material));
     DrawData {
         mesh_handle: mesh_id,
         shader_handle,
-        material_id: Some(material_id),
+        material_handle: Some(material_id),
     }
 }

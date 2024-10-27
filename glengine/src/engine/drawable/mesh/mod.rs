@@ -1,7 +1,7 @@
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::{Rc, Weak};
-use once_cell::sync::Lazy;
+use once_cell::unsync::Lazy;
 
 pub mod cube;
 pub mod screenquad;

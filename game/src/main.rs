@@ -83,8 +83,8 @@ fn new_simulated_cube(
         },
         textures: Default::default(),
     };
-    let material_id = MATERIAL_MAP.lock().unwrap().add(material);
-    drawable.draw_data[0].material_id = Some(material_id);
+    let material_handle = MATERIAL_MAP.with(|mm| mm.borrow_mut().add(material));
+    drawable.draw_data[0].material_handle = Some(material_handle);
     {
         let mut data = data.base.borrow_mut();
         data.add_component(DrawableComponent::new(Box::new(drawable)));
@@ -147,10 +147,10 @@ impl Scene for BaseScene {
                 },
                 textures: Default::default(),
             };
-            let material_id = MATERIAL_MAP.lock().unwrap().add(material);
+            let material_handle = MATERIAL_MAP.with(|mm| mm.borrow_mut().add(material));
             let mut drawable = BaseDrawable::default();
             drawable.draw_data[0].shader_handle = IncludedShaderHandle::LitColor.into();
-            drawable.draw_data[0].material_id = Some(material_id);
+            drawable.draw_data[0].material_handle = Some(material_handle);
             let mut data = floor.base.borrow_mut();
             data.data.transform.scale *= 200.0;
             data.data.transform.scale.y *= 0.001;
@@ -185,10 +185,10 @@ impl Scene for BaseScene {
                 },
                 textures: Default::default(),
             };
-            let material_id = MATERIAL_MAP.lock().unwrap().add(material);
+            let material_handle = MATERIAL_MAP.with(|mm| mm.borrow_mut().add(material));
             let mut drawable = BaseDrawable::default();
             drawable.draw_data[0].shader_handle = IncludedShaderHandle::LitColor.into();
-            drawable.draw_data[0].material_id = Some(material_id);
+            drawable.draw_data[0].material_handle = Some(material_handle);
             let mut data = cube.base.borrow_mut();
             data.add_component(DrawableComponent::new(Box::new(drawable)));
             data.data.transform.scale *= 4.0;

@@ -5,7 +5,7 @@ use glam::Mat4;
 use std::ops::AddAssign;
 use std::rc::{Rc, Weak};
 use std::sync::RwLock;
-use once_cell::sync::Lazy;
+use once_cell::unsync::Lazy;
 use crate::result::{EngineRenderResult, ShaderError};
 
 pub mod lit;
@@ -281,6 +281,10 @@ impl ShaderMap{
             }
         }
         handle
+    }
+    
+    pub fn clean(&mut self){
+        self.custom.retain(|_,(_,weak)|weak.handle.upgrade().is_some());
     }
 
     pub fn remove(&mut self, index: usize){

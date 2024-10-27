@@ -20,7 +20,7 @@ impl BaseDrawable {
         let draw_object = DrawData {
             mesh_handle,
             shader_handle,
-            material_id: None,
+            material_handle: None,
         };
         Self {
             draw_data: vec![draw_object],
@@ -41,7 +41,7 @@ impl Default for BaseDrawable {
         let draw_object = DrawData {
             mesh_handle: mesh::cube::new(),
             shader_handle: IncludedShaderHandle::Basic.into(),
-            material_id: None,
+            material_handle: None,
         };
         Self {
             draw_data: vec![draw_object],
