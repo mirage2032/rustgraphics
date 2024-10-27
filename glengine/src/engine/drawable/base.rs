@@ -1,14 +1,11 @@
-use std::cell::RefCell;
-use std::rc::Rc;
-
 use glam::Mat4;
 
 use crate::engine::drawable::{mesh, Drawable};
 use crate::engine::drawable::DrawData;
-use crate::engine::drawable::mesh::MeshHandle;
+use crate::engine::drawable::mesh::manager::MeshHandle;
 use crate::engine::scene::lights::Lights;
 
-use super::shader::{IncludedShaderHandle, Shader, ShaderHandle};
+use super::shader::manager::{IncludedShaderHandle, ShaderHandle};
 
 #[derive(Clone)]
 pub struct BaseDrawable {

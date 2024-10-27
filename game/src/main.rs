@@ -1,5 +1,5 @@
-use glengine::engine::drawable::material::MATERIAL_MAP;
-use glengine::engine::drawable::shader::IncludedShaderHandle;
+use glengine::engine::drawable::manager::DRAWABLE_MANAGER;
+use glengine::engine::drawable::shader::manager::IncludedShaderHandle;
 use glam::Vec3;
 use glengine::engine::drawable::base::BaseDrawable;
 use glengine::engine::drawable::importer::nmdl::import_w_collider;
@@ -83,7 +83,7 @@ fn new_simulated_cube(
         },
         textures: Default::default(),
     };
-    let material_handle = MATERIAL_MAP.with(|mm| mm.borrow_mut().add(material));
+    let material_handle = DRAWABLE_MANAGER.with(|dm| dm.borrow_mut().material.add(material));
     drawable.draw_data[0].material_handle = Some(material_handle);
     {
         let mut data = data.base.borrow_mut();
@@ -147,7 +147,7 @@ impl Scene for BaseScene {
                 },
                 textures: Default::default(),
             };
-            let material_handle = MATERIAL_MAP.with(|mm| mm.borrow_mut().add(material));
+            let material_handle = DRAWABLE_MANAGER.with(|dm| dm.borrow_mut().material.add(material));
             let mut drawable = BaseDrawable::default();
             drawable.draw_data[0].shader_handle = IncludedShaderHandle::LitColor.into();
             drawable.draw_data[0].material_handle = Some(material_handle);
@@ -185,7 +185,7 @@ impl Scene for BaseScene {
                 },
                 textures: Default::default(),
             };
-            let material_handle = MATERIAL_MAP.with(|mm| mm.borrow_mut().add(material));
+            let material_handle = DRAWABLE_MANAGER.with(|dm| dm.borrow_mut().material.add(material));
             let mut drawable = BaseDrawable::default();
             drawable.draw_data[0].shader_handle = IncludedShaderHandle::LitColor.into();
             drawable.draw_data[0].material_handle = Some(material_handle);

@@ -1,4 +1,6 @@
-use crate::engine::drawable::mesh::*;
+use crate::engine::drawable::manager::DRAWABLE_MANAGER;
+use crate::engine::drawable::mesh::manager::MeshHandle;
+use crate::engine::drawable::mesh::{BaseMesh, MeshData};
 
 //for the quad that will be used to render the screen
 pub fn new() -> MeshHandle {
@@ -23,6 +25,6 @@ pub fn new() -> MeshHandle {
     let mesh_data = MeshData::new(&vertices)
         .with_indices(&indices)
         .with_texcoords(&tex_coords);
-    MESH_MAP.with(|mm|mm.borrow_mut().add(Box::new(BaseMesh { mesh_data })))
+    DRAWABLE_MANAGER.with(|dm|dm.borrow_mut().mesh.add(Box::new(BaseMesh { mesh_data })))
     
 }

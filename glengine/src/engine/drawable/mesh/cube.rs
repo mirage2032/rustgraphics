@@ -1,5 +1,6 @@
-
-use crate::engine::drawable::mesh::*;
+use crate::engine::drawable::manager::DRAWABLE_MANAGER;
+use crate::engine::drawable::mesh::manager::MeshHandle;
+use crate::engine::drawable::mesh::{BaseMesh, MeshData};
 
 pub fn new() -> MeshHandle {
     let vertices: [f32; 72] = [
@@ -80,6 +81,6 @@ pub fn new() -> MeshHandle {
     let mesh_data = MeshData::new(&vertices)
         .with_normals(&normals)
         .with_indices(&indices);
-    let mesh_id = MESH_MAP.with(|mm| mm.borrow_mut().add(Box::new(BaseMesh { mesh_data })));
-    mesh_id
+    let mesh_handle = DRAWABLE_MANAGER.with(|dm| dm.borrow_mut().mesh.add(Box::new(BaseMesh { mesh_data })));
+    mesh_handle
 }

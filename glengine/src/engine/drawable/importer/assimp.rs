@@ -5,10 +5,11 @@ use std::collections::HashMap;
 use std::rc::Rc;
 
 use crate::engine::drawable::base::BaseDrawable;
-use crate::engine::drawable::material::{Material, MaterialHandle, MATERIAL_MAP};
-use crate::engine::drawable::mesh::{BaseMesh, MeshData, MESH_MAP};
-use crate::engine::drawable::shader::{IncludedShaderHandle, ShaderHandle};
+use crate::engine::drawable::material::{Material, manager::MaterialHandle};
+use crate::engine::drawable::mesh::{BaseMesh, MeshData};
+use crate::engine::drawable::shader::manager::{IncludedShaderHandle, ShaderHandle};
 use crate::engine::drawable::DrawData;
+use crate::engine::drawable::manager::DRAWABLE_MANAGER;
 
 pub fn import(path: &str) -> BaseDrawable {
     let scene = Scene::from_file(
@@ -28,7 +29,7 @@ pub fn import(path: &str) -> BaseDrawable {
     let mut materials: HashMap<u32,(MaterialHandle,ShaderHandle)> = HashMap::new();
     let mut draw_data: Vec<DrawData> = vec![];
     scene.meshes.iter().for_each(|mesh| {
-        let (material_handle,shader_handle) = MATERIAL_MAP.with(|mut mm| {
+        let (material_handle,shader_handle) = DRAWABLE_MANAGER.with(|mut dm| {
             match materials.get(&mesh.material_index) {
                 Some(mat) => mat.clone(),
                 None => {
@@ -37,7 +38,7 @@ pub fn import(path: &str) -> BaseDrawable {
                         Some(_) => IncludedShaderHandle::LitColor.into(),
                         None => IncludedShaderHandle::Basic.into(),
                     };
-                    let material_handle = mm.borrow_mut().add(mat);
+                    let material_handle = dm.borrow_mut().material.add(mat);
                     materials.insert(mesh.material_index, (material_handle.clone(),shader_handle.clone()));
                     (material_handle,shader_handle)
                 }
@@ -81,7 +82,7 @@ pub fn import(path: &str) -> BaseDrawable {
                     .collect::<Vec<f32>>(),
             );
         }
-        let mesh_handle = MESH_MAP.with(|mm| mm.borrow_mut().add(Box::new(BaseMesh{mesh_data})));
+        let mesh_handle = DRAWABLE_MANAGER.with(|dm| dm.borrow_mut().mesh.add(Box::new(BaseMesh{mesh_data})));
         
         let draw = DrawData {
             mesh_handle,
