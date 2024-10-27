@@ -5,7 +5,7 @@ use glam::Mat4;
 use shader::Shader;
 use crate::engine::config::CONFIG;
 use crate::engine::drawable::material::{Material, MaterialData, Texture, MATERIAL_MAP};
-use crate::engine::drawable::mesh::{MeshData, MESH_MAP};
+use crate::engine::drawable::mesh::{MeshData, MeshHandle, MESH_MAP};
 use crate::engine::drawable::shader::{ShaderType, SHADER_MAP};
 use crate::engine::fbo::Fbo;
 use crate::engine::scene::lights::Lights;
@@ -21,9 +21,9 @@ pub trait Drawable{
 }
 
 
-#[derive(Copy,Clone,Debug)]
+#[derive(Clone)]
 pub struct DrawData {
-    pub mesh_id: usize,
+    pub mesh_handle: MeshHandle,
     pub shader_type: ShaderType,
     pub material_id: Option<usize>,
 }
@@ -31,11 +31,9 @@ pub struct DrawData {
 impl Drawable for DrawData {
     fn draw(&mut self, modelmat: &Mat4, viewmat: &Mat4, lights: Option<&Lights>) {
         let shader = SHADER_MAP.get(&self.shader_type).expect("Shader not found");
-        let mesh_map = MESH_MAP.lock().expect("Could not lock mesh map");
-        let mesh = mesh_map.get(self.mesh_id).expect("Mesh not found");
         shader.use_program();
         shader.reset_texture_count();
-        mesh.bind();
+        let mesh = MESH_MAP.with(|mm|mm.borrow().get(&self.mesh_handle).expect("Mesh not found").bind());
         shader.set_mat4("view_mat", viewmat);
         shader.set_mat4("model_mat", modelmat);
         let projection = {
@@ -51,7 +49,7 @@ impl Drawable for DrawData {
         if let Some(lights) = lights {
             lights.bind(5);
         }
-        mesh.draw();
+        MESH_MAP.with(|mm|mm.borrow().get(&self.mesh_handle).expect("Mesh not found").draw());
         Lights::unbind(5);
         MeshData::unbind();
         Shader::unbind();
@@ -74,7 +72,7 @@ pub fn screenquad(fbo: &Fbo) -> DrawData {
     };
     let material_id = MATERIAL_MAP.lock().expect("Could not lock material map").add(material);
     DrawData {
-        mesh_id,
+        mesh_handle: mesh_id,
         shader_type: shader,
         material_id: Some(material_id),
     }

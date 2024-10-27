@@ -56,10 +56,10 @@ pub fn import(path: &str) -> BaseDrawable {
             Some(_) => ShaderType::Included(IncludedShaderType::LitColor),
             None => ShaderType::Included(IncludedShaderType::Basic),
         };
-        let mesh_id = MESH_MAP.lock().expect("Could not lock mesh map").add(Box::new(BaseMesh { mesh_data }));
+        let mesh_id = MESH_MAP.with(|mm| mm.borrow_mut().add(Box::new(BaseMesh { mesh_data })));
 
         let draw = DrawData {
-            mesh_id,
+            mesh_handle: mesh_id,
             shader_type,
             material_id: Some(material_id),
         };
@@ -114,10 +114,10 @@ pub fn import_w_collider(path: &str,scale:f32) -> (BaseDrawable,ColliderComponen
             Some(_) => ShaderType::Included(IncludedShaderType::LitColor),
             None => ShaderType::Included(IncludedShaderType::Basic),
         };
-        let mesh_id = MESH_MAP.lock().expect("Could not lock mesh map").add(Box::new(BaseMesh { mesh_data }));
+        let mesh_id = MESH_MAP.with(|mm| mm.borrow_mut().add(Box::new(BaseMesh { mesh_data })));
 
         let draw = DrawData {
-            mesh_id,
+            mesh_handle: mesh_id,
             shader_type,
             material_id: Some(material_id),
         };

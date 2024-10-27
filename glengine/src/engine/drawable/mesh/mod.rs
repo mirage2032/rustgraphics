@@ -1,5 +1,7 @@
+use std::cell::RefCell;
 use std::collections::HashMap;
-use std::sync::{LazyLock, Mutex};
+use std::rc::{Rc, Weak};
+use once_cell::sync::Lazy;
 
 pub mod cube;
 pub mod screenquad;
@@ -173,26 +175,60 @@ impl Drop for MeshData {
     }
 }
 
+#[derive(Clone)]
+pub struct MeshHandle{
+    rc: Rc<()>,
+    handle:usize
+}
+
+#[derive(Clone)]
+struct MeshWeakHandle{
+    handle: Weak<()>
+}
+
 pub struct MeshMap{
-    meshes: HashMap<usize, Box<dyn Mesh>>,
+    meshes: HashMap<usize, (Box<dyn Mesh>,MeshWeakHandle)>,
     index: usize
 }
 
 impl MeshMap{
-    pub fn get(&self, index: usize) -> Option<&Box<dyn Mesh>>{
-        self.meshes.get(&index)
+    pub fn get(&self, handle: &MeshHandle) -> Option<&Box<dyn Mesh>>{
+        let (mesh,_) = self.meshes.get(&handle.handle)?;
+        Some(mesh)
     }
-    pub fn get_mut(&mut self, index: usize) -> Option<&mut Box<dyn Mesh>>{
-        self.meshes.get_mut(&index)
+    pub fn get_mut(&mut self, handle: &MeshHandle) -> Option<&mut Box<dyn Mesh>>{
+        let (mesh,_) = self.meshes.get_mut(&handle.handle)?;
+        Some(mesh)
     }
-    pub fn add(&mut self, mesh: Box<dyn Mesh>) -> usize{
+    pub fn add(&mut self, mesh: Box<dyn Mesh>) -> MeshHandle{
         let index = self.index;
-        self.meshes.insert(index, mesh);
-        self.index += 1;
-        index
+        let mesh_handle = MeshHandle{
+            rc: Rc::new(()),
+            handle: index
+        };
+        let weak_handle = MeshWeakHandle{
+            handle: Rc::downgrade(&mesh_handle.rc)
+        };
+        self.meshes.insert(index, (mesh,weak_handle));
+        
+        self.index = self.index.wrapping_add(1);
+        while let Some((_,weak)) = self.meshes.get(&self.index){
+            match weak.handle.upgrade(){
+                Some(_) => self.index = self.index.wrapping_add(1),
+                None => {
+                    self.meshes.remove(&self.index);
+                    break;
+                }
+            }
+        }
+        mesh_handle
     }
-    pub fn remove(&mut self, index: usize){
-        self.meshes.remove(&index);
+    
+    pub fn clean(&mut self){
+        self.meshes.retain(|_,(_,weak)|weak.handle.upgrade().is_some());
+    }
+    pub fn remove(&mut self, handle: MeshHandle){
+        self.meshes.remove(&handle.handle);
     }
 }
 
@@ -205,4 +241,6 @@ impl Default for MeshMap{
     }
 }
 
-pub(crate) static MESH_MAP: LazyLock<Mutex<MeshMap>> = LazyLock::new(|| Mutex::new(MeshMap::default()));
+thread_local! {
+    pub static MESH_MAP: Lazy<RefCell<MeshMap>> = Lazy::new(|| RefCell::new(MeshMap::default()));
+}

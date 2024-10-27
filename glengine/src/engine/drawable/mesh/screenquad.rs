@@ -1,10 +1,7 @@
-use std::cell::RefCell;
-use std::rc::Rc;
-
 use crate::engine::drawable::mesh::*;
 
 //for the quad that will be used to render the screen
-pub fn new() -> usize {
+pub fn new() -> MeshHandle {
     let vertices = vec![
         -1.0, -1.0, 0.0, // bottom left
         1.0, -1.0, 0.0, // bottom right
@@ -26,6 +23,6 @@ pub fn new() -> usize {
     let mesh_data = MeshData::new(&vertices)
         .with_indices(&indices)
         .with_texcoords(&tex_coords);
-    MESH_MAP.lock().expect("Could not lock mesh map").add(Box::new(BaseMesh { mesh_data }))
+    MESH_MAP.with(|mm|mm.borrow_mut().add(Box::new(BaseMesh { mesh_data })))
     
 }
