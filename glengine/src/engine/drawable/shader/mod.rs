@@ -252,6 +252,14 @@ impl ShaderMap{
             ShaderHandle::Custom(custom) => self.custom.get_mut(&custom.handle).map(|(shader,_)|shader)
         }
     }
+    
+    pub fn get_custom(&self, handle: &CustomShaderHandle) -> Option<&Shader>{
+        self.custom.get(&handle.handle).map(|(shader,_)|shader)
+    }
+    
+    pub fn get_custom_mut(&mut self, handle: &CustomShaderHandle) -> Option<&mut Shader>{
+        self.custom.get_mut(&handle.handle).map(|(shader,_)|shader)
+    }
     pub fn add(&mut self, shader: Shader) -> CustomShaderHandle{
         let index = self.custom_index;
         let handle = CustomShaderHandle{
