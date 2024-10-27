@@ -1,6 +1,5 @@
 use glengine::engine::drawable::material::MATERIAL_MAP;
-use glengine::engine::drawable::shader::IncludedShaderType;
-use glengine::engine::drawable::shader::ShaderType;
+use glengine::engine::drawable::shader::IncludedShaderHandle;
 use glam::Vec3;
 use glengine::engine::drawable::base::BaseDrawable;
 use glengine::engine::drawable::importer::nmdl::import_w_collider;
@@ -47,7 +46,7 @@ impl BaseScene {
 fn cube_rain(parent: Option<GameObject>, center: Vec3, size: Vec3, count: usize,restitution:f32,scale:f32) {
     let mut rng = rand::thread_rng();
     let (mut drawable, collider) = nmdl_import_w_collider!("monkeylp.obj", scale);
-    drawable.draw_data[0].shader_type = ShaderType::Included(IncludedShaderType::LitColor);
+    drawable.draw_data[0].shader_handle = IncludedShaderHandle::LitColor.into();
     for _ in 0..count {
         let x = rng.gen_range(center.x - size.x..center.x + size.x);
         let y = rng.gen_range(center.y - size.y..center.y + size.y);
@@ -150,7 +149,7 @@ impl Scene for BaseScene {
             };
             let material_id = MATERIAL_MAP.lock().unwrap().add(material);
             let mut drawable = BaseDrawable::default();
-            drawable.draw_data[0].shader_type = ShaderType::Included(IncludedShaderType::LitColor);
+            drawable.draw_data[0].shader_handle = IncludedShaderHandle::LitColor.into();
             drawable.draw_data[0].material_id = Some(material_id);
             let mut data = floor.base.borrow_mut();
             data.data.transform.scale *= 200.0;
@@ -188,7 +187,7 @@ impl Scene for BaseScene {
             };
             let material_id = MATERIAL_MAP.lock().unwrap().add(material);
             let mut drawable = BaseDrawable::default();
-            drawable.draw_data[0].shader_type = ShaderType::Included(IncludedShaderType::LitColor);
+            drawable.draw_data[0].shader_handle = IncludedShaderHandle::LitColor.into();
             drawable.draw_data[0].material_id = Some(material_id);
             let mut data = cube.base.borrow_mut();
             data.add_component(DrawableComponent::new(Box::new(drawable)));

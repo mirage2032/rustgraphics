@@ -3,6 +3,7 @@ use gl;
 use gl::types::GLenum;
 use glam::Mat4;
 use std::ops::AddAssign;
+use std::rc::{Rc, Weak};
 use std::sync::RwLock;
 use once_cell::sync::Lazy;
 use crate::result::{EngineRenderResult, ShaderError};
@@ -188,52 +189,93 @@ impl Default for Shader {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum IncludedShaderType{
+pub enum IncludedShaderHandle {
     Basic,
     LitColor,
     UnlitFace,
     UnlitQuad
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum ShaderType{
-    Included(IncludedShaderType),
-    Custom(usize)
+#[derive(Clone)]
+pub enum ShaderHandle{
+    Included(IncludedShaderHandle),
+    Custom(CustomShaderHandle)
+}
+
+impl From<IncludedShaderHandle> for ShaderHandle{
+    fn from(handle: IncludedShaderHandle) -> Self{
+        ShaderHandle::Included(handle)
+    }
+}
+
+impl From<CustomShaderHandle> for ShaderHandle{
+    fn from(handle: CustomShaderHandle) -> Self{
+        ShaderHandle::Custom(handle)
+    }
+}
+
+#[derive(Clone)]
+pub struct CustomShaderHandle{
+    rc: Rc<()>,
+    handle:usize
+}
+
+#[derive(Clone)]
+struct CustomShaderWeakHandle{
+    handle: Weak<()>
 }
 
 pub struct ShaderMap{
-    included: HashMap<IncludedShaderType, Shader>,
-    custom: HashMap<usize, Shader>,
+    included: HashMap<IncludedShaderHandle, Shader>,
+    custom: HashMap<usize, (Shader,CustomShaderWeakHandle)>,
     custom_index: usize
 }
 
 impl ShaderMap{
 
-    pub fn get_included(&self, included: IncludedShaderType) -> &Shader{
+    pub fn get_included(&self, included: &IncludedShaderHandle) -> &Shader{
         self.included.get(&included).unwrap()
     }
 
-    pub fn get_included_mut(&mut self, included: &IncludedShaderType) -> &mut Shader{
+    pub fn get_included_mut(&mut self, included: &IncludedShaderHandle) -> &mut Shader{
         self.included.get_mut(&included).unwrap()
     }
-    pub fn get(&self, shader_type: &ShaderType) -> Option<&Shader>{
+    pub fn get(&self, shader_type: &ShaderHandle) -> Option<&Shader>{
         match shader_type{
-            ShaderType::Included(included) => self.included.get(&included),
-            ShaderType::Custom(index) => self.custom.get(&index)
+            ShaderHandle::Included(included) => Some(self.get_included(included)),
+            ShaderHandle::Custom(custom) => self.custom.get(&custom.handle).map(|(shader,_)|shader)
         }
     }
-    pub fn add_custom(&mut self, shader: Shader) -> usize{
+    pub fn get_mut(&mut self, shader_type: &ShaderHandle) -> Option<&mut Shader>{
+        match shader_type{
+            ShaderHandle::Included(included) => Some(self.get_included_mut(included)),
+            ShaderHandle::Custom(custom) => self.custom.get_mut(&custom.handle).map(|(shader,_)|shader)
+        }
+    }
+    pub fn add(&mut self, shader: Shader) -> CustomShaderHandle{
         let index = self.custom_index;
-        self.custom.insert(index, shader);
+        let handle = CustomShaderHandle{
+            rc: Rc::new(()),
+            handle: index
+        };
+        let weak = CustomShaderWeakHandle{
+            handle: Rc::downgrade(&handle.rc)
+        };
+        self.custom.insert(index, (shader,weak));
         self.custom_index += 1;
-        index
+        while let Some((_,weak)) = self.custom.get(&self.custom_index){
+            match weak.handle.upgrade(){
+                Some(_) => self.custom_index += 1,
+                None => {
+                    self.custom.remove(&self.custom_index);
+                    break;
+                }
+            }
+        }
+        handle
     }
 
-    pub fn get_custom(&self, index: usize) -> Option<&Shader>{
-        self.custom.get(&index)
-    }
-
-    pub fn remove_custom(&mut self, index: usize){
+    pub fn remove(&mut self, index: usize){
         self.custom.remove(&index);
     }
 }
@@ -241,10 +283,10 @@ impl ShaderMap{
 impl Default for ShaderMap{
     fn default() -> Self{
         let mut included = HashMap::new();
-        included.insert(IncludedShaderType::Basic, Shader::default());
-        included.insert(IncludedShaderType::LitColor, lit::new_basic_shader().unwrap());
-        included.insert(IncludedShaderType::UnlitFace, unlit::new_face_shader().unwrap());
-        included.insert(IncludedShaderType::UnlitQuad, unlit::new_quad_shader().unwrap());
+        included.insert(IncludedShaderHandle::Basic, Shader::default());
+        included.insert(IncludedShaderHandle::LitColor, lit::new_basic_shader().unwrap());
+        included.insert(IncludedShaderHandle::UnlitFace, unlit::new_face_shader().unwrap());
+        included.insert(IncludedShaderHandle::UnlitQuad, unlit::new_quad_shader().unwrap());
         Self{
             included,
             custom: HashMap::new(),
@@ -253,4 +295,6 @@ impl Default for ShaderMap{
     }
 }
 
-pub(crate) static SHADER_MAP: Lazy<ShaderMap> = Lazy::new(|| ShaderMap::default());
+thread_local! {
+    pub(crate) static SHADER_MAP: Lazy<ShaderMap> = Lazy::new(|| ShaderMap::default());
+}

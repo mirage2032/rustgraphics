@@ -8,7 +8,7 @@ use crate::engine::drawable::DrawData;
 use crate::engine::drawable::mesh::MeshHandle;
 use crate::engine::scene::lights::Lights;
 
-use super::shader::{IncludedShaderType, Shader, ShaderType};
+use super::shader::{IncludedShaderHandle, Shader, ShaderHandle};
 
 #[derive(Clone)]
 pub struct BaseDrawable {
@@ -16,10 +16,10 @@ pub struct BaseDrawable {
 }
 
 impl BaseDrawable {
-    pub fn new(mesh_handle: MeshHandle, shader_type: ShaderType) -> Self {
+    pub fn new(mesh_handle: MeshHandle, shader_handle: ShaderHandle) -> Self {
         let draw_object = DrawData {
             mesh_handle,
-            shader_type,
+            shader_handle,
             material_id: None,
         };
         Self {
@@ -40,7 +40,7 @@ impl Default for BaseDrawable {
     fn default() -> Self {
         let draw_object = DrawData {
             mesh_handle: mesh::cube::new(),
-            shader_type: ShaderType::Included(IncludedShaderType::Basic),
+            shader_handle: IncludedShaderHandle::Basic.into(),
             material_id: None,
         };
         Self {

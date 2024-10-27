@@ -5,7 +5,7 @@ use std::rc::Rc;
 use crate::engine::drawable::base::BaseDrawable;
 use crate::engine::drawable::material::{Material, MATERIAL_MAP};
 use crate::engine::drawable::mesh::{BaseMesh, MeshData, MESH_MAP};
-use crate::engine::drawable::shader::{IncludedShaderType, Shader, ShaderType};
+use crate::engine::drawable::shader::{IncludedShaderHandle};
 use crate::engine::drawable::DrawData;
 use glengine_mdl::models::{FileStruct};
 use crate::engine::scene::gameobject::components::collider::ColliderComponent;
@@ -53,14 +53,14 @@ pub fn import(path: &str) -> BaseDrawable {
             );
         }
         let shader_type = match material.data.ambient{
-            Some(_) => ShaderType::Included(IncludedShaderType::LitColor),
-            None => ShaderType::Included(IncludedShaderType::Basic),
+            Some(_) => IncludedShaderHandle::LitColor.into(),
+            None => IncludedShaderHandle::Basic.into(),
         };
         let mesh_id = MESH_MAP.with(|mm| mm.borrow_mut().add(Box::new(BaseMesh { mesh_data })));
 
         let draw = DrawData {
             mesh_handle: mesh_id,
-            shader_type,
+            shader_handle: shader_type,
             material_id: Some(material_id),
         };
         draw_data.push(draw);
@@ -110,15 +110,15 @@ pub fn import_w_collider(path: &str,scale:f32) -> (BaseDrawable,ColliderComponen
                 &tex_coords
             );
         }
-        let shader_type = match material.data.ambient{
-            Some(_) => ShaderType::Included(IncludedShaderType::LitColor),
-            None => ShaderType::Included(IncludedShaderType::Basic),
+        let shader_handle = match material.data.ambient{
+            Some(_) => IncludedShaderHandle::LitColor.into(),
+            None => IncludedShaderHandle::Basic.into(),
         };
         let mesh_id = MESH_MAP.with(|mm| mm.borrow_mut().add(Box::new(BaseMesh { mesh_data })));
 
         let draw = DrawData {
             mesh_handle: mesh_id,
-            shader_type,
+            shader_handle,
             material_id: Some(material_id),
         };
         draw_data.push(draw);
