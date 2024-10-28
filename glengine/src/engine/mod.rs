@@ -43,13 +43,13 @@ pub struct GameState {
 }
 
 pub struct GameData {
-    pub scene: Option<Box<dyn Scene>>,
+    pub scene: Option<Scene>,
     pub state: GameState,
     should_close: bool,
 }
 
 impl GameData {
-    pub fn new(scene: Option<Box<dyn Scene>>) -> Self {
+    pub fn new(scene: Option<Scene>) -> Self {
         Self {
             scene,
             ..Default::default()

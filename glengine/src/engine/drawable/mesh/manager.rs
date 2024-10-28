@@ -8,9 +8,17 @@ pub struct MeshHandle{
     handle:usize
 }
 
+impl MeshHandle{
+    fn downgrade(&self)->MeshWeakHandle{
+        MeshWeakHandle{
+            weak:Rc::downgrade(&self.rc)
+        }
+    }
+}
+
 #[derive(Clone)]
 struct MeshWeakHandle{
-    handle: Weak<()>
+    weak: Weak<()>
 }
 
 pub struct MeshManager {
@@ -33,14 +41,12 @@ impl MeshManager {
             rc: Rc::new(()),
             handle: index
         };
-        let weak_handle = MeshWeakHandle{
-            handle: Rc::downgrade(&mesh_handle.rc)
-        };
+        let weak_handle = mesh_handle.downgrade();
         self.meshes.insert(index, (mesh,weak_handle));
 
         self.index = self.index.wrapping_add(1);
         while let Some((_,weak)) = self.meshes.get(&self.index){
-            match weak.handle.upgrade(){
+            match weak.weak.upgrade(){
                 Some(_) => self.index = self.index.wrapping_add(1),
                 None => {
                     self.meshes.remove(&self.index);
@@ -52,7 +58,7 @@ impl MeshManager {
     }
 
     pub fn clean(&mut self){
-        self.meshes.retain(|_,(_,weak)|weak.handle.upgrade().is_some());
+        self.meshes.retain(|_,(_,weak)|weak.weak.upgrade().is_some());
     }
     pub fn remove(&mut self, handle: MeshHandle){
         self.meshes.remove(&handle.handle);

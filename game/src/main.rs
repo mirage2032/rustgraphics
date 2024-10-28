@@ -15,7 +15,6 @@ use glengine::engine::scene::lights::point::PointLight;
 use glengine::engine::scene::lights::spot::SpotLight;
 use glengine::engine::scene::lights::Lights;
 use glengine::engine::scene::Scene;
-use glengine::engine::scene::SceneData;
 use glengine::engine::transform::Transform;
 use glengine::engine::Engine;
 use glengine::engine::GameData;
@@ -26,22 +25,6 @@ use rand::Rng;
 use rapier3d::prelude::ColliderBuilder;
 use rapier3d::prelude::RigidBodyBuilder;
 use std::rc::Rc;
-
-struct BaseScene {
-    data: SceneData,
-}
-
-impl BaseScene {
-    fn new() -> Self {
-        Self {
-            data: SceneData {
-                objects: Vec::new(),
-                main_camera: None,
-                lights: Lights::default(),
-            },
-        }
-    }
-}
 
 fn cube_rain(parent: Option<GameObject>, center: Vec3, size: Vec3, count: usize,restitution:f32,scale:f32) {
     let mut rng = rand::thread_rng();
@@ -101,22 +84,14 @@ fn new_simulated_cube(
     data
 }
 
-impl Scene for BaseScene {
-    fn data(&self) -> &SceneData {
-        &self.data
-    }
 
-    fn data_mut(&mut self) -> &mut SceneData {
-        &mut self.data
-    }
-
-    fn init_gl(&mut self) -> EngineRenderResult<()> {
-        self.data_mut().lights.init_ssbo();
+    fn init_gl_cb(scene: &mut Scene) -> EngineRenderResult<()> {
+        scene.lights.init_ssbo();
         unsafe {
             gl::ClearColor(0.2, 0.3, 0.3, 1.0);
         }
         let empty = GameObject::new(None);
-        self.data.objects.push(empty.clone());
+        scene.objects.push(empty.clone());
         let monkey = GameObject::new(Some(empty.clone()));
         {
             let (monkey_draw, mut collider) = nmdl_import_w_collider!("monkeylp.obj", 5.0);
@@ -235,7 +210,7 @@ impl Scene for BaseScene {
             27.0,
             50.0,
         );
-        self.data_mut().lights.spot.push(spot_light);
+        scene.lights.spot.push(spot_light);
 
         let point_light_gameobject = GameObject::new_w_transform(
             Some(empty.clone()),
@@ -250,7 +225,7 @@ impl Scene for BaseScene {
             0.09,
             0.032,
         );
-        self.data_mut().lights.point.push(point_light);
+        scene.lights.point.push(point_light);
 
         let direction_light_gameobject = GameObject::new_w_transform(
             Some(empty.clone()),
@@ -266,16 +241,15 @@ impl Scene for BaseScene {
             vec3(1.0, 1.0, 1.0),
         );
 
-        self.data_mut().lights.directional = Some(directional_light);
+        scene.lights.directional = Some(directional_light);
 
-        self.data.objects.push(camera.game_object.clone());
-        self.data.main_camera = Some(camera);
+        scene.objects.push(camera.game_object.clone());
+        scene.main_camera = Some(camera);
         Ok(())
     }
-}
 
 fn main() {
-    let mut engine = Engine::from_game(GameData::new(Some(Box::new(BaseScene::new()))));
+    let mut engine = Engine::from_game(GameData::new(Some(Scene::new(init_gl_cb))));
     if let Err(e) = engine.run() {
         eprintln!("Error: {:?}", e);
         let s = unsafe { gl::GetError() };
